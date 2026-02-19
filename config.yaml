@@ -1,0 +1,61 @@
+# GitHub Commit → Social Post Agent Configuration
+
+agent:
+  # Default branch to scan for commits
+  default_branch: main
+
+  # How many days back to scan when no 'since' date is provided
+  scan_days: 7
+
+  # Maximum posts to generate per scan run
+  max_posts_per_run: 3
+
+  # Minimum commit score to qualify for post generation (0-100)
+  score_threshold: 30.0
+
+  # OpenAI model to use for post generation
+  openai_model: gpt-4o
+
+scoring:
+  # Weight multipliers for each scoring dimension
+  # These are updated automatically by the learning loop
+  weights:
+    novelty: 1.0
+    impact: 1.0
+    teachability: 1.0
+    relevance: 1.0
+    proof: 1.0
+
+post_generation:
+  # Default hook pattern to use (overridden by learning loop)
+  default_hook_pattern: result
+
+  # LinkedIn post target length range (characters)
+  linkedin_min_chars: 800
+  linkedin_max_chars: 1500
+
+topics:
+  # Topics to prioritize for post generation (must match scoring.py RELEVANT_TOPICS)
+  priority:
+    - ai
+    - distributed-systems
+    - testing
+    - performance
+    - reliability
+
+storage:
+  # Path to learning state JSON file
+  learning_state_path: learning_state.json
+
+  # Path to experiments state JSON file
+  experiments_path: experiments.json
+
+privacy:
+  # Always enforce — no config override available
+  # Commits containing these patterns are never processed
+  # See scoring.py SENSITIVE_PATTERNS for the full list
+  enforce_sensitive_filter: true
+
+experiments:
+  # Minimum posts per variant before declaring a winner
+  min_samples_per_variant: 3

@@ -1,0 +1,50 @@
+name: Collect Analytics & Update Learning
+
+on:
+  workflow_dispatch:
+    inputs:
+      posts_json:
+        description: "JSON array of Post objects (paste inline or leave empty)"
+        required: false
+  schedule:
+    # Run every Wednesday and Friday at 09:00 UTC to collect 48h+ post analytics
+    - cron: "0 9 * * 3,5"
+
+jobs:
+  collect-analytics:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Write posts JSON if provided
+        if: inputs.posts_json != ''
+        run: echo '${{ inputs.posts_json }}' > /tmp/posts.json
+
+      - name: Collect analytics and update learning state
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ARGS="--repo ${{ github.repository }}"
+
+          if [ -f /tmp/posts.json ]; then
+            ARGS="$ARGS --posts /tmp/posts.json"
+          fi
+
+          python -m src.agent analytics $ARGS
+
+      - name: Show experiment summary
+        run: python -m src.agent experiments

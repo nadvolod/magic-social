@@ -1,0 +1,62 @@
+name: Scan Commits & Generate Posts
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # Run every Monday at 08:00 UTC
+    - cron: "0 8 * * 1"
+  workflow_dispatch:
+    inputs:
+      since:
+        description: "Scan commits since (ISO 8601, e.g. 2024-01-01T00:00:00Z)"
+        required: false
+      max_posts:
+        description: "Maximum posts to generate"
+        default: "3"
+        required: false
+      dry_run:
+        description: "Dry run (print posts, don't create issues)"
+        type: boolean
+        default: false
+
+jobs:
+  scan-and-generate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Scan commits and generate posts
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          ARGS="--repo ${{ github.repository }} --branch main"
+
+          if [ -n "${{ inputs.since }}" ]; then
+            ARGS="$ARGS --since ${{ inputs.since }}"
+          fi
+
+          if [ -n "${{ inputs.max_posts }}" ]; then
+            ARGS="$ARGS --max-posts ${{ inputs.max_posts }}"
+          fi
+
+          if [ "${{ inputs.dry_run }}" = "true" ]; then
+            ARGS="$ARGS --dry-run"
+          fi
+
+          python -m src.agent scan $ARGS
