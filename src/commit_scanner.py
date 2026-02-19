@@ -54,7 +54,7 @@ def fetch_commits(
     repo: str,
     token: str,
     since: Optional[str] = None,
-    per_page: int = 30,
+    per_page: int = 100,
     branch: str = "main",
 ) -> list[dict]:
     """Fetch recent commits from a GitHub repository."""
@@ -81,7 +81,7 @@ def scan_commits(
     repo: str,
     token: str,
     since: Optional[str] = None,
-    per_page: int = 30,
+    per_page: int = 100,
     branch: str = "main",
     threshold: float = SCORE_THRESHOLD,
 ) -> list[SourceCommit]:
