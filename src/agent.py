@@ -45,7 +45,7 @@ DEFAULT_LEARNING_STATE_PATH = "learning_state.json"
 DEFAULT_EXPERIMENTS_PATH = "experiments.json"
 
 # How many days back to scan for commits when no 'since' date is provided
-DEFAULT_SCAN_DAYS = 7
+DEFAULT_SCAN_DAYS = 1
 
 
 def _get_openai_client():
@@ -67,7 +67,7 @@ def run_scan(
     token: str,
     since: Optional[str] = None,
     branch: str = "main",
-    max_posts: int = 3,
+    max_posts: int = 10,
     learning_state_path: str = DEFAULT_LEARNING_STATE_PATH,
     experiments_path: str = DEFAULT_EXPERIMENTS_PATH,
     dry_run: bool = False,
@@ -246,7 +246,7 @@ Examples:
     scan_parser.add_argument("--repo", required=True, help="GitHub repo (owner/repo)")
     scan_parser.add_argument("--branch", default="main", help="Branch to scan")
     scan_parser.add_argument("--since", help="ISO 8601 date (e.g. 2024-01-01T00:00:00Z)")
-    scan_parser.add_argument("--max-posts", type=int, default=3, help="Max posts per run")
+    scan_parser.add_argument("--max-posts", type=int, default=10, help="Max posts per run")
     scan_parser.add_argument("--dry-run", action="store_true", help="Print posts, don't create issues")
     scan_parser.add_argument("--threshold", type=float, default=SCORE_THRESHOLD, help="Min score threshold")
 

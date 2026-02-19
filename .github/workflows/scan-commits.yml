@@ -4,8 +4,8 @@ on:
   push:
     branches: [main]
   schedule:
-    # Run every Monday at 08:00 UTC
-    - cron: "0 8 * * 1"
+    # Run every day at 08:00 UTC
+    - cron: "0 8 * * *"
   workflow_dispatch:
     inputs:
       since:
@@ -13,7 +13,7 @@ on:
         required: false
       max_posts:
         description: "Maximum posts to generate"
-        default: "3"
+        default: "10"
         required: false
       dry_run:
         description: "Dry run (print posts, don't create issues)"
