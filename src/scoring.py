@@ -5,7 +5,10 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-# Topics that resonate with the target audience
+# Topics that resonate with the target audience.
+# Entries are used as regex patterns — dots act as wildcards so that
+# "fine.tun" matches "fine-tuning", "finetuning", "fine_tuning", etc.
+# "event.driven" matches "event-driven" / "event_driven", etc.
 RELEVANT_TOPICS = [
     "ai",
     "llm",

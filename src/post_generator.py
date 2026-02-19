@@ -24,11 +24,8 @@ HOOK_PATTERNS = {
     "revelation": "I was wrong about {topic}.\n\nHere's what changed my mind.",
 }
 
-# LinkedIn post structural constraints
+# LinkedIn post hard limit; the prompt instructs the model to stay within 800-1500 chars
 MAX_LINKEDIN_CHARS = 3000
-IDEAL_LINKEDIN_CHARS = (800, 1500)
-MAX_SENTENCES_PER_PARAGRAPH = 2
-IDEAL_PARAGRAPHS = (5, 10)
 
 
 def _build_system_prompt() -> str:

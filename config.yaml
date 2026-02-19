@@ -35,7 +35,7 @@ post_generation:
   linkedin_max_chars: 1500
 
 topics:
-  # Topics to prioritise for post generation (must match scoring.py RELEVANT_TOPICS)
+  # Topics to prioritize for post generation (must match scoring.py RELEVANT_TOPICS)
   priority:
     - ai
     - distributed-systems
