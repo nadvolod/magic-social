@@ -5,13 +5,13 @@ agent:
   default_branch: main
 
   # How many days back to scan when no 'since' date is provided
-  scan_days: 1
+  scan_days: 7
 
   # Maximum posts to generate per scan run
   max_posts_per_run: 10
 
   # Minimum commit score to qualify for post generation (0-100)
-  score_threshold: 30.0
+  score_threshold: 15.0
 
   # OpenAI model to use for post generation
   openai_model: gpt-4o

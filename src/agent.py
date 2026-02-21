@@ -45,7 +45,7 @@ DEFAULT_LEARNING_STATE_PATH = "learning_state.json"
 DEFAULT_EXPERIMENTS_PATH = "experiments.json"
 
 # How many days back to scan for commits when no 'since' date is provided
-DEFAULT_SCAN_DAYS = 1
+DEFAULT_SCAN_DAYS = 7
 
 
 def _get_openai_client():
@@ -107,7 +107,7 @@ def run_scan(
     best_hook = get_best_hook_pattern(learning_state)
 
     # Scan commits
-    source_commits = scan_commits(repo, token, since=since, branch=branch)
+    source_commits = scan_commits(repo, token, since=since, branch=branch, threshold=threshold)
     if not source_commits:
         logger.info("No lesson-worthy commits found.")
         return []
