@@ -259,4 +259,4 @@ def score_commit(
 
 
 # Minimum score threshold to qualify a commit for post generation
-SCORE_THRESHOLD = 30.0
+SCORE_THRESHOLD = 15.0

@@ -65,7 +65,8 @@ def parse_analytics_from_comment(comment_body: str, post_id: str, issue_number: 
     for key in METRIC_KEYS:
         # Match "key: value" (with optional spaces and commas in number)
         # Support both underscore and hyphen separators (e.g. click_through / click-through)
-        pattern = rf"{key.replace('_', '[_\\- ]')}[:\s]+([+-]?[\d,]+)"
+        key_pattern = key.replace('_', '[_\\- ]')
+        pattern = rf"{key_pattern}[:\s]+([+-]?[\d,]+)"
         match = re.search(pattern, comment_body, re.IGNORECASE)
         if match:
             try:
