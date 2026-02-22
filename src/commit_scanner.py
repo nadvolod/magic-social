@@ -50,6 +50,27 @@ def _summarize_diff(patch: str, max_chars: int = 500) -> str:
     return summary[:max_chars]
 
 
+def fetch_user_repos(username: str, token: str, per_page: int = 100) -> list[str]:
+    """Fetch all repository full names owned by a GitHub user (handles pagination)."""
+    headers = _github_headers(token)
+    repos: list[str] = []
+    page = 1
+    while True:
+        url = f"{GITHUB_API}/users/{username}/repos"
+        params: dict = {"per_page": per_page, "page": page, "type": "owner"}
+        response = requests.get(url, headers=headers, params=params, timeout=30)
+        response.raise_for_status()
+        page_repos = response.json()
+        if not page_repos:
+            break
+        repos.extend(r["full_name"] for r in page_repos)
+        if len(page_repos) < per_page:
+            break
+        page += 1
+    logger.info("Found %d repositories for user %s", len(repos), username)
+    return repos
+
+
 def fetch_commits(
     repo: str,
     token: str,
@@ -158,3 +179,45 @@ def scan_commits(
     results.sort(key=lambda c: c.score, reverse=True)
     logger.info("Found %d lesson-worthy commits out of %d scanned", len(results), len(raw_commits))
     return results
+
+
+def scan_all_user_commits(
+    username: str,
+    token: str,
+    since: Optional[str] = None,
+    per_page: int = 100,
+    branch: str = "main",
+    threshold: float = SCORE_THRESHOLD,
+) -> list[SourceCommit]:
+    """
+    Scan commits across **all** repositories owned by a GitHub user.
+
+    Args:
+        username:  GitHub username whose repositories to scan.
+        token:     GitHub personal access token.
+        since:     ISO 8601 timestamp; only commits after this date.
+        per_page:  Number of commits to fetch per repository (max 100).
+        branch:    Branch to scan in each repository.
+        threshold: Minimum score to include a commit.
+
+    Returns:
+        Combined list of SourceCommit objects from all repos, sorted by score descending.
+    """
+    repos = fetch_user_repos(username, token)
+    all_commits: list[SourceCommit] = []
+    for repo in repos:
+        try:
+            commits = scan_commits(
+                repo, token, since=since, per_page=per_page, branch=branch, threshold=threshold
+            )
+            all_commits.extend(commits)
+        except requests.HTTPError as exc:
+            logger.warning("Could not scan repo %s: %s", repo, exc)
+    all_commits.sort(key=lambda c: c.score, reverse=True)
+    logger.info(
+        "Found %d total lesson-worthy commits across %d repos for user %s",
+        len(all_commits),
+        len(repos),
+        username,
+    )
+    return all_commits
