@@ -26,7 +26,7 @@ from .analytics import (
     get_best_hook_pattern,
     update_learning_state,
 )
-from .commit_scanner import scan_commits
+from .commit_scanner import scan_all_user_commits, scan_commits
 from .experiments import ExperimentManager
 from .github_storage import (
     add_analytics_comment,
@@ -63,20 +63,22 @@ def _get_openai_client():
 
 
 def run_scan(
-    repo: str,
-    token: str,
+    repo: Optional[str] = None,
+    token: str = "",
     since: Optional[str] = None,
     branch: str = "main",
     max_posts: int = 10,
     learning_state_path: str = DEFAULT_LEARNING_STATE_PATH,
     experiments_path: str = DEFAULT_EXPERIMENTS_PATH,
     dry_run: bool = False,
+    username: Optional[str] = None,
+    threshold: float = SCORE_THRESHOLD,
 ) -> list[Post]:
     """
     Run a full commit scan → post generation → GitHub Issue creation cycle.
 
     Args:
-        repo:                 Full repo name (owner/repo).
+        repo:                 Full repo name (owner/repo).  Mutually exclusive with username.
         token:                GitHub token with repo + issues write access.
         since:                ISO 8601 date string; only scan commits after this.
         branch:               Branch to scan.
@@ -84,15 +86,19 @@ def run_scan(
         learning_state_path:  Path to the learning state JSON file.
         experiments_path:     Path to the experiments JSON file.
         dry_run:              If True, print posts but don't create issues.
+        username:             GitHub username — scan ALL repos for this user.
+        threshold:            Minimum commit score to qualify for post generation.
 
     Returns:
         List of generated Post objects.
     """
+    if not repo and not username:
+        raise ValueError("Either 'repo' or 'username' must be provided.")
     if since is None:
         cutoff = datetime.now(timezone.utc) - timedelta(days=DEFAULT_SCAN_DAYS)
         since = cutoff.isoformat()
 
-    logger.info("Starting commit scan for %s (since=%s)", repo, since)
+    logger.info("Starting commit scan (since=%s)", since)
 
     # Load persistent state
     learning_state = LearningState.load(learning_state_path)
@@ -106,8 +112,17 @@ def run_scan(
     # Pick the best hook pattern from learning state
     best_hook = get_best_hook_pattern(learning_state)
 
-    # Scan commits
-    source_commits = scan_commits(repo, token, since=since, branch=branch, threshold=threshold)
+    # Scan commits — either a single repo or all repos for a user
+    if username:
+        logger.info("Scanning all repositories for user %s", username)
+        source_commits = scan_all_user_commits(
+            username, token, since=since, branch=branch, threshold=threshold
+        )
+    else:
+        logger.info("Scanning commits for %s (branch=%s)", repo, branch)
+        source_commits = scan_commits(
+            repo, token, since=since, branch=branch, threshold=threshold  # type: ignore[arg-type]
+        )
     if not source_commits:
         logger.info("No lesson-worthy commits found.")
         return []
@@ -243,7 +258,9 @@ Examples:
 
     # scan command
     scan_parser = subparsers.add_parser("scan", help="Scan commits and generate posts")
-    scan_parser.add_argument("--repo", required=True, help="GitHub repo (owner/repo)")
+    repo_group = scan_parser.add_mutually_exclusive_group(required=True)
+    repo_group.add_argument("--repo", help="GitHub repo (owner/repo)")
+    repo_group.add_argument("--username", help="GitHub username — scan ALL repos for this user")
     scan_parser.add_argument("--branch", default="main", help="Branch to scan")
     scan_parser.add_argument("--since", help="ISO 8601 date (e.g. 2024-01-01T00:00:00Z)")
     scan_parser.add_argument("--max-posts", type=int, default=10, help="Max posts per run")
@@ -278,6 +295,8 @@ Examples:
             branch=args.branch,
             max_posts=args.max_posts,
             dry_run=args.dry_run,
+            username=args.username,
+            threshold=args.threshold,
         )
         print(f"\n✅ Generated {len(posts)} post(s).")
 
