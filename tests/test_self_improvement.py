@@ -81,6 +81,42 @@ def test_apply_config_tunings_updates_threshold_and_limits(tmp_path):
     assert updated["post_generation"]["linkedin_max_chars"] <= 1350
 
 
+def test_apply_config_tunings_preserves_yaml_comments(tmp_path):
+    config_path = tmp_path / "config.yaml"
+    config_path.write_text(
+        "# Top-level config comment\n"
+        "agent:\n"
+        "  # Minimum score to qualify\n"
+        "  score_threshold: 15.0\n"
+        "  max_posts_per_run: 10\n"
+        "post_generation:\n"
+        "  linkedin_max_chars: 1500  # inline comment\n",
+        encoding="utf-8",
+    )
+
+    state = LearningState(not_published_reasons={"too_long": 4, "stale_unpublished_7d": 4})
+    ctx = ImprovementContext(
+        total_social_issues=20,
+        open_social_issues=14,
+        open_unpublished=13,
+        stale_unpublished_7d=6,
+        old_unreviewed_72h=7,
+    )
+    changes = apply_config_tunings(str(config_path), state, ctx)
+    result = config_path.read_text(encoding="utf-8")
+    updated = yaml.safe_load(result)
+
+    assert changes
+    # Verify that config values were actually updated.
+    assert updated["post_generation"]["linkedin_max_chars"] <= 1350
+    assert updated["agent"]["score_threshold"] >= 20.0
+    assert updated["agent"]["max_posts_per_run"] <= 8
+    # Verify that comments are preserved.
+    assert "# Top-level config comment" in result
+    assert "# Minimum score to qualify" in result
+    assert "# inline comment" in result
+
+
 def test_render_self_improvement_report_contains_sections():
     state = LearningState(not_published_reasons={"quality": 3})
     ctx = ImprovementContext(total_social_issues=5, open_social_issues=3, open_unpublished=2)
