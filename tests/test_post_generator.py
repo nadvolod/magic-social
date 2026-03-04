@@ -92,10 +92,27 @@ class TestPlaceholderGenerators:
         post = _placeholder_linkedin(source, "result")
         assert "result" in post
 
-    def test_placeholder_linkedin_contains_commit_sha(self):
+    def test_placeholder_linkedin_contains_commit_message(self):
         source = _make_source(sha="abc123def456")
         post = _placeholder_linkedin(source, "result")
-        assert "abc123" in post
+        assert "fix Temporal workflow timeout" in post
+
+    def test_placeholder_linkedin_follows_post_structure(self):
+        """Placeholder should read like a real post, not dump raw data."""
+        source = _make_source()
+        post = _placeholder_linkedin(source, "story")
+        # Should NOT contain raw data markers
+        assert "[DRAFT" not in post
+        assert "Lesson score:" not in post
+        # Should have a human-readable hook and a CTA question
+        lines = [l for l in post.splitlines() if l.strip()]
+        assert lines[0]  # hook line exists
+        assert "?" in post  # ends with a question (CTA)
+
+    def test_placeholder_linkedin_includes_diff_summary(self):
+        source = _make_source()
+        post = _placeholder_linkedin(source, "result")
+        assert source.diff_summary in post
 
     def test_placeholder_x_thread_has_tweet_numbers(self):
         linkedin = "Hook line\n\nBody paragraph\n\nClosing question?"

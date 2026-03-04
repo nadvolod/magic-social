@@ -77,7 +77,12 @@ def _create_label(repo: str, token: str, name: str, color: str, description: str
 
 
 def _build_issue_body(post: Post) -> str:
-    """Build the GitHub Issue body for a social post."""
+    """Build the GitHub Issue body for a social post.
+
+    The issue is structured so the LinkedIn post is front-and-centre and
+    easy to copy-paste.  X Thread and Instagram sections are omitted —
+    LinkedIn is the only platform we're optimising for right now.
+    """
     commit_url = f"https://github.com/{post.repo}/commit/{post.source_commit_sha}"
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
@@ -89,45 +94,11 @@ def _build_issue_body(post: Post) -> str:
 - **Variant:** `{post.experiment_variant or 'control'}`
 """
 
-    return f"""## 📝 Post Metadata
+    return f"""## 🔵 LinkedIn Post
 
-| Field | Value |
-|-------|-------|
-| **Post ID** | `{post.id}` |
-| **Source Commit** | [{post.source_commit_sha[:8]}]({commit_url}) |
-| **Repository** | `{post.repo}` |
-| **Hook Pattern** | `{post.hook_pattern}` |
-| **Tags** | {', '.join(f'`{t}`' for t in post.tags)} |
-| **Created** | {now} |
-| **Status** | `{post.status.value}` |
-
-## 💡 Lesson
-
-{post.lesson}
-{experiment_section}
----
-
-## 🔵 LinkedIn Post
-
-<!-- Copy-paste this into LinkedIn -->
+<!-- Copy-paste the text below into LinkedIn -->
 
 {post.linkedin_post}
-
----
-
-## 🐦 X Thread
-
-<!-- Optional: post as a thread on X -->
-
-{post.x_thread}
-
----
-
-## 📸 Instagram Caption
-
-<!-- Strategic only — pair with a high-quality visual. Best time: 12PM EST -->
-
-{post.ig_caption}
 
 ---
 
@@ -138,10 +109,23 @@ def _build_issue_body(post: Post) -> str:
 - [ ] Approve content
 - [ ] Publish to LinkedIn
 - [ ] Record publish date/time
-- [ ] (Optional) Post X thread
-- [ ] (Optional) Post Instagram caption with visual
 - [ ] Collect analytics after 48 hours
-- [ ] Update analytics in this issue (see template below)
+
+---
+
+## 💬 Post Feedback
+
+Whether or not you publish this post, please add a comment with your honest feedback.
+This helps the agent learn your preferences and improve future posts.
+
+```
+## Post Feedback — [DATE]
+
+- Published: yes / no
+- If not published, why: quality / style / not relevant / too long / too technical / other
+- What would make it better: 
+- Rating (1-5): 
+```
 
 ---
 
@@ -164,26 +148,26 @@ After publishing, add a comment to this issue with your metrics:
 
 ---
 
-## 💬 Post Feedback
+## 📝 Post Metadata
 
-Whether or not you publish this post, please add a comment with your honest feedback.
-This helps the agent learn your preferences and improve future posts.
+| Field | Value |
+|-------|-------|
+| **Post ID** | `{post.id}` |
+| **Source Commit** | [{post.source_commit_sha[:8]}]({commit_url}) |
+| **Repository** | `{post.repo}` |
+| **Hook Pattern** | `{post.hook_pattern}` |
+| **Tags** | {', '.join(f'`{t}`' for t in post.tags)} |
+| **Created** | {now} |
+| **Status** | `{post.status.value}` |
 
-```
-## Post Feedback — [DATE]
+## 💡 Lesson
 
-- Published: yes / no
-- If not published, why: quality / style / not relevant / too long / too technical / other
-- What would make it better: 
-- Rating (1-5): 
-```
-
+{post.lesson}
+{experiment_section}
 ---
 
-## 🤖 Raw Post Data
-
 <details>
-<summary>JSON metadata (for agent use)</summary>
+<summary>🤖 Raw Post Data (JSON metadata for agent use)</summary>
 
 ```json
 {post.to_json()}

@@ -122,13 +122,21 @@ def _build_linkedin_prompt(source: SourceCommit, hook_pattern: str, experiment_v
         {variant_note}
 
         Rules:
-        1. Extract ONE clear lesson. Do not combine multiple ideas.
-        2. Never paste code, diffs, secrets, tokens, or customer data.
-        3. Summarize the technical lesson in plain language.
-        4. Include 1 concrete proof point (metric, before/after, or specific outcome).
-        5. End with an open question to spark comments.
+        1. Extract ONE clear lesson from this commit. Do not combine multiple ideas.
+        2. Follow this exact structure:
+           - Hook: single sentence that creates tension or curiosity
+           - Context: what were you trying to do?
+           - Problem: what went wrong or what did you discover?
+           - Lesson: the concrete, specific insight
+           - Proof: a number, before/after, or specific outcome
+           - CTA: an open-ended question to invite comments
+        3. Never paste code, diffs, secrets, tokens, or customer data.
+        4. Write in first person. Make it sound like a real engineer sharing a lesson.
+        5. Use short paragraphs (1-2 sentences each) with blank lines between them.
         6. Keep total length between 800-1500 characters.
-        7. Use blank lines between paragraphs.
+        7. Use 0-2 hashtags maximum at the end, only if highly relevant.
+        8. Do NOT start with "I'm excited to share" or any clichés.
+        9. The post must provide clear value — a reader should learn something concrete.
 
         Return ONLY the LinkedIn post text. No explanations, no meta-commentary.
     """).strip()
@@ -274,22 +282,44 @@ def _generate_with_openai(client, model: str, system: str, user: str) -> str:
 
 
 def _placeholder_linkedin(source: SourceCommit, hook_pattern: str) -> str:
-    """Return a structured placeholder post without calling OpenAI."""
-    return textwrap.dedent(f"""
-        [DRAFT — replace with AI-generated content]
+    """Return a structured placeholder post without calling OpenAI.
 
-        Hook ({hook_pattern}): {source.message[:80]}
+    Follows the LinkedIn post structure from the README and good-social-posts:
+    Hook → Context → Problem → Lesson → Proof → CTA.
+    The output should read like a real LinkedIn post, not a raw data dump.
+    """
+    # Build a human-readable first line from the commit message
+    first_line = source.message.strip().splitlines()[0] if source.message.strip() else "a recent commit"
+    first_line = first_line[:80]
 
-        The lesson extracted from commit {source.sha[:8]}:
+    # Summarise the change scope
+    file_count = len(source.files_changed)
+    files_note = (
+        f"across {file_count} files" if file_count > 1
+        else f"in {source.files_changed[0]}" if file_count == 1
+        else ""
+    )
 
-        {source.diff_summary or 'No diff summary available.'}
+    diff_note = source.diff_summary if source.diff_summary else "a targeted code change"
 
-        Files changed: {', '.join(source.files_changed[:3]) or 'none'}
+    return textwrap.dedent(f"""\
+I just solved a problem that surprised me.
 
-        Lesson score: {source.score:.0f}/100
+{first_line}
 
-        What's your experience with this pattern?
-    """).strip()
+Here's the context:
+
+I was working on a change {files_note} — {diff_note}.
+
+What looked straightforward turned out to have a real lesson behind it.
+
+The key insight:
+
+Every commit tells a story. This one was about making things better, one step at a time.
+
+Score: {source.score:.0f}/100 (hook: {hook_pattern}).
+
+Have you run into something similar? I'd love to hear your experience.""")
 
 
 def _placeholder_x_thread(linkedin_post: str) -> str:
