@@ -401,6 +401,12 @@ Examples:
         sys.exit(1)
 
     if args.command == "scan":
+        if not (0 <= args.quality_threshold <= 100):
+            print("Error: --quality-threshold must be between 0 and 100", file=sys.stderr)
+            sys.exit(1)
+        if args.max_rewrites < 0:
+            print("Error: --max-rewrites must be a non-negative integer", file=sys.stderr)
+            sys.exit(1)
         posts = run_scan(
             repo=args.repo,
             token=token,
