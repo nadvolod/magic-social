@@ -22,8 +22,6 @@ Usage (CLI):
       2. Lists your most recent posts (up to --max-posts, default 10)
       3. Fetches engagement stats (likes, comments, shares) for each post
       4. Writes a linkedin_metrics.json snapshot for the learning state
-      5. (Optional) matches post URLs provided via --post-urls to issue numbers
-         and records analytics back to GitHub Issues
 """
 
 from __future__ import annotations
