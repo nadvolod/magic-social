@@ -245,7 +245,6 @@ def fetch_post_impressions(post_urn: str, access_token: str) -> int:
     Returns 0 if the endpoint is unavailable (impressions are only accessible for
     posts made via the Marketing API or Organization pages).
     """
-    encoded_urn = requests.utils.quote(post_urn, safe="")
     url = f"{LINKEDIN_API}/shareStatistics"
     params = {"q": "organizationalEntity", "share": post_urn}
     resp = requests.get(url, headers=_headers(access_token), params=params, timeout=30)
