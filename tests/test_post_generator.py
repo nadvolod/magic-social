@@ -6,6 +6,7 @@ import pytest
 from src.models import Post, PostStatus, SourceCommit
 from src.post_generator import (
     HOOK_PATTERNS,
+    _build_system_prompt,
     _extract_lesson,
     _extract_linkedin_section,
     _infer_tags,
@@ -243,3 +244,12 @@ class TestLoadGoodPostsExamples:
             assert examples == []
         finally:
             pg._GOOD_POSTS_DIR = original
+
+
+class TestSystemPrompt:
+    def test_includes_external_lessons_when_available(self, monkeypatch):
+        monkeypatch.setattr(pg, "_load_good_posts_examples", lambda: [])
+        monkeypatch.setattr(pg, "_load_external_social_lessons", lambda: "Use stronger proof.\nAvoid weak hooks.")
+        prompt = _build_system_prompt()
+        assert "Use stronger proof." in prompt
+        assert "Avoid weak hooks." in prompt

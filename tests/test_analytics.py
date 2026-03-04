@@ -1,5 +1,7 @@
 """Tests for the analytics module."""
 
+from datetime import datetime, timedelta, timezone
+
 import pytest
 
 from src.analytics import (
@@ -9,9 +11,13 @@ from src.analytics import (
     _apply_qualitative_feedback,
     _average_engagement_score,
     _infer_strong_dimension,
+    infer_implicit_feedback,
     get_best_hook_pattern,
+    parse_feedback_from_issue_body,
+    parse_feedback_from_reactions,
     parse_analytics_from_comment,
     parse_feedback_from_comment,
+    should_apply_feedback,
     update_learning_state,
 )
 from src.models import AnalyticsSnapshot, Post, PostFeedback, PostStatus
@@ -207,6 +213,17 @@ class TestParseFeedbackFromComment:
         fb = parse_feedback_from_comment("Just a regular comment", "post-abc")
         assert fb is None
 
+    def test_parses_shorthand_publish_comment(self):
+        fb = parse_feedback_from_comment("publish", "post-abc")
+        assert fb is not None
+        assert fb.published is True
+
+    def test_parses_shorthand_rewrite_comment(self):
+        fb = parse_feedback_from_comment("rewrite", "post-abc")
+        assert fb is not None
+        assert fb.published is False
+        assert fb.not_published_reason == "needs_rewrite"
+
     def test_published_yes(self):
         comment = "## Post Feedback — 2024-01-01\n- Published: yes\n- Rating (1-5): 5"
         fb = parse_feedback_from_comment(comment, "post-xyz")
@@ -292,3 +309,68 @@ class TestApplyQualitativeFeedback:
         new_state = update_learning_state(state, post, analytics, feedback=fb)
         assert new_state.total_feedback_received == 1
         assert "style" in new_state.not_published_reasons
+
+
+class TestReactionAndCheckboxFeedback:
+    def test_parses_issue_body_publish_checkbox(self):
+        body = "- [x] Publish\n- [ ] Rewrite\n- [ ] Skip"
+        fb = parse_feedback_from_issue_body(body, "post-abc")
+        assert fb is not None
+        assert fb.published is True
+
+    def test_parses_issue_body_negative_checkbox(self):
+        body = "- [ ] Publish\n- [x] Too long"
+        fb = parse_feedback_from_issue_body(body, "post-abc")
+        assert fb is not None
+        assert fb.published is False
+        assert fb.not_published_reason == "too_long"
+
+    def test_parses_reaction_feedback(self):
+        fb = parse_feedback_from_reactions({"rocket": 1}, "post-abc")
+        assert fb is not None
+        assert fb.published is True
+        assert fb.rating == 5
+
+
+class TestFeedbackDeduplication:
+    def test_deduplicates_same_feedback(self):
+        state = LearningState()
+        fb = PostFeedback(
+            post_id="post-abc",
+            published=False,
+            not_published_reason="quality",
+            rating=1,
+            recorded_at="2026-03-04T00:00:00+00:00",
+        )
+        assert should_apply_feedback(state, "post-abc", fb) is True
+        assert should_apply_feedback(state, "post-abc", fb) is False
+
+
+class TestImplicitFeedback:
+    def test_infers_no_feedback_after_72h(self):
+        state = LearningState()
+        post = _make_post(post_id="post-abc")
+        post.status = PostStatus.DRAFT
+        post.created_at = (datetime.now(timezone.utc) - timedelta(hours=80)).isoformat()
+        inferred = infer_implicit_feedback(state, post, has_explicit_feedback=False)
+        event_keys = {event for event, _ in inferred}
+        assert "no_feedback_72h" in event_keys
+
+    def test_infers_stale_unpublished_after_7d(self):
+        state = LearningState()
+        post = _make_post(post_id="post-abc")
+        post.status = PostStatus.DRAFT
+        post.created_at = (datetime.now(timezone.utc) - timedelta(days=8)).isoformat()
+        inferred = infer_implicit_feedback(state, post, has_explicit_feedback=False)
+        event_keys = {event for event, _ in inferred}
+        assert "stale_unpublished_7d" in event_keys
+
+    def test_implicit_events_are_one_time(self):
+        state = LearningState()
+        post = _make_post(post_id="post-abc")
+        post.status = PostStatus.DRAFT
+        post.created_at = (datetime.now(timezone.utc) - timedelta(days=8)).isoformat()
+        first = infer_implicit_feedback(state, post, has_explicit_feedback=False)
+        second = infer_implicit_feedback(state, post, has_explicit_feedback=False)
+        assert first
+        assert second == []

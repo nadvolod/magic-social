@@ -40,10 +40,20 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Validate OpenAI key
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          if [ -z "$OPENAI_API_KEY" ]; then
+            echo "OPENAI_API_KEY secret is required to generate production-quality posts."
+            exit 1
+          fi
+
       - name: Scan commits and generate posts
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          SOCIAL_LESSONS_DOC_URL: ${{ vars.SOCIAL_LESSONS_DOC_URL }}
         run: |
           ARGS="--repo ${{ github.repository }} --branch main"
 
