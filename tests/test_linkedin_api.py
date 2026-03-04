@@ -3,8 +3,6 @@
 import json
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 from src.linkedin_api import (
     LinkedInPostMetrics,
     LinkedInProfile,
