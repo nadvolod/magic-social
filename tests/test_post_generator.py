@@ -6,6 +6,9 @@ import pytest
 from src.models import Post, PostStatus, SourceCommit
 from src.post_generator import (
     HOOK_PATTERNS,
+    QUALITY_GATE_DEFAULT_MAX_REWRITES,
+    QUALITY_GATE_DEFAULT_THRESHOLD,
+    QualityScore,
     _extract_lesson,
     _extract_linkedin_section,
     _infer_tags,
@@ -15,6 +18,8 @@ from src.post_generator import (
     _placeholder_x_thread,
     _post_id,
     generate_post,
+    generate_post_with_quality_gate,
+    score_linkedin_post_quality,
 )
 
 
@@ -243,3 +248,129 @@ class TestLoadGoodPostsExamples:
             assert examples == []
         finally:
             pg._GOOD_POSTS_DIR = original
+
+
+class TestQualityRubric:
+    def test_scores_high_quality_post_higher(self):
+        post = """
+I thought retry logic was solved.
+
+Then one Temporal workflow doubled charges during activity retries.
+
+I fixed it by enforcing idempotency keys before every write:
+
+    if payment_exists(workflow_id):
+        return existing_payment
+    save_payment(workflow_id, amount)
+
+p99 latency dropped from 2000ms to 220ms after removing duplicate writes.
+
+That one guard fixed correctness and performance at once.
+
+Have you had a bug that looked like one problem but was two?
+""".strip()
+        score = score_linkedin_post_quality(post)
+        assert score.total >= 75.0
+
+    def test_scores_low_quality_post_lower(self):
+        post = "I am excited to share this journey. We improved things. Great stuff."
+        score = score_linkedin_post_quality(post)
+        assert score.total < 75.0
+        assert score.issues
+
+
+class TestQualityGateGeneration:
+    def test_rejects_low_quality_placeholder_when_no_openai(self):
+        source = _make_source()
+        post = generate_post_with_quality_gate(
+            source=source,
+            openai_client=None,
+            quality_threshold=95.0,
+        )
+        assert post is None
+
+    def test_returns_post_when_initial_quality_passes(self, monkeypatch):
+        source = _make_source()
+        base_post = generate_post(source, openai_client=None)
+
+        monkeypatch.setattr(
+            pg,
+            "generate_post",
+            lambda *args, **kwargs: base_post,
+        )
+        monkeypatch.setattr(
+            pg,
+            "score_linkedin_post_quality",
+            lambda *args, **kwargs: QualityScore(total=90.0, breakdown={}, issues=[]),
+        )
+
+        result = generate_post_with_quality_gate(
+            source=source,
+            openai_client=object(),
+        )
+        assert result is base_post
+
+    def test_rewrites_until_quality_passes(self, monkeypatch):
+        source = _make_source()
+        base_post = generate_post(source, openai_client=None)
+        base_post.linkedin_post = "Weak draft."
+        base_post.x_thread = "old thread"
+        base_post.ig_caption = "old caption"
+
+        monkeypatch.setattr(pg, "generate_post", lambda *args, **kwargs: base_post)
+
+        scores = [
+            QualityScore(total=40.0, breakdown={}, issues=["needs proof"]),
+            QualityScore(total=85.0, breakdown={}, issues=[]),
+            QualityScore(total=85.0, breakdown={}, issues=[]),
+        ]
+
+        def fake_score(*args, **kwargs):
+            return scores.pop(0)
+
+        monkeypatch.setattr(pg, "score_linkedin_post_quality", fake_score)
+
+        calls: list[str] = []
+
+        def fake_openai(client, model, system, user):
+            calls.append(user)
+            if "Rewrite this LinkedIn post" in user:
+                return "Improved draft with proof.\n\nHave you seen this?"
+            if "Convert this LinkedIn post into a tight X (Twitter) thread." in user:
+                return "1/ better thread"
+            if "Create an Instagram caption based on this LinkedIn post." in user:
+                return "better caption"
+            return "unexpected"
+
+        monkeypatch.setattr(pg, "_generate_with_openai", fake_openai)
+
+        result = generate_post_with_quality_gate(
+            source=source,
+            openai_client=object(),
+            quality_threshold=75.0,
+            max_rewrites=QUALITY_GATE_DEFAULT_MAX_REWRITES,
+        )
+
+        assert result is not None
+        assert result.linkedin_post.startswith("Improved draft")
+        assert result.x_thread == "1/ better thread"
+        assert result.ig_caption == "better caption"
+
+    def test_returns_none_when_rewrites_still_fail(self, monkeypatch):
+        source = _make_source()
+        base_post = generate_post(source, openai_client=None)
+        monkeypatch.setattr(pg, "generate_post", lambda *args, **kwargs: base_post)
+        monkeypatch.setattr(
+            pg,
+            "score_linkedin_post_quality",
+            lambda *args, **kwargs: QualityScore(total=30.0, breakdown={}, issues=["weak"]),
+        )
+        monkeypatch.setattr(pg, "_generate_with_openai", lambda *args, **kwargs: "still weak")
+
+        result = generate_post_with_quality_gate(
+            source=source,
+            openai_client=object(),
+            quality_threshold=75.0,
+            max_rewrites=2,
+        )
+        assert result is None

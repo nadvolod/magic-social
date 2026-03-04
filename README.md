@@ -184,6 +184,9 @@ python -m src.agent scan --repo owner/repo --since 2024-01-01T00:00:00Z
 # Limit posts per run
 python -m src.agent scan --repo owner/repo --max-posts 2
 
+# Enforce stricter quality and allow more rewrite attempts
+python -m src.agent scan --repo owner/repo --quality-threshold 80 --max-rewrites 3
+
 # Collect analytics for published posts
 python -m src.agent analytics --repo owner/repo --posts posts.json
 
@@ -307,6 +310,16 @@ Commits are scored 0–100 across five dimensions (20 points each):
 - 0–2 hashtags maximum
 - No LinkedIn Reels
 - No fluff, clichés, or vague inspiration
+
+### Quality Gate (new)
+- Every generated LinkedIn draft is scored with a deterministic 0–100 rubric:
+  - Hook strength
+  - Structure + code snippet presence
+  - Proof signals (numbers/before-after)
+  - CTA quality
+  - Clarity/readability
+- If score is below threshold (default `75`), the agent attempts rewrites (default `2` tries)
+- If still below threshold, the post is discarded and no GitHub issue is created
 
 ### Platform Variants
 - **X thread** — hook tweet + 3–4 breakdown tweets + CTA (280 chars each)
