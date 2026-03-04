@@ -1,0 +1,53 @@
+name: Poll LinkedIn Metrics
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_posts:
+        description: "Maximum number of recent posts to fetch (default: 10)"
+        required: false
+        default: "10"
+  schedule:
+    # Run every day at 07:00 UTC
+    - cron: "0 7 * * *"
+
+jobs:
+  linkedin-poll:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # needed to commit updated linkedin_metrics.json + METRICS.md
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Poll LinkedIn API
+        env:
+          LINKEDIN_ACCESS_TOKEN: ${{ secrets.LINKEDIN_ACCESS_TOKEN }}
+        run: |
+          MAX_POSTS="${{ inputs.max_posts || '10' }}"
+          python -m src.agent linkedin-poll --max-posts "$MAX_POSTS" --output linkedin_metrics.json
+
+      - name: Regenerate METRICS.md
+        run: python -m src.agent metrics
+
+      - name: Commit updated metrics
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add linkedin_metrics.json METRICS.md
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: update LinkedIn metrics and METRICS.md [skip ci]"
+            git push
+          fi

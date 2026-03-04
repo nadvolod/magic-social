@@ -319,6 +319,35 @@ Examples:
         help="Path to the experiments JSON file",
     )
 
+    # backfill-feedback command
+    backfill_parser = subparsers.add_parser(
+        "backfill-feedback",
+        help="Post a minimal feedback request comment on all open social-post issues that don't have one yet",
+    )
+    backfill_parser.add_argument("--repo", required=True, help="GitHub repo (owner/repo)")
+    backfill_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print which issues would receive a comment without actually posting",
+    )
+
+    # linkedin-poll command
+    linkedin_parser = subparsers.add_parser(
+        "linkedin-poll",
+        help="Poll LinkedIn API for post engagement metrics and follower count",
+    )
+    linkedin_parser.add_argument(
+        "--max-posts",
+        type=int,
+        default=10,
+        help="Maximum number of recent posts to fetch engagement for (default: 10)",
+    )
+    linkedin_parser.add_argument(
+        "--output",
+        default="linkedin_metrics.json",
+        help="Path to write the snapshot history (default: linkedin_metrics.json)",
+    )
+
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -327,7 +356,7 @@ Examples:
     )
 
     token = os.environ.get("GITHUB_TOKEN")
-    if args.command not in ("experiments", "feedback", "metrics") and not token:
+    if args.command not in ("experiments", "feedback", "metrics", "linkedin-poll") and not token:
         print("Error: GITHUB_TOKEN environment variable is required", file=sys.stderr)
         sys.exit(1)
 
@@ -371,18 +400,168 @@ Examples:
             f.write(output)
         print(f"✅ METRICS.md written to {out_file}")
 
+    elif args.command == "backfill-feedback":
+        count = backfill_feedback_comments(
+            repo=args.repo,
+            token=token,
+            dry_run=args.dry_run,
+        )
+        verb = "Would comment on" if args.dry_run else "Commented on"
+        print(f"\n✅ {verb} {count} issue(s).")
+
+    elif args.command == "linkedin-poll":
+        linkedin_token = os.environ.get("LINKEDIN_ACCESS_TOKEN")
+        if not linkedin_token:
+            print(
+                "Error: LINKEDIN_ACCESS_TOKEN environment variable is required.\n"
+                "Set it to your LinkedIn OAuth 2.0 access token.\n"
+                "See README.md for setup instructions.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        run_linkedin_poll(
+            access_token=linkedin_token,
+            max_posts=args.max_posts,
+            output=args.output,
+        )
+
+
+def backfill_feedback_comments(repo: str, token: str, dry_run: bool = False) -> int:
+    """
+    Find all open GitHub Issues with the 'social-post' label and post a minimal
+    feedback request comment on any that don't already have one.
+
+    Returns the number of issues that received (or would receive) a comment.
+    """
+    import requests as _requests  # noqa: PLC0415
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+
+    # Fetch all open issues with the social-post label
+    issues: list[dict] = []
+    page = 1
+    while True:
+        url = f"https://api.github.com/repos/{repo}/issues"
+        resp = _requests.get(
+            url,
+            headers=headers,
+            params={"state": "open", "labels": "social-post", "per_page": 100, "page": page},
+            timeout=30,
+        )
+        resp.raise_for_status()
+        batch = resp.json()
+        if not batch:
+            break
+        issues.extend(batch)
+        page += 1
+
+    logger.info("Found %d open social-post issues in %s", len(issues), repo)
+
+    # Minimal feedback template — as short as possible while still being parseable
+    feedback_template = (
+        "## Post Feedback\n\n"
+        "Add your feedback by editing this comment or replying below — "
+        "it takes under 30 seconds:\n\n"
+        "```\n"
+        "## Post Feedback\n\n"
+        "- Published: yes / no\n"
+        "- If not published, why: quality / style / not relevant / too long / too technical / other\n"
+        "- What would make it better: \n"
+        "- Rating (1-5): \n"
+        "```\n\n"
+        "_Your feedback is used to improve future post generation. "
+        "Every rating helps — even a simple 1–5 number is valuable._"
+    )
+
+    count = 0
+    for issue in issues:
+        issue_number = issue["number"]
+        title = issue.get("title", "")
+
+        # Check if a feedback comment already exists
+        comments_url = f"https://api.github.com/repos/{repo}/issues/{issue_number}/comments"
+        comments_resp = _requests.get(comments_url, headers=headers, params={"per_page": 100}, timeout=30)
+        comments_resp.raise_for_status()
+        existing_comments = comments_resp.json()
+
+        already_has_feedback = any(
+            "Post Feedback" in c.get("body", "")
+            for c in existing_comments
+        )
+        # Also check the issue body itself (new issues already have the template)
+        if "Post Feedback" in issue.get("body", ""):
+            already_has_feedback = True
+
+        if already_has_feedback:
+            logger.debug("Issue #%d already has a feedback section — skipping", issue_number)
+            continue
+
+        if dry_run:
+            print(f"  [dry-run] Would post feedback request on #{issue_number}: {title[:70]}")
+        else:
+            post_resp = _requests.post(
+                comments_url,
+                headers=headers,
+                json={"body": feedback_template},
+                timeout=30,
+            )
+            post_resp.raise_for_status()
+            print(f"  ✓ Posted feedback request on #{issue_number}: {title[:70]}")
+            logger.info("Posted feedback comment on issue #%d", issue_number)
+
+        count += 1
+
+    return count
+
+
+def run_linkedin_poll(
+    access_token: str,
+    max_posts: int = 10,
+    output: str = "linkedin_metrics.json",
+) -> None:
+    """
+    Poll the LinkedIn API, save the snapshot, and print a summary.
+    """
+    from .linkedin_api import poll_linkedin, save_snapshot  # noqa: PLC0415
+
+    snapshot = poll_linkedin(access_token, max_posts=max_posts)
+    save_snapshot(snapshot, path=output)
+
+    print("\n📊 LinkedIn Metrics Snapshot")
+    print("=" * 50)
+    print(f"Recorded at:         {snapshot.recorded_at[:19].replace('T', ' ')} UTC")
+    print(f"Followers/connections: {snapshot.follower_count:,}")
+    print(f"Posts fetched:       {len(snapshot.post_metrics)}")
+    if snapshot.post_metrics:
+        print("\nPost engagement:")
+        for pm in snapshot.post_metrics:
+            print(
+                f"  {pm.created_at[:10]}  likes={pm.likes}  comments={pm.comments}  "
+                f"shares={pm.shares}  impressions={pm.impressions}  "
+                f"score={pm.engagement_score:.0f}"
+            )
+    print(f"\nSaved to: {output}")
+
 
 def generate_metrics_report(
     learning_state_path: str = DEFAULT_LEARNING_STATE_PATH,
     experiments_path: str = DEFAULT_EXPERIMENTS_PATH,
+    linkedin_metrics_path: str = "linkedin_metrics.json",
 ) -> str:
     """
     Generate a Markdown metrics dashboard from the current learning state and experiments.
 
     Returns the full Markdown string — caller decides where to write it.
     """
+    from .linkedin_api import load_latest_snapshot  # noqa: PLC0415
+
     state = LearningState.load(learning_state_path)
     experiments = ExperimentManager(experiments_path)
+    linkedin = load_latest_snapshot(linkedin_metrics_path)
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
     lines: list[str] = []
@@ -412,6 +591,18 @@ def generate_metrics_report(
         f"| Feedback received | {total_feedback} |",
         f"| Average post rating | {avg_rating_str} |",
         f"| Best performing posts (rolling 20) | {len(state.best_performing_posts)} |",
+    ]
+
+    if linkedin:
+        lines += [
+            f"| LinkedIn followers/connections | {linkedin.follower_count:,} |",
+            f"| LinkedIn posts tracked | {len(linkedin.post_metrics)} |",
+            f"| LinkedIn metrics last updated | {linkedin.recorded_at[:10]} |",
+        ]
+    else:
+        lines.append("| LinkedIn metrics | _not yet polled — run `linkedin-poll`_ |")
+
+    lines += [
         "",
         "> **Goal:** average rating ≥ 4.0 / 5, engagement score ≥ 100 per post",
         "",
@@ -599,6 +790,50 @@ def generate_metrics_report(
         "",
     ]
 
+    # ------------------------------------------------- linkedin metrics
+    lines += [
+        "## 🔗 LinkedIn Metrics",
+        "",
+    ]
+
+    if linkedin:
+        lines += [
+            f"_Data from poll on {linkedin.recorded_at[:10]}_",
+            "",
+            f"**Followers / connections:** {linkedin.follower_count:,}",
+            "",
+        ]
+        if linkedin.post_metrics:
+            lines += [
+                "| Date | Likes | Comments | Shares | Impressions | Engagement Score |",
+                "|------|-------|----------|--------|-------------|-----------------|",
+            ]
+            for pm in sorted(linkedin.post_metrics, key=lambda p: p.created_at, reverse=True):
+                lines.append(
+                    f"| {pm.created_at[:10]} | {pm.likes} | {pm.comments} | "
+                    f"{pm.shares} | {pm.impressions} | {pm.engagement_score:.0f} |"
+                )
+            lines.append("")
+        else:
+            lines.append("_No post metrics in the latest snapshot._")
+            lines.append("")
+    else:
+        lines += [
+            "_LinkedIn metrics not yet collected._",
+            "",
+            "To start tracking follower count and post engagement, run:",
+            "```bash",
+            "# One-time setup: add LINKEDIN_ACCESS_TOKEN to GitHub secrets",
+            "# Then poll manually or let the daily workflow do it:",
+            "python -m src.agent linkedin-poll",
+            "```",
+            "",
+            "See **LinkedIn API Setup** in the README for OAuth instructions.",
+            "",
+        ]
+
+    lines += ["---", ""]
+
     # ------------------------------------------------- next improvements
     lines += [
         "## 🚀 Next Improvements",
@@ -607,11 +842,12 @@ def generate_metrics_report(
         "",
         "### 🔴 High Priority (do this now)",
         "",
-        "- [ ] **Collect your first batch of feedback** — review the 5 most recent generated posts,",
-        "      add a `## Post Feedback` comment to each (published? why not? rating 1–5)",
+        "- [ ] **Collect your first batch of feedback** — run `python -m src.agent backfill-feedback --repo owner/repo`",
+        "      to post a feedback request on every existing open issue in one command",
         "- [ ] **Add good-post examples** — drop any LinkedIn post that performed well into",
         "      `good-social-posts/post-N.md` under `## Final LinkedIn Post`",
-        "- [ ] **Run the first experiment** — publish at least 3 posts, then compare hook pattern scores",
+        "- [ ] **Set up LinkedIn API polling** — add `LINKEDIN_ACCESS_TOKEN` secret and run",
+        "      `python -m src.agent linkedin-poll` to start tracking follower count + post engagement daily",
         "",
         "### 🟡 Medium Priority (this sprint)",
         "",
@@ -619,14 +855,15 @@ def generate_metrics_report(
         "- [ ] **Enable the analytics workflow** — enter impressions/saves/comments 48 h after each publish",
         "- [ ] **Review scoring weights** — after 5+ posts, run `python -m src.agent metrics` to see",
         "      which dimensions correlate with high engagement",
+        "- [ ] **Run the first experiment** — publish at least 3 posts, then compare hook pattern scores",
         "",
         "### 🟢 Roadmap (Phase 2)",
         "",
-        "- [ ] LinkedIn API — auto-fetch real impression + reaction data (no manual entry)",
-        "- [ ] Publish rate tracker — automatically detect when a post was published via LinkedIn API",
-        "- [ ] Automated weekly metrics report committed to `METRICS.md` via GitHub Actions",
+        "- [ ] Auto-commit `METRICS.md` and `linkedin_metrics.json` via GitHub Actions after each daily poll",
+        "- [ ] Publish rate tracker — detect published posts via LinkedIn API, no manual status updates",
         "- [ ] Slack/email alert when a post is ready for review",
         "- [ ] Topic gap analysis — highlight topics not covered in the last 30 days",
+        "- [ ] Follower growth trend chart (sparkline from `linkedin_metrics.json` history)",
         "",
         "---",
         "",
@@ -640,16 +877,19 @@ def generate_metrics_report(
         "# Regenerate METRICS.md from current learning state + experiments",
         "python -m src.agent metrics",
         "",
-        "# Regenerate and write to a custom path",
-        "python -m src.agent metrics --output path/to/METRICS.md",
+        "# Post feedback requests on all existing open issues (run once)",
+        "python -m src.agent backfill-feedback --repo owner/repo",
+        "",
+        "# Poll LinkedIn API for post metrics + follower count",
+        "python -m src.agent linkedin-poll",
         "",
         "# Collect analytics (updates learning state, then regenerate)",
         "python -m src.agent analytics --repo owner/repo --posts posts.json",
         "python -m src.agent metrics",
         "```",
         "",
-        "> **Tip:** Add `python -m src.agent metrics` as the last step in",
-        "> `.github/workflows/analytics-update.yml` to auto-commit an updated dashboard.",
+        "> **Tip:** The daily LinkedIn poll workflow (`.github/workflows/linkedin-poll.yml`) runs",
+        "> automatically and commits updated metrics to `linkedin_metrics.json`.",
         "",
     ]
 
