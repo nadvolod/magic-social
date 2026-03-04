@@ -164,6 +164,22 @@ After publishing, add a comment to this issue with your metrics:
 
 ---
 
+## 💬 Post Feedback
+
+Whether or not you publish this post, please add a comment with your honest feedback.
+This helps the agent learn your preferences and improve future posts.
+
+```
+## Post Feedback — [DATE]
+
+- Published: yes / no
+- If not published, why: quality / style / not relevant / too long / too technical / other
+- What would make it better: 
+- Rating (1-5): 
+```
+
+---
+
 ## 🤖 Raw Post Data
 
 <details>

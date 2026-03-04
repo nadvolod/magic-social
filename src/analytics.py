@@ -10,7 +10,7 @@ from typing import Optional
 
 import requests
 
-from .models import AnalyticsSnapshot, Post
+from .models import AnalyticsSnapshot, Post, PostFeedback
 
 logger = logging.getLogger(__name__)
 
@@ -115,6 +115,85 @@ def fetch_issue_analytics(
 
 
 # -------------------------------------------------------------------
+# Parsing qualitative post feedback from issue comments
+# -------------------------------------------------------------------
+
+def parse_feedback_from_comment(comment_body: str, post_id: str) -> Optional[PostFeedback]:
+    """
+    Parse a post feedback comment and return a PostFeedback object.
+
+    Expected format (case-insensitive):
+        ## Post Feedback — [DATE]
+        - Published: yes / no
+        - If not published, why: quality / style / not relevant / other
+        - What would make it better: <free text>
+        - Rating (1-5): 4
+    """
+    if "Post Feedback" not in comment_body:
+        return None
+
+    def _first_match(pattern: str) -> Optional[str]:
+        m = re.search(pattern, comment_body, re.IGNORECASE)
+        return m.group(1).strip() if m else None
+
+    published_raw = _first_match(r"published[:\s]+([^\n]+)")
+    published: Optional[bool] = None
+    if published_raw:
+        if re.search(r"\byes\b", published_raw, re.IGNORECASE):
+            published = True
+        elif re.search(r"\bno\b", published_raw, re.IGNORECASE):
+            published = False
+
+    not_published_reason = _first_match(r"(?:if not published,? why|why not)[:\s]+([^\n]+)")
+    improvement_notes = _first_match(r"(?:what would make it better|improvement)[:\s]+([^\n]+)")
+
+    rating: Optional[int] = None
+    rating_raw = _first_match(r"rating[^:]*:[:\s]+([1-5])")
+    if rating_raw:
+        try:
+            rating = int(rating_raw)
+        except ValueError:
+            pass
+
+    return PostFeedback(
+        post_id=post_id,
+        published=published,
+        not_published_reason=not_published_reason,
+        improvement_notes=improvement_notes,
+        rating=rating,
+    )
+
+
+def fetch_issue_feedback(
+    repo: str,
+    token: str,
+    issue_number: int,
+    post_id: str,
+) -> Optional[PostFeedback]:
+    """
+    Fetch qualitative feedback from a GitHub Issue by reading its comments.
+
+    Returns the most recent feedback comment parsed as a PostFeedback object.
+    """
+    url = f"{GITHUB_API}/repos/{repo}/issues/{issue_number}/comments"
+    resp = requests.get(url, headers=_github_headers(token), timeout=30)
+    resp.raise_for_status()
+    comments = resp.json()
+
+    feedbacks = []
+    for comment in comments:
+        body = comment.get("body", "")
+        fb = parse_feedback_from_comment(body, post_id)
+        if fb:
+            feedbacks.append(fb)
+
+    if not feedbacks:
+        return None
+
+    return max(feedbacks, key=lambda f: f.recorded_at)
+
+
+# -------------------------------------------------------------------
 # Learning loop — adjusts scoring weights based on analytics
 # -------------------------------------------------------------------
 
@@ -131,6 +210,11 @@ class LearningState:
     topic_scores: dict = field(default_factory=dict)
     best_performing_posts: list[str] = field(default_factory=list)
     total_posts_analyzed: int = 0
+    # Qualitative feedback tracking
+    not_published_reasons: dict = field(default_factory=dict)   # reason → count
+    total_feedback_received: int = 0
+    total_ratings_received: int = 0
+    average_rating: float = 0.0
     version: int = 1
 
     def to_dict(self) -> dict:
@@ -140,6 +224,10 @@ class LearningState:
             "topic_scores": self.topic_scores,
             "best_performing_posts": self.best_performing_posts,
             "total_posts_analyzed": self.total_posts_analyzed,
+            "not_published_reasons": self.not_published_reasons,
+            "total_feedback_received": self.total_feedback_received,
+            "total_ratings_received": self.total_ratings_received,
+            "average_rating": self.average_rating,
             "version": self.version,
         }
 
@@ -151,6 +239,10 @@ class LearningState:
             topic_scores=data.get("topic_scores", {}),
             best_performing_posts=data.get("best_performing_posts", []),
             total_posts_analyzed=data.get("total_posts_analyzed", 0),
+            not_published_reasons=data.get("not_published_reasons", {}),
+            total_feedback_received=data.get("total_feedback_received", 0),
+            total_ratings_received=data.get("total_ratings_received", 0),
+            average_rating=data.get("average_rating", 0.0),
             version=data.get("version", 1),
         )
 
@@ -178,6 +270,7 @@ def update_learning_state(
     state: LearningState,
     post: Post,
     analytics: AnalyticsSnapshot,
+    feedback: Optional[PostFeedback] = None,
 ) -> LearningState:
     """
     Update scoring weights and pattern scores based on post performance.
@@ -188,6 +281,8 @@ def update_learning_state(
     2. Hook pattern scores — patterns that produce high-engagement posts
        are preferred for future generation.
     3. Topic scores — topics with high engagement are prioritized.
+    4. Qualitative feedback — not-published reasons and ratings inform
+       post generation quality over time.
 
     Guardrails:
     - Weight adjustments are capped to avoid overfitting.
@@ -215,6 +310,10 @@ def update_learning_state(
         state.best_performing_posts.append(post.id)
         state.best_performing_posts = state.best_performing_posts[-20:]
 
+    # Incorporate qualitative feedback
+    if feedback is not None:
+        _apply_qualitative_feedback(state, feedback)
+
     # Adjust scoring weights only after enough data
     if state.total_posts_analyzed >= MIN_POSTS_FOR_LEARNING:
         _adjust_weights(state, post, analytics)
@@ -226,6 +325,37 @@ def update_learning_state(
         analytics.engagement_score,
     )
     return state
+
+
+def _apply_qualitative_feedback(state: LearningState, feedback: PostFeedback) -> None:
+    """
+    Incorporate qualitative user feedback into the learning state.
+
+    Tracks:
+    - How often posts are not published (and why)
+    - Average user rating across all rated posts
+    """
+    state.total_feedback_received += 1
+
+    # Track not-published reasons
+    if feedback.published is False and feedback.not_published_reason:
+        reason = feedback.not_published_reason.lower().strip()
+        state.not_published_reasons[reason] = state.not_published_reasons.get(reason, 0) + 1
+
+    # Update rolling average rating — only count feedback that includes a rating
+    if feedback.rating is not None:
+        prev_count = state.total_ratings_received
+        state.total_ratings_received += 1
+        state.average_rating = (
+            (state.average_rating * prev_count + feedback.rating) / state.total_ratings_received
+        )
+
+    logger.info(
+        "Qualitative feedback applied: published=%s, rating=%s, reasons=%s",
+        feedback.published,
+        feedback.rating,
+        state.not_published_reasons,
+    )
 
 
 def _adjust_weights(

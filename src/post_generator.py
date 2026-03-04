@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import logging
 import textwrap
+from pathlib import Path
 from typing import Optional
 
 from .models import Post, PostStatus, SourceCommit
@@ -27,9 +28,63 @@ HOOK_PATTERNS = {
 # LinkedIn post hard limit; the prompt instructs the model to stay within 800-1500 chars
 MAX_LINKEDIN_CHARS = 3000
 
+# Directory containing hand-picked example posts (relative to repo root)
+_GOOD_POSTS_DIR = Path(__file__).parent.parent / "good-social-posts"
+
+
+def _load_good_posts_examples() -> list[str]:
+    """
+    Load LinkedIn post examples from the good-social-posts directory.
+
+    Each .md file is expected to contain a '## Final LinkedIn Post' section.
+    Returns a list of extracted post texts to use as few-shot examples.
+    """
+    examples: list[str] = []
+    if not _GOOD_POSTS_DIR.exists():
+        return examples
+    for md_file in sorted(_GOOD_POSTS_DIR.glob("*.md")):
+        try:
+            content = md_file.read_text(encoding="utf-8")
+            post_text = _extract_linkedin_section(content)
+            if post_text:
+                examples.append(post_text)
+        except Exception:  # noqa: BLE001
+            logger.debug("Could not load good-post example from %s", md_file)
+    return examples
+
+
+def _extract_linkedin_section(content: str) -> str:
+    """
+    Extract the 'Final LinkedIn Post' section from a good-post markdown file.
+
+    Reads until the next '## ' heading or a '---' horizontal rule.
+    """
+    lines = content.splitlines()
+    in_section = False
+    post_lines: list[str] = []
+
+    for line in lines:
+        if "## Final LinkedIn Post" in line:
+            in_section = True
+            continue
+        if in_section:
+            if (line.startswith("## ") or line.startswith("# ")) and post_lines:
+                break
+            if line.startswith("---") and post_lines:
+                break
+            post_lines.append(line)
+
+    return "\n".join(post_lines).strip()
+
 
 def _build_system_prompt() -> str:
-    return textwrap.dedent("""
+    examples = _load_good_posts_examples()
+    example_block = ""
+    if examples:
+        formatted = "\n\n---\n\n".join(examples)
+        example_block = f"\n\nHere are real examples of high-performing posts. Study their structure, tone, and style closely — your output must match this quality:\n\n{formatted}"
+
+    return textwrap.dedent(f"""
         You are an expert technical LinkedIn content creator for senior engineers and tech leads.
 
         Your posts:
@@ -43,7 +98,7 @@ def _build_system_prompt() -> str:
         - Avoid: hashtag spam (0-2 max, only if highly relevant)
         - Topics that work: AI/LLMs, distributed systems, Temporal.io, testing, engineering career
 
-        Tone: Direct. Confident. Specific. Human.
+        Tone: Direct. Confident. Specific. Human.{example_block}
     """).strip()
 
 

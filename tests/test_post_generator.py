@@ -154,3 +154,72 @@ class TestGeneratePost:
         source = _make_source()
         post = generate_post(source, openai_client=None)
         assert post.lesson
+
+
+from src.post_generator import _extract_linkedin_section, _load_good_posts_examples
+
+
+class TestExtractLinkedInSection:
+    def test_extracts_section_content(self):
+        md = "# Title\n\n## Final LinkedIn Post\n\nHook line.\n\nBody paragraph.\n\n## How to Post\n\nIgnore this."
+        result = _extract_linkedin_section(md)
+        assert "Hook line." in result
+        assert "Body paragraph." in result
+        assert "How to Post" not in result
+
+    def test_stops_at_horizontal_rule(self):
+        md = "## Final LinkedIn Post\n\nPost content here.\n\n---\n\nAfter separator."
+        result = _extract_linkedin_section(md)
+        assert "Post content here." in result
+        assert "After separator." not in result
+
+    def test_returns_empty_if_no_section(self):
+        md = "# Title\n\nSome content without the expected heading."
+        result = _extract_linkedin_section(md)
+        assert result == ""
+
+    def test_strips_whitespace(self):
+        md = "## Final LinkedIn Post\n\n  \n\nActual post.\n\n  \n"
+        result = _extract_linkedin_section(md)
+        assert result.strip() == result
+
+
+class TestLoadGoodPostsExamples:
+    def test_returns_list(self):
+        examples = _load_good_posts_examples()
+        assert isinstance(examples, list)
+
+    def test_examples_are_non_empty_strings(self):
+        examples = _load_good_posts_examples()
+        for ex in examples:
+            assert isinstance(ex, str)
+            assert len(ex) > 0
+
+    def test_loads_from_good_posts_dir(self, tmp_path):
+        from pathlib import Path
+        import src.post_generator as pg
+        # Temporarily override the directory to a tmp location
+        original = pg._GOOD_POSTS_DIR
+        tmp_dir = tmp_path / "good-social-posts"
+        tmp_dir.mkdir()
+        (tmp_dir / "test-post.md").write_text(
+            "# Test\n\n## Final LinkedIn Post\n\nHook.\n\nBody.\n\n---\n",
+            encoding="utf-8",
+        )
+        pg._GOOD_POSTS_DIR = tmp_dir
+        try:
+            examples = _load_good_posts_examples()
+            assert len(examples) == 1
+            assert "Hook." in examples[0]
+        finally:
+            pg._GOOD_POSTS_DIR = original
+
+    def test_missing_dir_returns_empty_list(self, tmp_path):
+        import src.post_generator as pg
+        original = pg._GOOD_POSTS_DIR
+        pg._GOOD_POSTS_DIR = tmp_path / "nonexistent"
+        try:
+            examples = _load_good_posts_examples()
+            assert examples == []
+        finally:
+            pg._GOOD_POSTS_DIR = original

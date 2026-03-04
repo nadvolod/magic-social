@@ -181,3 +181,88 @@ class TestGetBestHookPattern:
             "contrarian": {"count": 2, "total_score": 80.0}, # avg 40
         }
         assert get_best_hook_pattern(state) == "result"
+
+
+from src.analytics import parse_feedback_from_comment, _apply_qualitative_feedback
+from src.models import PostFeedback
+
+
+class TestParseFeedbackFromComment:
+    VALID_COMMENT = """
+## Post Feedback — 2024-02-05
+
+- Published: no
+- If not published, why: quality
+- What would make it better: more concrete numbers
+- Rating (1-5): 3
+    """
+
+    def test_parses_valid_comment(self):
+        fb = parse_feedback_from_comment(self.VALID_COMMENT, "post-abc")
+        assert fb is not None
+        assert fb.post_id == "post-abc"
+        assert fb.published is False
+        assert "quality" in fb.not_published_reason
+        assert fb.rating == 3
+
+    def test_returns_none_for_non_feedback_comment(self):
+        fb = parse_feedback_from_comment("Just a regular comment", "post-abc")
+        assert fb is None
+
+    def test_published_yes(self):
+        comment = "## Post Feedback — 2024-01-01\n- Published: yes\n- Rating (1-5): 5"
+        fb = parse_feedback_from_comment(comment, "post-xyz")
+        assert fb is not None
+        assert fb.published is True
+        assert fb.rating == 5
+
+    def test_improvement_notes_captured(self):
+        comment = (
+            "## Post Feedback — 2024-01-01\n"
+            "- Published: no\n"
+            "- What would make it better: shorter and punchier\n"
+        )
+        fb = parse_feedback_from_comment(comment, "post-xyz")
+        assert fb is not None
+        assert "shorter" in fb.improvement_notes
+
+    def test_missing_rating_is_none(self):
+        comment = "## Post Feedback — 2024-01-01\n- Published: yes"
+        fb = parse_feedback_from_comment(comment, "post-abc")
+        assert fb is not None
+        assert fb.rating is None
+
+
+class TestApplyQualitativeFeedback:
+    def test_increments_feedback_count(self):
+        from src.analytics import LearningState
+        state = LearningState()
+        fb = PostFeedback(post_id="post-abc", published=True, rating=4)
+        _apply_qualitative_feedback(state, fb)
+        assert state.total_feedback_received == 1
+
+    def test_tracks_not_published_reason(self):
+        from src.analytics import LearningState
+        state = LearningState()
+        fb = PostFeedback(post_id="post-abc", published=False, not_published_reason="quality")
+        _apply_qualitative_feedback(state, fb)
+        assert "quality" in state.not_published_reasons
+        assert state.not_published_reasons["quality"] == 1
+
+    def test_average_rating_updated(self):
+        from src.analytics import LearningState
+        state = LearningState()
+        _apply_qualitative_feedback(state, PostFeedback(post_id="p1", rating=4))
+        _apply_qualitative_feedback(state, PostFeedback(post_id="p2", rating=2))
+        assert state.average_rating == pytest.approx(3.0)
+
+    def test_feedback_integrated_in_update_learning_state(self):
+        from src.analytics import LearningState, update_learning_state
+        from src.models import Post, PostStatus, AnalyticsSnapshot
+        state = LearningState()
+        post = _make_post()
+        analytics = _make_analytics()
+        fb = PostFeedback(post_id=post.id, published=False, not_published_reason="style", rating=2)
+        new_state = update_learning_state(state, post, analytics, feedback=fb)
+        assert new_state.total_feedback_received == 1
+        assert "style" in new_state.not_published_reasons

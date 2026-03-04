@@ -22,6 +22,7 @@ from typing import Optional
 from .analytics import (
     LearningState,
     fetch_issue_analytics,
+    fetch_issue_feedback,
     get_analytics_prompt,
     get_best_hook_pattern,
     update_learning_state,
@@ -205,8 +206,11 @@ def run_analytics_collection(
             print(get_analytics_request_message(post, post.github_issue_number, repo))
             continue
 
+        # Collect qualitative feedback if available
+        feedback = fetch_issue_feedback(repo, token, post.github_issue_number, post.id)
+
         # Update learning state
-        learning_state = update_learning_state(learning_state, post, analytics)
+        learning_state = update_learning_state(learning_state, post, analytics, feedback=feedback)
         learning_state.save(learning_state_path)
 
         # Record experiment results
@@ -251,6 +255,9 @@ Examples:
 
   # Show experiment summary
   python -m src.agent experiments
+
+  # Show learning state summary (feedback, ratings, not-published reasons)
+  python -m src.agent feedback --summary
         """,
     )
 
@@ -273,7 +280,23 @@ Examples:
     analytics_parser.add_argument("--posts", help="JSON file containing list of Post objects")
 
     # experiments command
-    experiments_parser = subparsers.add_parser("experiments", help="Show experiment summary")
+    subparsers.add_parser("experiments", help="Show experiment summary")
+
+    # feedback command
+    feedback_parser = subparsers.add_parser(
+        "feedback",
+        help="Show feedback summary from the learning state",
+    )
+    feedback_parser.add_argument(
+        "--summary",
+        action="store_true",
+        help="Print a summary of collected feedback and learning signals",
+    )
+    feedback_parser.add_argument(
+        "--state",
+        default=DEFAULT_LEARNING_STATE_PATH,
+        help="Path to the learning state JSON file",
+    )
 
     args = parser.parse_args()
 
@@ -283,7 +306,7 @@ Examples:
     )
 
     token = os.environ.get("GITHUB_TOKEN")
-    if args.command != "experiments" and not token:
+    if args.command not in ("experiments", "feedback") and not token:
         print("Error: GITHUB_TOKEN environment variable is required", file=sys.stderr)
         sys.exit(1)
 
@@ -313,6 +336,50 @@ Examples:
     elif args.command == "experiments":
         manager = ExperimentManager()
         print(manager.summary())
+
+    elif args.command == "feedback":
+        _print_feedback_summary(getattr(args, "state", DEFAULT_LEARNING_STATE_PATH))
+
+
+def _print_feedback_summary(learning_state_path: str) -> None:
+    """Print a human-readable summary of collected feedback and learning signals."""
+    state = LearningState.load(learning_state_path)
+
+    print("\n📊 Feedback & Learning Summary")
+    print("=" * 50)
+    print(f"Total posts analyzed:    {state.total_posts_analyzed}")
+    print(f"Total feedback received: {state.total_feedback_received}")
+    avg = f"{state.average_rating:.1f}/5" if state.average_rating > 0 else "n/a"
+    print(f"Average post rating:     {avg}")
+
+    if state.not_published_reasons:
+        print("\n❌ Reasons posts were NOT published:")
+        for reason, count in sorted(state.not_published_reasons.items(), key=lambda x: -x[1]):
+            print(f"  • {reason}: {count}")
+    else:
+        print("\n❌ No 'not published' feedback recorded yet.")
+
+    if state.hook_pattern_scores:
+        print("\n🪝 Hook pattern performance (avg engagement score):")
+        for pattern, data in sorted(
+            state.hook_pattern_scores.items(),
+            key=lambda kv: kv[1]["total_score"] / max(kv[1]["count"], 1),
+            reverse=True,
+        ):
+            avg_score = data["total_score"] / max(data["count"], 1)
+            print(f"  • {pattern}: {avg_score:.1f} (n={data['count']})")
+
+    if state.topic_scores:
+        print("\n🏷  Topic performance (avg engagement score):")
+        for topic, data in sorted(
+            state.topic_scores.items(),
+            key=lambda kv: kv[1]["total_score"] / max(kv[1]["count"], 1),
+            reverse=True,
+        ):
+            avg_score = data["total_score"] / max(data["count"], 1)
+            print(f"  • {topic}: {avg_score:.1f} (n={data['count']})")
+
+    print()
 
 
 if __name__ == "__main__":
