@@ -136,6 +136,28 @@ class AnalyticsSnapshot:
 
 
 @dataclass
+class PostFeedback:
+    """Qualitative feedback from the user about a generated post."""
+
+    post_id: str
+    published: Optional[bool] = None
+    not_published_reason: Optional[str] = None
+    improvement_notes: Optional[str] = None
+    rating: Optional[int] = None          # 1–5 scale
+    recorded_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "PostFeedback":
+        return cls(**data)
+
+    def to_json(self) -> str:
+        return json.dumps(self.to_dict(), indent=2)
+
+
+@dataclass
 class Experiment:
     """An A/B experiment to test post variables."""
 

@@ -2,6 +2,9 @@
 
 An AI agent that transforms your GitHub commits into high-quality LinkedIn posts, stores every post as a GitHub Issue, collects performance analytics, and continuously learns to improve future content.
 
+> 📊 **[View Live Metrics Dashboard → METRICS.md](METRICS.md)**  
+> Hook pattern leaderboard · Experiment tracker · Feedback trends · Next improvements
+
 ---
 
 ## 📐 Architecture Overview
@@ -142,6 +145,25 @@ pip install -r requirements.txt
 |----------|----------|-------------|
 | `GITHUB_TOKEN` | ✅ | GitHub PAT with repo + issues write access |
 | `OPENAI_API_KEY` | ⬜ | OpenAI API key for AI-generated posts |
+| `LINKEDIN_ACCESS_TOKEN` | ⬜ | LinkedIn OAuth 2.0 token for daily metrics polling |
+
+### LinkedIn API Setup
+
+To enable daily follower count + post engagement polling:
+
+1. **Create a LinkedIn App** at [linkedin.com/developers](https://www.linkedin.com/developers/)
+2. **Request these OAuth 2.0 scopes:**
+   - `r_liteprofile` — read your profile URN
+   - `r_member_social` — read your posts and engagement
+   - `r_1st_connections_size` — read your connection/follower count
+3. **Complete the Authorization Code Flow** to get a long-lived access token
+4. **Add the token as a GitHub repository secret:** `Settings → Secrets → LINKEDIN_ACCESS_TOKEN`
+5. **Enable the workflow:** `.github/workflows/linkedin-poll.yml` runs daily at 07:00 UTC
+
+> **Note:** LinkedIn access tokens expire. The Marketing API offers long-lived tokens;
+> personal OAuth tokens typically last 60 days.  
+> **To refresh:** repeat the Authorization Code Flow and update the `LINKEDIN_ACCESS_TOKEN` secret.  
+> The daily workflow will log a clear HTTP 401 error when the token has expired — check the workflow run logs in the **Actions** tab if polling suddenly stops producing data.
 
 ---
 
@@ -165,21 +187,35 @@ python -m src.agent scan --repo owner/repo --max-posts 2
 # Collect analytics for published posts
 python -m src.agent analytics --repo owner/repo --posts posts.json
 
+# Post feedback request comments on ALL open social-post issues (run once to backfill)
+python -m src.agent backfill-feedback --repo owner/repo
+
+# Poll LinkedIn API for follower count + post engagement (requires LINKEDIN_ACCESS_TOKEN)
+python -m src.agent linkedin-poll
+
 # Show experiment summary
 python -m src.agent experiments
+
+# Show feedback & learning summary
+python -m src.agent feedback
+
+# Generate / refresh METRICS.md dashboard
+python -m src.agent metrics
 ```
 
 ### GitHub Actions
 
-Two workflows are included:
+Three workflows are included:
 
 | Workflow | File | Trigger |
 |----------|------|---------|
 | Scan commits | `.github/workflows/scan-commits.yml` | push to main, every Monday 08:00 UTC, manual |
 | Collect analytics | `.github/workflows/analytics-update.yml` | Wed + Fri 09:00 UTC, manual |
+| Poll LinkedIn metrics | `.github/workflows/linkedin-poll.yml` | daily 07:00 UTC, manual |
 
 **Required secrets:**
 - `OPENAI_API_KEY` — set in repo Settings → Secrets
+- `LINKEDIN_ACCESS_TOKEN` — required for the LinkedIn poll workflow (see LinkedIn API Setup above)
 
 ---
 
@@ -203,7 +239,8 @@ Every generated post is stored as a GitHub Issue with:
 5. Instagram caption
 6. Publishing checklist
 7. Analytics input template
-8. Raw JSON metadata (in collapsible block)
+8. **Post feedback template** (new — rate the post, explain if not published)
+9. Raw JSON metadata (in collapsible block)
 
 **Example analytics comment:**
 ```
@@ -345,13 +382,18 @@ The agent applies privacy-first defaults at every stage:
 - [x] GitHub Issues storage with labels + checklist
 - [x] Learning state with adjustable weights
 - [x] A/B experiment management
+- [x] Few-shot examples from `good-social-posts/` in generation prompt
+- [x] Qualitative feedback loop (`PostFeedback` model + Issue template)
+- [x] `METRICS.md` dashboard (auto-generated via `python -m src.agent metrics`)
 - [ ] Run `python -m src.agent scan --repo your/repo --dry-run`
 - [ ] Review generated posts, approve, publish manually
 - [ ] Add analytics as GitHub Issue comments after 48h
+- [ ] Add post feedback comments (published? why not? rating?)
 
 ### Phase 2 — Automation
 - [ ] LinkedIn API integration for direct publishing
 - [ ] Automated analytics fetching (LinkedIn Analytics API)
+- [ ] Auto-commit `METRICS.md` via GitHub Actions after each analytics run
 - [ ] Slack/email notifications for post approval
 - [ ] Dashboard for engagement trends
 - [ ] Multi-repo support

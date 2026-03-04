@@ -9,6 +9,7 @@ from src.models import (
     ExperimentStatus,
     ExperimentVariable,
     Post,
+    PostFeedback,
     PostStatus,
     SourceCommit,
 )
@@ -172,3 +173,32 @@ class TestExperiment:
         assert restored.variable == exp.variable
         assert restored.status == exp.status
         assert restored.variants == exp.variants
+
+
+class TestPostFeedback:
+    def _make(self, **kwargs):
+        defaults = {"post_id": "post-abc123"}
+        defaults.update(kwargs)
+        return PostFeedback(**defaults)
+
+    def test_defaults(self):
+        fb = self._make()
+        assert fb.published is None
+        assert fb.rating is None
+        assert fb.not_published_reason is None
+        assert fb.improvement_notes is None
+
+    def test_to_dict_and_from_dict_roundtrip(self):
+        fb = self._make(published=False, not_published_reason="quality", rating=2)
+        restored = PostFeedback.from_dict(fb.to_dict())
+        assert restored.post_id == fb.post_id
+        assert restored.published == fb.published
+        assert restored.rating == fb.rating
+        assert restored.not_published_reason == fb.not_published_reason
+
+    def test_to_json_is_valid_json(self):
+        fb = self._make(rating=4)
+        payload = fb.to_json()
+        parsed = json.loads(payload)
+        assert parsed["post_id"] == fb.post_id
+        assert parsed["rating"] == 4
