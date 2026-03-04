@@ -306,7 +306,7 @@ def _placeholder_linkedin(source: SourceCommit, hook_pattern: str) -> str:
 
     # Use the full commit message body (after the first line) as additional context
     msg_lines = source.message.strip().splitlines()
-    body_lines = [l.strip() for l in msg_lines[1:] if l.strip()]
+    body_lines = [line.strip() for line in msg_lines[1:] if line.strip()]
     if body_lines:
         context = "\n\n".join(body_lines[:3])
         context_block = f"\n\n{context}"
