@@ -21,6 +21,7 @@ from typing import Optional
 
 from .analytics import (
     LearningState,
+    _apply_qualitative_feedback,
     fetch_issue_analytics,
     fetch_issue_feedback,
     get_analytics_prompt,
@@ -186,9 +187,11 @@ def run_analytics_collection(
     Check for analytics on published posts and update the learning state.
 
     For each post with a GitHub Issue, this:
-    1. Checks if an analytics comment has been added.
-    2. If yes: updates the learning state and experiment results.
-    3. If no: prints a prompt asking the user to enter analytics.
+    1. Collects qualitative feedback regardless of post status or analytics presence.
+       (Rejections are the most important signal — we need to know *why* posts
+       weren't published even when no engagement data exists.)
+    2. For published posts that have analytics: runs the full quantitative learning loop.
+    3. For published posts without analytics yet: prints a prompt asking the user to enter them.
     """
     learning_state = LearningState.load(learning_state_path)
     experiments = ExperimentManager(experiments_path)
@@ -196,6 +199,16 @@ def run_analytics_collection(
     for post in posts:
         if post.github_issue_number is None:
             continue
+
+        # --- Pass 1: collect qualitative feedback for every post ---
+        # This runs regardless of status so that rejection reasons from
+        # non-published (draft/archived) posts are also captured.
+        feedback = fetch_issue_feedback(repo, token, post.github_issue_number, post.id)
+        if feedback is not None:
+            _apply_qualitative_feedback(learning_state, feedback)
+            learning_state.save(learning_state_path)
+
+        # --- Pass 2: quantitative analytics (published posts only) ---
         if post.status != PostStatus.PUBLISHED:
             continue
 
@@ -206,11 +219,8 @@ def run_analytics_collection(
             print(get_analytics_request_message(post, post.github_issue_number, repo))
             continue
 
-        # Collect qualitative feedback if available
-        feedback = fetch_issue_feedback(repo, token, post.github_issue_number, post.id)
-
-        # Update learning state
-        learning_state = update_learning_state(learning_state, post, analytics, feedback=feedback)
+        # Update learning state with quantitative data (feedback already applied above)
+        learning_state = update_learning_state(learning_state, post, analytics)
         learning_state.save(learning_state_path)
 
         # Record experiment results

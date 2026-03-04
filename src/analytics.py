@@ -128,32 +128,55 @@ def parse_feedback_from_comment(comment_body: str, post_id: str) -> Optional[Pos
         - If not published, why: quality / style / not relevant / other
         - What would make it better: <free text>
         - Rating (1-5): 4
+
+    Returns None if the comment does not contain a feedback section or if no
+    field has been meaningfully filled in (i.e., the template was posted but
+    left blank).
     """
     if "Post Feedback" not in comment_body:
         return None
 
     def _first_match(pattern: str) -> Optional[str]:
         m = re.search(pattern, comment_body, re.IGNORECASE)
-        return m.group(1).strip() if m else None
+        if m is None:
+            return None
+        value = m.group(1).strip()
+        return value if value else None
 
-    published_raw = _first_match(r"published[:\s]+([^\n]+)")
+    published_raw = _first_match(r"published:[ \t]*([^\n]+)")
     published: Optional[bool] = None
     if published_raw:
-        if re.search(r"\byes\b", published_raw, re.IGNORECASE):
-            published = True
-        elif re.search(r"\bno\b", published_raw, re.IGNORECASE):
-            published = False
+        # Require the value to be unambiguously "yes" or "no" after stripping —
+        # not a placeholder like "yes / no" that still contains a slash.
+        stripped = published_raw.strip()
+        if "/" not in stripped:
+            if re.fullmatch(r"yes", stripped, re.IGNORECASE):
+                published = True
+            elif re.fullmatch(r"no", stripped, re.IGNORECASE):
+                published = False
 
-    not_published_reason = _first_match(r"(?:if not published,? why|why not)[:\s]+([^\n]+)")
-    improvement_notes = _first_match(r"(?:what would make it better|improvement)[:\s]+([^\n]+)")
+    not_published_reason_raw = _first_match(r"(?:if not published,? why|why not):[ \t]*([^\n]+)")
+    # Reject slash-separated option lists (unfilled placeholder)
+    not_published_reason: Optional[str] = None
+    if not_published_reason_raw and "/" not in not_published_reason_raw:
+        not_published_reason = not_published_reason_raw
+
+    improvement_notes_raw = _first_match(r"(?:what would make it better|improvement):[ \t]*([^\n]+)")
+    # Reject empty or whitespace-only improvement notes
+    improvement_notes: Optional[str] = improvement_notes_raw if improvement_notes_raw else None
 
     rating: Optional[int] = None
-    rating_raw = _first_match(r"rating[^:]*:[:\s]+([1-5])")
+    rating_raw = _first_match(r"rating[^:]*:[ \t]*([1-5])")
     if rating_raw:
         try:
             rating = int(rating_raw)
         except ValueError:
             pass
+
+    # Return None if no field was actually filled in — this prevents blank or
+    # copy-paste templates from being recorded as real feedback.
+    if published is None and not_published_reason is None and improvement_notes is None and rating is None:
+        return None
 
     return PostFeedback(
         post_id=post_id,
@@ -173,7 +196,9 @@ def fetch_issue_feedback(
     """
     Fetch qualitative feedback from a GitHub Issue by reading its comments.
 
-    Returns the most recent feedback comment parsed as a PostFeedback object.
+    Returns the last feedback comment (in API order) parsed as a PostFeedback object.
+    The GitHub API returns comments in ascending created_at order, so the last
+    matching comment is the most recent one.
     """
     url = f"{GITHUB_API}/repos/{repo}/issues/{issue_number}/comments"
     resp = requests.get(url, headers=_github_headers(token), timeout=30)
@@ -187,9 +212,6 @@ def fetch_issue_feedback(
         if fb:
             # Keep the last matching feedback based on the API's comment ordering
             latest_feedback = fb
-
-    if latest_feedback is None:
-        return None
 
     return latest_feedback
 # -------------------------------------------------------------------

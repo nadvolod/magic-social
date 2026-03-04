@@ -6,13 +6,15 @@ from src.analytics import (
     DEFAULT_WEIGHTS,
     LearningState,
     MIN_POSTS_FOR_LEARNING,
+    _apply_qualitative_feedback,
     _average_engagement_score,
     _infer_strong_dimension,
     get_best_hook_pattern,
     parse_analytics_from_comment,
+    parse_feedback_from_comment,
     update_learning_state,
 )
-from src.models import AnalyticsSnapshot, Post, PostStatus
+from src.models import AnalyticsSnapshot, Post, PostFeedback, PostStatus
 
 
 def _make_post(post_id="post-abc", hook="result", tags=None, experiment_id=None, variant=None):
@@ -183,10 +185,6 @@ class TestGetBestHookPattern:
         assert get_best_hook_pattern(state) == "result"
 
 
-from src.analytics import parse_feedback_from_comment, _apply_qualitative_feedback
-from src.models import PostFeedback
-
-
 class TestParseFeedbackFromComment:
     VALID_COMMENT = """
 ## Post Feedback — 2024-02-05
@@ -232,17 +230,48 @@ class TestParseFeedbackFromComment:
         assert fb is not None
         assert fb.rating is None
 
+    def test_unfilled_template_returns_none(self):
+        # The backfill template (all fields are placeholders) must not be treated
+        # as real feedback — no field has been meaningfully filled in.
+        template = (
+            "## Post Feedback\n\n"
+            "- Published: yes / no\n"
+            "- If not published, why: quality / style / not relevant / too long / too technical / other\n"
+            "- What would make it better: \n"
+            "- Rating (1-5): \n"
+        )
+        fb = parse_feedback_from_comment(template, "post-abc")
+        assert fb is None
+
+    def test_published_yes_slash_no_is_not_parsed(self):
+        # "yes / no" must not be parsed as published=True
+        comment = "## Post Feedback\n- Published: yes / no\n- Rating (1-5): 4"
+        fb = parse_feedback_from_comment(comment, "post-abc")
+        assert fb is not None
+        assert fb.published is None
+        assert fb.rating == 4
+
+    def test_slash_separated_not_published_reason_is_ignored(self):
+        # A slash-separated option list for the reason field should not be stored
+        comment = (
+            "## Post Feedback\n"
+            "- Published: no\n"
+            "- If not published, why: quality / style / not relevant / too long / too technical / other\n"
+        )
+        fb = parse_feedback_from_comment(comment, "post-abc")
+        assert fb is not None
+        assert fb.published is False
+        assert fb.not_published_reason is None  # placeholder, not filled
+
 
 class TestApplyQualitativeFeedback:
     def test_increments_feedback_count(self):
-        from src.analytics import LearningState
         state = LearningState()
         fb = PostFeedback(post_id="post-abc", published=True, rating=4)
         _apply_qualitative_feedback(state, fb)
         assert state.total_feedback_received == 1
 
     def test_tracks_not_published_reason(self):
-        from src.analytics import LearningState
         state = LearningState()
         fb = PostFeedback(post_id="post-abc", published=False, not_published_reason="quality")
         _apply_qualitative_feedback(state, fb)
@@ -250,15 +279,12 @@ class TestApplyQualitativeFeedback:
         assert state.not_published_reasons["quality"] == 1
 
     def test_average_rating_updated(self):
-        from src.analytics import LearningState
         state = LearningState()
         _apply_qualitative_feedback(state, PostFeedback(post_id="p1", rating=4))
         _apply_qualitative_feedback(state, PostFeedback(post_id="p2", rating=2))
         assert state.average_rating == pytest.approx(3.0)
 
     def test_feedback_integrated_in_update_learning_state(self):
-        from src.analytics import LearningState, update_learning_state
-        from src.models import Post, PostStatus, AnalyticsSnapshot
         state = LearningState()
         post = _make_post()
         analytics = _make_analytics()

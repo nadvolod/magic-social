@@ -15,7 +15,7 @@ Authentication:
     repository secret LINKEDIN_ACCESS_TOKEN.
 
 Usage (CLI):
-    python -m src.agent linkedin-poll --repo owner/repo
+    python -m src.agent linkedin-poll
 
     This command:
       1. Fetches your current follower/connection count

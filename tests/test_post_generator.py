@@ -1,12 +1,15 @@
 """Tests for the post generator."""
 
+import src.post_generator as pg
 import pytest
 
 from src.models import Post, PostStatus, SourceCommit
 from src.post_generator import (
     HOOK_PATTERNS,
     _extract_lesson,
+    _extract_linkedin_section,
     _infer_tags,
+    _load_good_posts_examples,
     _placeholder_ig,
     _placeholder_linkedin,
     _placeholder_x_thread,
@@ -156,9 +159,6 @@ class TestGeneratePost:
         assert post.lesson
 
 
-from src.post_generator import _extract_linkedin_section, _load_good_posts_examples
-
-
 class TestExtractLinkedInSection:
     def test_extracts_section_content(self):
         md = "# Title\n\n## Final LinkedIn Post\n\nHook line.\n\nBody paragraph.\n\n## How to Post\n\nIgnore this."
@@ -196,7 +196,6 @@ class TestLoadGoodPostsExamples:
             assert len(ex) > 0
 
     def test_loads_from_good_posts_dir(self, tmp_path):
-        import src.post_generator as pg
         # Temporarily override the directory to a tmp location
         original = pg._GOOD_POSTS_DIR
         tmp_dir = tmp_path / "good-social-posts"
@@ -214,7 +213,6 @@ class TestLoadGoodPostsExamples:
             pg._GOOD_POSTS_DIR = original
 
     def test_missing_dir_returns_empty_list(self, tmp_path):
-        import src.post_generator as pg
         original = pg._GOOD_POSTS_DIR
         pg._GOOD_POSTS_DIR = tmp_path / "nonexistent"
         try:
