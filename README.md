@@ -130,7 +130,7 @@ results: dict                 # post_id → {variant, engagement_score, recorded
 ### Prerequisites
 - Python 3.11+
 - GitHub repository with commits to scan
-- OpenAI API key (optional — placeholder content is generated without it)
+- OpenAI API key (required for non-dry-run generation)
 - GitHub token with `repo` + `issues:write` permissions
 
 ### Installation
@@ -144,8 +144,10 @@ pip install -r requirements.txt
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `GITHUB_TOKEN` | ✅ | GitHub PAT with repo + issues write access |
-| `OPENAI_API_KEY` | ⬜ | OpenAI API key for AI-generated posts |
+| `OPENAI_API_KEY` | ✅ | OpenAI API key for AI-generated posts |
 | `LINKEDIN_ACCESS_TOKEN` | ⬜ | LinkedIn OAuth 2.0 token for daily metrics polling |
+| `SOCIAL_LESSONS_DOC_URL` | ⬜ | Google Doc URL with maintained social-post lessons (defaults to the project doc) |
+| `SOCIAL_LESSONS_FILE` | ⬜ | Local file path override for lessons (takes priority over doc URL) |
 
 ### LinkedIn API Setup
 
@@ -217,6 +219,9 @@ Three workflows are included:
 - `OPENAI_API_KEY` — set in repo Settings → Secrets
 - `LINKEDIN_ACCESS_TOKEN` — required for the LinkedIn poll workflow (see LinkedIn API Setup above)
 
+**Optional repository variable:**
+- `SOCIAL_LESSONS_DOC_URL` — set in repo Settings → Variables to override the default Google Doc lessons source
+
 ---
 
 ## 📋 GitHub Issues Format
@@ -232,15 +237,16 @@ Every generated post is stored as a GitHub Issue with:
 - `experiment` — posts that are part of an A/B test
 
 **Issue body structure:**
-1. Post Metadata (table)
-2. Lesson (one sentence)
-3. LinkedIn post (copy-paste ready)
-4. X thread
-5. Instagram caption
-6. Publishing checklist
-7. Analytics input template
-8. **Post feedback template** (new — rate the post, explain if not published)
-9. Raw JSON metadata (in collapsible block)
+1. LinkedIn post (copy-paste ready)
+2. **Quick mobile feedback section** (checkboxes + reactions)
+3. Publishing checklist
+4. Analytics input template
+5. Full optional post feedback template
+6. Post metadata + raw JSON (for agent use)
+
+**Fast feedback (no form required):**
+- React to the issue: `👍` good draft, `👎` bad draft, `🚀` published
+- Or add a short comment: `publish`, `rewrite`, `skip`, `too long`, `not relevant`, `weak hook`
 
 **Example analytics comment:**
 ```
@@ -332,13 +338,15 @@ Sequential A/B experiments run automatically:
 
 ## 🔄 Learning Loop
 
-1. After publishing, user adds analytics to the GitHub Issue comment
-2. Analytics workflow reads the comment and parses metrics
+1. User gives quick feedback with reactions/checklist/short comments (mobile-first)
+2. After publishing, user adds analytics to the GitHub Issue comment
+3. Analytics workflow reads metrics and qualitative signals, then updates learning state
 3. `update_learning_state()` updates:
    - **Hook pattern scores** — tracks avg engagement per pattern
    - **Topic scores** — tracks which topics resonate most
    - **Scoring weights** — dimensions that correlate with high engagement get a small boost
-4. Next scan uses the best hook pattern and highest-weight scoring dimensions
+4. Inactivity is also a signal: no feedback for 72h and unpublished drafts older than 7d are down-ranked automatically
+5. Next scan uses the best hook pattern and highest-weight scoring dimensions
 
 **Guardrails against overfitting:**
 - Minimum 3 posts before any weight adjustments
