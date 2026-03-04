@@ -87,15 +87,38 @@ class TestInferTags:
 
 
 class TestPlaceholderGenerators:
-    def test_placeholder_linkedin_contains_hook_pattern(self):
+    def test_placeholder_linkedin_contains_commit_message(self):
         source = _make_source()
         post = _placeholder_linkedin(source, "result")
-        assert "result" in post
+        assert "fix Temporal workflow timeout" in post
 
-    def test_placeholder_linkedin_contains_commit_sha(self):
-        source = _make_source(sha="abc123def456")
+    def test_placeholder_linkedin_follows_post_structure(self):
+        """Placeholder should read like a real post, not dump raw data."""
+        source = _make_source()
+        post = _placeholder_linkedin(source, "story")
+        # Should NOT contain raw data markers or internal metadata
+        assert "[DRAFT" not in post
+        assert "Lesson score:" not in post
+        assert "Score:" not in post
+        # Should have a human-readable hook and a CTA question
+        lines = [l for l in post.splitlines() if l.strip()]
+        assert lines[0]  # hook line exists
+        assert "?" in post  # ends with a question (CTA)
+
+    def test_placeholder_linkedin_no_commit_metadata(self):
+        """Placeholder should not include raw commit metadata like line counts."""
+        source = _make_source()
         post = _placeholder_linkedin(source, "result")
-        assert "abc123" in post
+        assert "+45 lines" not in post
+        assert "-12 lines" not in post
+        assert "touches:" not in post
+        assert source.diff_summary not in post
+
+    def test_placeholder_linkedin_shows_file_names(self):
+        """Placeholder should show readable file names, not line count metadata."""
+        source = _make_source()
+        post = _placeholder_linkedin(source, "result")
+        assert "workflow/saga.go" in post
 
     def test_placeholder_x_thread_has_tweet_numbers(self):
         linkedin = "Hook line\n\nBody paragraph\n\nClosing question?"

@@ -122,13 +122,23 @@ def _build_linkedin_prompt(source: SourceCommit, hook_pattern: str, experiment_v
         {variant_note}
 
         Rules:
-        1. Extract ONE clear lesson. Do not combine multiple ideas.
-        2. Never paste code, diffs, secrets, tokens, or customer data.
-        3. Summarize the technical lesson in plain language.
-        4. Include 1 concrete proof point (metric, before/after, or specific outcome).
-        5. End with an open question to spark comments.
-        6. Keep total length between 800-1500 characters.
-        7. Use blank lines between paragraphs.
+        1. Extract ONE clear lesson from this commit. Do not combine multiple ideas.
+        2. Follow this exact structure:
+           - Hook: single sentence that creates tension or curiosity
+           - Context: what were you trying to do?
+           - Problem: what went wrong or what did you discover?
+           - Code example: show a small, readable code snippet or config that illustrates the lesson (indented 4 spaces so it renders as code on LinkedIn)
+           - Lesson: the concrete, specific insight
+           - Proof: a number, before/after, or specific outcome
+           - CTA: an open-ended question to invite comments
+        3. Never reference raw commit metadata like line counts, SHAs, or diff summaries.
+        4. DO include actual readable code or config snippets that teach the reader something. Use 4-space indentation for code blocks.
+        5. Write in first person. Make it sound like a real engineer sharing a lesson.
+        6. Use short paragraphs (1-2 sentences each) with blank lines between them.
+        7. Keep total length between 800-1500 characters.
+        8. Use 0-2 hashtags maximum at the end, only if highly relevant.
+        9. Do NOT start with "I'm excited to share" or any clichés.
+        10. The post must provide clear value — a reader should learn something concrete from the code shown.
 
         Return ONLY the LinkedIn post text. No explanations, no meta-commentary.
     """).strip()
@@ -274,22 +284,48 @@ def _generate_with_openai(client, model: str, system: str, user: str) -> str:
 
 
 def _placeholder_linkedin(source: SourceCommit, hook_pattern: str) -> str:
-    """Return a structured placeholder post without calling OpenAI."""
-    return textwrap.dedent(f"""
-        [DRAFT — replace with AI-generated content]
+    """Return a structured placeholder post without calling OpenAI.
 
-        Hook ({hook_pattern}): {source.message[:80]}
+    Follows the LinkedIn post structure from the README and good-social-posts:
+    Hook → Context → Problem → Lesson → Proof → CTA.
+    Shows readable code examples — never raw commit metadata like line counts.
+    """
+    # Build a human-readable first line from the commit message
+    first_line = source.message.strip().splitlines()[0] if source.message.strip() else "a recent change"
+    first_line = first_line[:120]
 
-        The lesson extracted from commit {source.sha[:8]}:
+    # Build a readable list of files touched
+    files = source.files_changed[:3]
+    if files:
+        file_list = "\n".join(f"    {f}" for f in files)
+        if len(source.files_changed) > 3:
+            file_list += f"\n    ... and {len(source.files_changed) - 3} more"
+        code_block = f"Here's what the change touched:\n\n{file_list}"
+    else:
+        code_block = "The change was small but the lesson was big."
 
-        {source.diff_summary or 'No diff summary available.'}
+    # Use the full commit message body (after the first line) as additional context
+    msg_lines = source.message.strip().splitlines()
+    body_lines = [line.strip() for line in msg_lines[1:] if line.strip()]
+    if body_lines:
+        context = "\n\n".join(body_lines[:3])
+        context_block = f"\n\n{context}"
+    else:
+        context_block = ""
 
-        Files changed: {', '.join(source.files_changed[:3]) or 'none'}
+    return textwrap.dedent(f"""\
+{first_line}
 
-        Lesson score: {source.score:.0f}/100
+That single line hides a real lesson.
+{context_block}
 
-        What's your experience with this pattern?
-    """).strip()
+{code_block}
+
+What looked straightforward turned out to be more nuanced than expected.
+
+The takeaway: small, focused commits often reveal the biggest insights. This one forced me to rethink how I approach the problem.
+
+Have you run into something similar? I'd love to hear your experience.""")
 
 
 def _placeholder_x_thread(linkedin_post: str) -> str:
