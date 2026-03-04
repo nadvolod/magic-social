@@ -42,6 +42,7 @@ from .github_storage import (
 from .models import Post, PostStatus
 from .post_generator import HOOK_PATTERNS, generate_post
 from .scoring import SCORE_THRESHOLD
+from .self_improvement import run_self_improvement_cycle
 
 logger = logging.getLogger(__name__)
 
@@ -305,6 +306,9 @@ Examples:
 
   # Show learning state summary (feedback, ratings, not-published reasons)
   python -m src.agent feedback --summary
+
+  # Run weekly self-improvement analysis (writes SELF_IMPROVEMENT.md)
+  python -m src.agent self-improve --repo owner/repo --apply
         """,
     )
 
@@ -395,6 +399,33 @@ Examples:
         help="Path to write the snapshot history (default: linkedin_metrics.json)",
     )
 
+    # self-improve command
+    improve_parser = subparsers.add_parser(
+        "self-improve",
+        help="Analyze backlog + feedback signals and produce weekly tuning recommendations",
+    )
+    improve_parser.add_argument("--repo", required=True, help="GitHub repo (owner/repo)")
+    improve_parser.add_argument(
+        "--state",
+        default=DEFAULT_LEARNING_STATE_PATH,
+        help="Path to the learning state JSON file",
+    )
+    improve_parser.add_argument(
+        "--config",
+        default="config.yaml",
+        help="Path to config YAML for automatic tuning",
+    )
+    improve_parser.add_argument(
+        "--output",
+        default="SELF_IMPROVEMENT.md",
+        help="Output markdown report path (default: SELF_IMPROVEMENT.md)",
+    )
+    improve_parser.add_argument(
+        "--apply",
+        action="store_true",
+        help="Apply safe tuning adjustments to the config file",
+    )
+
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -474,6 +505,29 @@ Examples:
             max_posts=args.max_posts,
             output=args.output,
         )
+
+    elif args.command == "self-improve":
+        changes, ctx = run_self_improvement_cycle(
+            repo=args.repo,
+            token=token,
+            learning_state_path=args.state,
+            config_path=args.config,
+            report_output=args.output,
+            apply=args.apply,
+        )
+        print("\n🛠 Self-Improvement Summary")
+        print("=" * 50)
+        print(f"Social issues:         {ctx.total_social_issues}")
+        print(f"Open unpublished:      {ctx.open_unpublished}")
+        print(f"Stale unpublished 7d:  {ctx.stale_unpublished_7d}")
+        print(f"Unreviewed 72h:        {ctx.old_unreviewed_72h}")
+        if changes:
+            print("\nApplied config changes:")
+            for change in changes:
+                print(f"  - {change}")
+        else:
+            print("\nNo config changes applied.")
+        print(f"\nReport written to: {args.output}")
 
 
 def backfill_feedback_comments(repo: str, token: str, dry_run: bool = False) -> int:

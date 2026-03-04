@@ -203,6 +203,9 @@ python -m src.agent feedback
 
 # Generate / refresh METRICS.md dashboard
 python -m src.agent metrics
+
+# Run weekly self-improvement analysis and apply safe config tuning
+python -m src.agent self-improve --repo owner/repo --apply
 ```
 
 ### GitHub Actions
@@ -214,6 +217,7 @@ Three workflows are included:
 | Scan commits | `.github/workflows/scan-commits.yml` | push to main, every Monday 08:00 UTC, manual |
 | Collect analytics | `.github/workflows/analytics-update.yml` | Wed + Fri 09:00 UTC, manual |
 | Poll LinkedIn metrics | `.github/workflows/linkedin-poll.yml` | daily 07:00 UTC, manual |
+| Weekly self-improvement PR | `.github/workflows/self-improve.yml` | every Monday 10:00 UTC, manual |
 
 **Required secrets:**
 - `OPENAI_API_KEY` — set in repo Settings → Secrets
