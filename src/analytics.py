@@ -180,19 +180,18 @@ def fetch_issue_feedback(
     resp.raise_for_status()
     comments = resp.json()
 
-    feedbacks = []
+    latest_feedback: Optional[PostFeedback] = None
     for comment in comments:
         body = comment.get("body", "")
         fb = parse_feedback_from_comment(body, post_id)
         if fb:
-            feedbacks.append(fb)
+            # Keep the last matching feedback based on the API's comment ordering
+            latest_feedback = fb
 
-    if not feedbacks:
+    if latest_feedback is None:
         return None
 
-    return max(feedbacks, key=lambda f: f.recorded_at)
-
-
+    return latest_feedback
 # -------------------------------------------------------------------
 # Learning loop — adjusts scoring weights based on analytics
 # -------------------------------------------------------------------
