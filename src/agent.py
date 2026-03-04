@@ -13,6 +13,7 @@ Main orchestrator that runs the full pipeline:
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import os
 import sys
@@ -65,6 +66,15 @@ class BacklogStats:
     total_open_social: int = 0
     open_unpublished: int = 0
     stale_unpublished: int = 0
+
+
+@dataclass
+class CommitDecision:
+    """OpenAI decision for whether a commit should become a post."""
+
+    accept: bool
+    reason: str
+    confidence: float = 0.0
 
 
 def _issue_status_from_labels(labels: list[dict]) -> Optional[str]:
@@ -198,6 +208,82 @@ def apply_learning_guardrails(
     return adjusted_threshold, adjusted_max_posts
 
 
+def _historical_bad_practice_summary(learning_state: LearningState, top_n: int = 5) -> str:
+    """Return a compact summary of historical negative reasons for prompting."""
+    reasons = learning_state.not_published_reasons or {}
+    if not reasons:
+        return "No historical bad-practice reasons recorded."
+    ranked = sorted(reasons.items(), key=lambda kv: -int(kv[1]))[:top_n]
+    return "; ".join(f"{reason}={count}" for reason, count in ranked)
+
+
+def decide_commit_with_openai(openai_client, source, learning_state: LearningState, model: str = "gpt-4o") -> CommitDecision:
+    """
+    Ask OpenAI whether this commit should become a social post.
+
+    The model is used as a qualitative gate to avoid repeating low-value,
+    internal-only patterns that previously failed to get published.
+    """
+    if openai_client is None:
+        return CommitDecision(accept=True, reason="OpenAI unavailable; default accept.", confidence=0.0)
+
+    history_summary = _historical_bad_practice_summary(learning_state)
+    system_prompt = (
+        "You are an editorial gatekeeper for technical LinkedIn posts. "
+        "Decide if a commit should become a post. Reject repetitive internal maintenance "
+        "or meta tooling churn. Accept only if an external engineering audience will learn "
+        "a concrete, useful lesson. Respond ONLY valid JSON."
+    )
+    user_prompt = (
+        "Historical negative signals (do not repeat):\n"
+        f"{history_summary}\n\n"
+        "Commit candidate:\n"
+        f"- message: {source.message}\n"
+        f"- files_changed: {', '.join(source.files_changed[:8])}\n"
+        f"- diff_summary: {source.diff_summary}\n"
+        f"- score: {source.score:.1f}\n\n"
+        "Return JSON with keys:\n"
+        '{"decision":"accept|reject","reason":"short reason","confidence":0.0}'
+    )
+    try:
+        response = openai_client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt},
+            ],
+            temperature=0.0,
+            max_tokens=220,
+        )
+        content = (response.choices[0].message.content or "").strip()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("OpenAI commit decision failed for %s: %s", source.sha[:8], exc)
+        return CommitDecision(accept=True, reason="OpenAI decision failed; default accept.", confidence=0.0)
+
+    try:
+        payload = json.loads(content)
+    except json.JSONDecodeError:
+        start = content.find("{")
+        end = content.rfind("}")
+        if start != -1 and end != -1 and end > start:
+            try:
+                payload = json.loads(content[start : end + 1])
+            except json.JSONDecodeError:
+                payload = {}
+        else:
+            payload = {}
+
+    decision_raw = str(payload.get("decision", "accept")).strip().lower()
+    accept = decision_raw == "accept"
+    reason = str(payload.get("reason", "")).strip() or "No reason provided."
+    try:
+        confidence = float(payload.get("confidence", 0.0))
+    except (TypeError, ValueError):
+        confidence = 0.0
+
+    return CommitDecision(accept=accept, reason=reason, confidence=confidence)
+
+
 def run_scan(
     repo: Optional[str] = None,
     token: str = "",
@@ -302,6 +388,24 @@ def run_scan(
 
     # Generate posts
     openai_client = _get_openai_client()
+    if openai_client is not None:
+        filtered_commits = []
+        for source in source_commits:
+            decision = decide_commit_with_openai(openai_client, source, learning_state)
+            if decision.accept:
+                filtered_commits.append(source)
+            else:
+                logger.info(
+                    "OpenAI rejected commit %s for posting (confidence=%.2f): %s",
+                    source.sha[:8],
+                    decision.confidence,
+                    decision.reason,
+                )
+        source_commits = filtered_commits
+        if not source_commits:
+            logger.info("No commits passed OpenAI editorial gate.")
+            return []
+
     generated_posts: list[Post] = []
 
     for source in source_commits[:max_posts]:

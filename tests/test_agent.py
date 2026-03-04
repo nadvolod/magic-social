@@ -197,3 +197,67 @@ def test_apply_learning_guardrails_preserves_stricter_existing_values():
     threshold, max_posts = agent.apply_learning_guardrails(state, threshold=55.0, max_posts=2)
     assert threshold == 55.0
     assert max_posts == 2
+
+
+class _FakeMessage:
+    def __init__(self, content: str):
+        self.content = content
+
+
+class _FakeChoice:
+    def __init__(self, content: str):
+        self.message = _FakeMessage(content)
+
+
+class _FakeResponse:
+    def __init__(self, content: str):
+        self.choices = [_FakeChoice(content)]
+
+
+class _FakeCompletions:
+    def __init__(self, content: str):
+        self._content = content
+
+    def create(self, **kwargs):
+        return _FakeResponse(self._content)
+
+
+class _FakeChat:
+    def __init__(self, content: str):
+        self.completions = _FakeCompletions(content)
+
+
+class _FakeOpenAI:
+    def __init__(self, content: str):
+        self.chat = _FakeChat(content)
+
+
+def test_decide_commit_with_openai_accepts_valid_json():
+    source = _make_source()
+    state = LearningState()
+    client = _FakeOpenAI('{"decision":"accept","reason":"strong external lesson","confidence":0.88}')
+    decision = agent.decide_commit_with_openai(client, source, state)
+    assert decision.accept is True
+    assert "external lesson" in decision.reason
+    assert decision.confidence == 0.88
+
+
+def test_decide_commit_with_openai_rejects_valid_json():
+    source = _make_source()
+    state = LearningState()
+    client = _FakeOpenAI('{"decision":"reject","reason":"internal maintenance only","confidence":0.91}')
+    decision = agent.decide_commit_with_openai(client, source, state)
+    assert decision.accept is False
+    assert "internal maintenance" in decision.reason
+
+
+def test_decide_commit_with_openai_handles_wrapped_json():
+    source = _make_source()
+    state = LearningState()
+    client = _FakeOpenAI(
+        "Here is the result:\n"
+        '{"decision":"reject","reason":"not audience-relevant","confidence":0.7}\n'
+    )
+    decision = agent.decide_commit_with_openai(client, source, state)
+    assert decision.accept is False
+    assert "audience-relevant" in decision.reason
