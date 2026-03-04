@@ -87,13 +87,8 @@ class TestInferTags:
 
 
 class TestPlaceholderGenerators:
-    def test_placeholder_linkedin_contains_hook_pattern(self):
-        source = _make_source()
-        post = _placeholder_linkedin(source, "result")
-        assert "result" in post
-
     def test_placeholder_linkedin_contains_commit_message(self):
-        source = _make_source(sha="abc123def456")
+        source = _make_source()
         post = _placeholder_linkedin(source, "result")
         assert "fix Temporal workflow timeout" in post
 
@@ -101,9 +96,10 @@ class TestPlaceholderGenerators:
         """Placeholder should read like a real post, not dump raw data."""
         source = _make_source()
         post = _placeholder_linkedin(source, "story")
-        # Should NOT contain raw data markers
+        # Should NOT contain raw data markers or internal metadata
         assert "[DRAFT" not in post
         assert "Lesson score:" not in post
+        assert "Score:" not in post
         # Should have a human-readable hook and a CTA question
         lines = [l for l in post.splitlines() if l.strip()]
         assert lines[0]  # hook line exists

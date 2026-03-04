@@ -289,35 +289,31 @@ def _placeholder_linkedin(source: SourceCommit, hook_pattern: str) -> str:
     The output should read like a real LinkedIn post, not a raw data dump.
     """
     # Build a human-readable first line from the commit message
-    first_line = source.message.strip().splitlines()[0] if source.message.strip() else "a recent commit"
-    first_line = first_line[:80]
+    first_line = source.message.strip().splitlines()[0] if source.message.strip() else "a recent change"
+    first_line = first_line[:120]
 
     # Summarise the change scope
     file_count = len(source.files_changed)
     files_note = (
         f"across {file_count} files" if file_count > 1
         else f"in {source.files_changed[0]}" if file_count == 1
-        else ""
+        else "in the codebase"
     )
 
     diff_note = source.diff_summary if source.diff_summary else "a targeted code change"
 
     return textwrap.dedent(f"""\
-I just solved a problem that surprised me.
-
 {first_line}
+
+That single line hides a real lesson.
 
 Here's the context:
 
 I was working on a change {files_note} — {diff_note}.
 
-What looked straightforward turned out to have a real lesson behind it.
+What looked straightforward turned out to be more nuanced than expected.
 
-The key insight:
-
-Every commit tells a story. This one was about making things better, one step at a time.
-
-Score: {source.score:.0f}/100 (hook: {hook_pattern}).
+The takeaway: small, focused commits often reveal the biggest insights. This one forced me to rethink how I approach the problem.
 
 Have you run into something similar? I'd love to hear your experience.""")
 
