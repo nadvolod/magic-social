@@ -103,6 +103,19 @@ LOW_VALUE_PATTERNS = [
     r"whitespace",
 ]
 
+# Historical anti-patterns learned from rejected social-post batches.
+# These patterns represent internal/meta churn that repeatedly produced
+# low-value social content and should not be turned into posts again.
+HISTORICAL_BAD_PRACTICE_PATTERNS = [
+    r"syntaxerror",
+    r"scan\s+window",
+    r"threshold\s+pass[-\s]?through",
+    r"multi[-\s]?repo\s+commit\s+scanning",
+    r"create\s+linkedin\s+post\s+guidance",
+    r"address\s+code\s+review",
+    r"update\s+tests?/",
+]
+
 # Privacy/security-sensitive patterns that should never be published
 SENSITIVE_PATTERNS = [
     r"api[_\s]?key",
@@ -155,7 +168,9 @@ def is_sensitive(text: str) -> bool:
 def is_low_value(message: str) -> bool:
     """Return True if this commit message suggests a low-value commit."""
     message_lower = message.lower().strip()
-    return any(re.search(pattern, message_lower) for pattern in LOW_VALUE_PATTERNS)
+    if any(re.search(pattern, message_lower) for pattern in LOW_VALUE_PATTERNS):
+        return True
+    return any(re.search(pattern, message_lower) for pattern in HISTORICAL_BAD_PRACTICE_PATTERNS)
 
 
 def score_novelty(message: str, diff_summary: str) -> float:

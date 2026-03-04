@@ -345,6 +345,8 @@ Sequential A/B experiments run automatically:
    - **Topic scores** — tracks which topics resonate most
    - **Scoring weights** — dimensions that correlate with high engagement get a small boost
 4. Next scan uses the best hook pattern and highest-weight scoring dimensions
+5. Explicit historical bad-practice batches in `not_published_reasons` automatically tighten scan guardrails
+   (higher score threshold + fewer posts per run)
 
 **Guardrails against overfitting:**
 - Minimum 3 posts before any weight adjustments
@@ -372,6 +374,7 @@ The agent applies privacy-first defaults at every stage:
 |---------|------------|
 | Low-signal commits | Hard filters + score threshold (< 30 skipped) |
 | Draft backlog overload | Backlog throttle pauses new generation when unpublished drafts exceed limits |
+| Repeating known bad internal/meta patterns | Historical bad-practice regex filters hard-reject those commit messages |
 | Sensitive/confidential code | Privacy filter blocks entire commit; diff summarized, never pasted |
 | Repeated topics | Experiment tracking + topic scores reduce redundancy over time |
 | LLM hallucinations | One-idea rule + proof requirement + human approval checklist |

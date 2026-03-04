@@ -49,6 +49,10 @@ DEFAULT_EXPERIMENTS_PATH = "experiments.json"
 
 # How many days back to scan for commits when no 'since' date is provided
 DEFAULT_SCAN_DAYS = 7
+
+# Learning-state key used when a large historical issue batch is explicitly
+# marked as "bad practice" and should tighten future selection.
+HISTORICAL_BAD_BATCH_REASON_PREFIX = "historical_batch_bad_practice_pre_"
 DEFAULT_MAX_OPEN_UNPUBLISHED = 10
 DEFAULT_MAX_STALE_UNPUBLISHED = 4
 DEFAULT_STALE_DAYS = 7
@@ -155,6 +159,45 @@ def _get_openai_client():
         return None
 
 
+def apply_learning_guardrails(
+    learning_state: LearningState,
+    threshold: float,
+    max_posts: int,
+) -> tuple[float, int]:
+    """
+    Tighten scan settings when historical bad-practice signals are present.
+
+    If the learning state contains a strong historical bad-batch signal, we:
+    - increase minimum commit threshold (quality-first)
+    - reduce post volume per run (avoid flooding with weak drafts)
+    """
+    reasons = learning_state.not_published_reasons or {}
+    bad_batch_count = sum(
+        int(count)
+        for reason, count in reasons.items()
+        if reason.lower().startswith(HISTORICAL_BAD_BATCH_REASON_PREFIX)
+    )
+
+    adjusted_threshold = threshold
+    adjusted_max_posts = max_posts
+
+    # This signal is coarse but high-confidence (explicitly user-marked batch).
+    if bad_batch_count >= 10:
+        adjusted_threshold = max(adjusted_threshold, 40.0)
+        adjusted_max_posts = min(adjusted_max_posts, 3)
+        logger.info(
+            "Learning guardrail active from historical bad-practice batch (count=%d): "
+            "threshold %.1f -> %.1f, max_posts %d -> %d",
+            bad_batch_count,
+            threshold,
+            adjusted_threshold,
+            max_posts,
+            adjusted_max_posts,
+        )
+
+    return adjusted_threshold, adjusted_max_posts
+
+
 def run_scan(
     repo: Optional[str] = None,
     token: str = "",
@@ -230,6 +273,9 @@ def run_scan(
     # Load persistent state
     learning_state = LearningState.load(learning_state_path)
     experiments = ExperimentManager(experiments_path)
+
+    # Apply guardrails learned from prior rejected batches.
+    threshold, max_posts = apply_learning_guardrails(learning_state, threshold, max_posts)
 
     # Get or start an experiment
     active_exp = experiments.get_active_experiment()

@@ -58,6 +58,15 @@ class TestLowValueFilter:
     def test_initial_commit_filtered(self):
         assert is_low_value("Initial commit")
 
+    def test_historical_bad_practice_syntaxerror_filtered(self):
+        assert is_low_value("Fix SyntaxError in analytics parser")
+
+    def test_historical_bad_practice_scan_window_filtered(self):
+        assert is_low_value("Fix scan window and threshold pass-through")
+
+    def test_historical_bad_practice_guidance_doc_filtered(self):
+        assert is_low_value("Create LinkedIn post guidance document")
+
 
 class TestIndividualScorers:
     def test_novelty_rewards_insight_words(self):
