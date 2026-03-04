@@ -236,7 +236,7 @@ def _parse_shorthand_feedback(comment_body: str, post_id: str) -> Optional[PostF
         return PostFeedback(post_id=post_id, published=True, rating=5)
 
     for marker, reason in SHORT_NEGATIVE_REASON_MARKERS.items():
-        if marker in text:
+        if re.search(rf"\b{re.escape(marker)}\b", text):
             return PostFeedback(
                 post_id=post_id,
                 published=False,
@@ -252,7 +252,7 @@ def parse_feedback_from_issue_body(issue_body: str, post_id: str) -> Optional[Po
         return None
 
     # Prioritize explicit publish signal over negative checkboxes if multiple are checked.
-    if re.search(r"- \[[xX]\]\s*.*publish", issue_body, re.IGNORECASE):
+    if re.search(r"^- \[[xX]\]\s*publish\s*$", issue_body, re.IGNORECASE | re.MULTILINE):
         return PostFeedback(post_id=post_id, published=True, rating=5)
 
     checkbox_reason_map = {

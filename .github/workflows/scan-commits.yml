@@ -41,6 +41,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Validate OpenAI key
+        if: ${{ inputs.dry_run != 'true' }}
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
