@@ -105,10 +105,20 @@ class TestPlaceholderGenerators:
         assert lines[0]  # hook line exists
         assert "?" in post  # ends with a question (CTA)
 
-    def test_placeholder_linkedin_includes_diff_summary(self):
+    def test_placeholder_linkedin_no_commit_metadata(self):
+        """Placeholder should not include raw commit metadata like line counts."""
         source = _make_source()
         post = _placeholder_linkedin(source, "result")
-        assert source.diff_summary in post
+        assert "+45 lines" not in post
+        assert "-12 lines" not in post
+        assert "touches:" not in post
+        assert source.diff_summary not in post
+
+    def test_placeholder_linkedin_shows_file_names(self):
+        """Placeholder should show readable file names, not line count metadata."""
+        source = _make_source()
+        post = _placeholder_linkedin(source, "result")
+        assert "workflow/saga.go" in post
 
     def test_placeholder_x_thread_has_tweet_numbers(self):
         linkedin = "Hook line\n\nBody paragraph\n\nClosing question?"

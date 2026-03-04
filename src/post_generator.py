@@ -127,16 +127,18 @@ def _build_linkedin_prompt(source: SourceCommit, hook_pattern: str, experiment_v
            - Hook: single sentence that creates tension or curiosity
            - Context: what were you trying to do?
            - Problem: what went wrong or what did you discover?
+           - Code example: show a small, readable code snippet or config that illustrates the lesson (indented 4 spaces so it renders as code on LinkedIn)
            - Lesson: the concrete, specific insight
            - Proof: a number, before/after, or specific outcome
            - CTA: an open-ended question to invite comments
-        3. Never paste code, diffs, secrets, tokens, or customer data.
-        4. Write in first person. Make it sound like a real engineer sharing a lesson.
-        5. Use short paragraphs (1-2 sentences each) with blank lines between them.
-        6. Keep total length between 800-1500 characters.
-        7. Use 0-2 hashtags maximum at the end, only if highly relevant.
-        8. Do NOT start with "I'm excited to share" or any clichés.
-        9. The post must provide clear value — a reader should learn something concrete.
+        3. Never reference raw commit metadata like line counts, SHAs, or diff summaries.
+        4. DO include actual readable code or config snippets that teach the reader something. Use 4-space indentation for code blocks.
+        5. Write in first person. Make it sound like a real engineer sharing a lesson.
+        6. Use short paragraphs (1-2 sentences each) with blank lines between them.
+        7. Keep total length between 800-1500 characters.
+        8. Use 0-2 hashtags maximum at the end, only if highly relevant.
+        9. Do NOT start with "I'm excited to share" or any clichés.
+        10. The post must provide clear value — a reader should learn something concrete from the code shown.
 
         Return ONLY the LinkedIn post text. No explanations, no meta-commentary.
     """).strip()
@@ -286,30 +288,38 @@ def _placeholder_linkedin(source: SourceCommit, hook_pattern: str) -> str:
 
     Follows the LinkedIn post structure from the README and good-social-posts:
     Hook → Context → Problem → Lesson → Proof → CTA.
-    The output should read like a real LinkedIn post, not a raw data dump.
+    Shows readable code examples — never raw commit metadata like line counts.
     """
     # Build a human-readable first line from the commit message
     first_line = source.message.strip().splitlines()[0] if source.message.strip() else "a recent change"
     first_line = first_line[:120]
 
-    # Summarise the change scope
-    file_count = len(source.files_changed)
-    files_note = (
-        f"across {file_count} files" if file_count > 1
-        else f"in {source.files_changed[0]}" if file_count == 1
-        else "in the codebase"
-    )
+    # Build a readable list of files touched
+    files = source.files_changed[:3]
+    if files:
+        file_list = "\n".join(f"    {f}" for f in files)
+        if len(source.files_changed) > 3:
+            file_list += f"\n    ... and {len(source.files_changed) - 3} more"
+        code_block = f"Here's what the change touched:\n\n{file_list}"
+    else:
+        code_block = "The change was small but the lesson was big."
 
-    diff_note = source.diff_summary if source.diff_summary else "a targeted code change"
+    # Use the full commit message body (after the first line) as additional context
+    msg_lines = source.message.strip().splitlines()
+    body_lines = [l.strip() for l in msg_lines[1:] if l.strip()]
+    if body_lines:
+        context = "\n\n".join(body_lines[:3])
+        context_block = f"\n\n{context}"
+    else:
+        context_block = ""
 
     return textwrap.dedent(f"""\
 {first_line}
 
 That single line hides a real lesson.
+{context_block}
 
-Here's the context:
-
-I was working on a change {files_note} — {diff_note}.
+{code_block}
 
 What looked straightforward turned out to be more nuanced than expected.
 
