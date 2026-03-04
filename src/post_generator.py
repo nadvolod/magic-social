@@ -408,8 +408,9 @@ def generate_post_with_quality_gate(
         )
         return None
 
-    rewritten = post.linkedin_post
+    best_text = post.linkedin_post
     best_quality = quality
+    rewritten = post.linkedin_post  # seed for the first rewrite prompt's current_post arg
     for attempt in range(1, max_rewrites + 1):
         rewritten = _generate_with_openai(
             openai_client,
@@ -426,20 +427,19 @@ def generate_post_with_quality_gate(
         candidate_quality = score_linkedin_post_quality(rewritten, min_chars=min_chars, max_chars=max_chars)
         if candidate_quality.total > best_quality.total:
             best_quality = candidate_quality
-            post.linkedin_post = rewritten
+            best_text = rewritten
         if candidate_quality.total >= quality_threshold:
-            post.linkedin_post = rewritten
             break
 
-    final_quality = score_linkedin_post_quality(post.linkedin_post, min_chars=min_chars, max_chars=max_chars)
-    if final_quality.total < quality_threshold:
+    post.linkedin_post = best_text
+    if best_quality.total < quality_threshold:
         logger.warning(
             "Post %s rejected by quality gate after %d rewrites (%.1f < %.1f): %s",
             post.id,
             max_rewrites,
-            final_quality.total,
+            best_quality.total,
             quality_threshold,
-            "; ".join(final_quality.issues[:3]),
+            "; ".join(best_quality.issues[:3]),
         )
         return None
 
