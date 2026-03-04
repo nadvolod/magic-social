@@ -2,6 +2,9 @@
 
 An AI agent that transforms your GitHub commits into high-quality LinkedIn posts, stores every post as a GitHub Issue, collects performance analytics, and continuously learns to improve future content.
 
+> 📊 **[View Live Metrics Dashboard → METRICS.md](METRICS.md)**  
+> Hook pattern leaderboard · Experiment tracker · Feedback trends · Next improvements
+
 ---
 
 ## 📐 Architecture Overview
@@ -167,6 +170,12 @@ python -m src.agent analytics --repo owner/repo --posts posts.json
 
 # Show experiment summary
 python -m src.agent experiments
+
+# Show feedback & learning summary
+python -m src.agent feedback
+
+# Generate / refresh METRICS.md dashboard
+python -m src.agent metrics
 ```
 
 ### GitHub Actions
@@ -203,7 +212,8 @@ Every generated post is stored as a GitHub Issue with:
 5. Instagram caption
 6. Publishing checklist
 7. Analytics input template
-8. Raw JSON metadata (in collapsible block)
+8. **Post feedback template** (new — rate the post, explain if not published)
+9. Raw JSON metadata (in collapsible block)
 
 **Example analytics comment:**
 ```
@@ -345,13 +355,18 @@ The agent applies privacy-first defaults at every stage:
 - [x] GitHub Issues storage with labels + checklist
 - [x] Learning state with adjustable weights
 - [x] A/B experiment management
+- [x] Few-shot examples from `good-social-posts/` in generation prompt
+- [x] Qualitative feedback loop (`PostFeedback` model + Issue template)
+- [x] `METRICS.md` dashboard (auto-generated via `python -m src.agent metrics`)
 - [ ] Run `python -m src.agent scan --repo your/repo --dry-run`
 - [ ] Review generated posts, approve, publish manually
 - [ ] Add analytics as GitHub Issue comments after 48h
+- [ ] Add post feedback comments (published? why not? rating?)
 
 ### Phase 2 — Automation
 - [ ] LinkedIn API integration for direct publishing
 - [ ] Automated analytics fetching (LinkedIn Analytics API)
+- [ ] Auto-commit `METRICS.md` via GitHub Actions after each analytics run
 - [ ] Slack/email notifications for post approval
 - [ ] Dashboard for engagement trends
 - [ ] Multi-repo support
