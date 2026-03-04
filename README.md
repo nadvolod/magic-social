@@ -184,6 +184,12 @@ python -m src.agent scan --repo owner/repo --since 2024-01-01T00:00:00Z
 # Limit posts per run
 python -m src.agent scan --repo owner/repo --max-posts 2
 
+# Backlog throttle tuning (pause generation if draft backlog is too high)
+python -m src.agent scan --repo owner/repo --max-open-unpublished 8 --max-stale-unpublished 3
+
+# Override backlog throttle for emergency/manual runs
+python -m src.agent scan --repo owner/repo --disable-backlog-throttle
+
 # Collect analytics for published posts
 python -m src.agent analytics --repo owner/repo --posts posts.json
 
@@ -365,6 +371,7 @@ The agent applies privacy-first defaults at every stage:
 | Failure | Mitigation |
 |---------|------------|
 | Low-signal commits | Hard filters + score threshold (< 30 skipped) |
+| Draft backlog overload | Backlog throttle pauses new generation when unpublished drafts exceed limits |
 | Sensitive/confidential code | Privacy filter blocks entire commit; diff summarized, never pasted |
 | Repeated topics | Experiment tracking + topic scores reduce redundancy over time |
 | LLM hallucinations | One-idea rule + proof requirement + human approval checklist |

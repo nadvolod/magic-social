@@ -16,6 +16,7 @@ import argparse
 import logging
 import os
 import sys
+from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
@@ -48,6 +49,96 @@ DEFAULT_EXPERIMENTS_PATH = "experiments.json"
 
 # How many days back to scan for commits when no 'since' date is provided
 DEFAULT_SCAN_DAYS = 7
+DEFAULT_MAX_OPEN_UNPUBLISHED = 10
+DEFAULT_MAX_STALE_UNPUBLISHED = 4
+DEFAULT_STALE_DAYS = 7
+
+
+@dataclass
+class BacklogStats:
+    """Backlog health summary for open social-post issues."""
+
+    total_open_social: int = 0
+    open_unpublished: int = 0
+    stale_unpublished: int = 0
+
+
+def _issue_status_from_labels(labels: list[dict]) -> Optional[str]:
+    """Return the issue status from status:* labels."""
+    for label in labels:
+        name = label.get("name", "")
+        if name.startswith("status:"):
+            return name.split(":", 1)[1]
+    return None
+
+
+def _parse_iso_datetime(value: str) -> Optional[datetime]:
+    """Parse ISO timestamp into timezone-aware datetime."""
+    if not value:
+        return None
+    try:
+        dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
+    except ValueError:
+        return None
+
+
+def fetch_social_post_backlog(
+    repo: str,
+    token: str,
+    stale_days: int = DEFAULT_STALE_DAYS,
+) -> BacklogStats:
+    """
+    Fetch open social-post issues and compute backlog health stats.
+
+    Unpublished backlog includes `status:draft` and `status:approved`.
+    Stale backlog includes unpublished issues older than `stale_days`.
+    """
+    import requests as _requests  # noqa: PLC0415
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+    stats = BacklogStats()
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=stale_days)
+
+    page = 1
+    while True:
+        url = f"https://api.github.com/repos/{repo}/issues"
+        resp = _requests.get(
+            url,
+            headers=headers,
+            params={"state": "open", "labels": "social-post", "per_page": 100, "page": page},
+            timeout=30,
+        )
+        resp.raise_for_status()
+        batch = resp.json()
+        if not batch:
+            break
+
+        for issue in batch:
+            if "pull_request" in issue:
+                continue
+            stats.total_open_social += 1
+            status = _issue_status_from_labels(issue.get("labels", [])) or "draft"
+            if status not in (PostStatus.DRAFT.value, PostStatus.APPROVED.value):
+                continue
+
+            stats.open_unpublished += 1
+            created_at = _parse_iso_datetime(issue.get("created_at", ""))
+            if created_at is not None and created_at <= cutoff:
+                stats.stale_unpublished += 1
+
+        if len(batch) < 100:
+            break
+        page += 1
+
+    return stats
 
 
 def _get_openai_client():
@@ -75,6 +166,10 @@ def run_scan(
     dry_run: bool = False,
     username: Optional[str] = None,
     threshold: float = SCORE_THRESHOLD,
+    backlog_throttle_enabled: bool = True,
+    max_open_unpublished: int = DEFAULT_MAX_OPEN_UNPUBLISHED,
+    max_stale_unpublished: int = DEFAULT_MAX_STALE_UNPUBLISHED,
+    stale_days: int = DEFAULT_STALE_DAYS,
 ) -> list[Post]:
     """
     Run a full commit scan → post generation → GitHub Issue creation cycle.
@@ -90,6 +185,12 @@ def run_scan(
         dry_run:              If True, print posts but don't create issues.
         username:             GitHub username — scan ALL repos for this user.
         threshold:            Minimum commit score to qualify for post generation.
+        backlog_throttle_enabled:
+                              If True, pause generation when draft backlog is too high.
+        max_open_unpublished: Maximum allowed open unpublished social-post issues.
+        max_stale_unpublished:
+                              Maximum allowed stale unpublished issues before pausing.
+        stale_days:           Age threshold (days) for stale unpublished issues.
 
     Returns:
         List of generated Post objects.
@@ -101,6 +202,30 @@ def run_scan(
         since = cutoff.isoformat()
 
     logger.info("Starting commit scan (since=%s)", since)
+
+    # Backlog throttle: pause generation when too many unpublished drafts accumulate.
+    if backlog_throttle_enabled and not dry_run and repo:
+        backlog = fetch_social_post_backlog(repo, token, stale_days=stale_days)
+        if (
+            backlog.open_unpublished >= max_open_unpublished
+            or backlog.stale_unpublished >= max_stale_unpublished
+        ):
+            logger.warning(
+                "Backlog throttle activated for %s: open_unpublished=%d (limit=%d), "
+                "stale_unpublished=%d (limit=%d).",
+                repo,
+                backlog.open_unpublished,
+                max_open_unpublished,
+                backlog.stale_unpublished,
+                max_stale_unpublished,
+            )
+            print(
+                "⏸ Backlog throttle activated — skipping new draft generation.\n"
+                f"Open unpublished: {backlog.open_unpublished} (limit {max_open_unpublished})\n"
+                f"Stale unpublished (>{stale_days}d): {backlog.stale_unpublished} "
+                f"(limit {max_stale_unpublished})"
+            )
+            return []
 
     # Load persistent state
     learning_state = LearningState.load(learning_state_path)
@@ -260,6 +385,9 @@ Examples:
   # Scan and create GitHub Issues
   python -m src.agent scan --repo owner/repo
 
+  # Pause generation automatically if draft backlog is high
+  python -m src.agent scan --repo owner/repo --max-open-unpublished 8 --max-stale-unpublished 3
+
   # Collect analytics for published posts (posts provided via stdin JSON)
   python -m src.agent analytics --repo owner/repo --posts posts.json
 
@@ -283,6 +411,29 @@ Examples:
     scan_parser.add_argument("--max-posts", type=int, default=10, help="Max posts per run")
     scan_parser.add_argument("--dry-run", action="store_true", help="Print posts, don't create issues")
     scan_parser.add_argument("--threshold", type=float, default=SCORE_THRESHOLD, help="Min score threshold")
+    scan_parser.add_argument(
+        "--disable-backlog-throttle",
+        action="store_true",
+        help="Disable backlog throttle and always generate drafts",
+    )
+    scan_parser.add_argument(
+        "--max-open-unpublished",
+        type=int,
+        default=DEFAULT_MAX_OPEN_UNPUBLISHED,
+        help="Backlog throttle limit for open unpublished draft issues",
+    )
+    scan_parser.add_argument(
+        "--max-stale-unpublished",
+        type=int,
+        default=DEFAULT_MAX_STALE_UNPUBLISHED,
+        help="Backlog throttle limit for stale unpublished draft issues",
+    )
+    scan_parser.add_argument(
+        "--stale-days",
+        type=int,
+        default=DEFAULT_STALE_DAYS,
+        help="Issue age threshold in days for stale backlog detection",
+    )
 
     # analytics command
     analytics_parser = subparsers.add_parser("analytics", help="Collect analytics for published posts")
@@ -380,6 +531,10 @@ Examples:
             dry_run=args.dry_run,
             username=args.username,
             threshold=args.threshold,
+            backlog_throttle_enabled=not args.disable_backlog_throttle,
+            max_open_unpublished=args.max_open_unpublished,
+            max_stale_unpublished=args.max_stale_unpublished,
+            stale_days=args.stale_days,
         )
         print(f"\n✅ Generated {len(posts)} post(s).")
 
