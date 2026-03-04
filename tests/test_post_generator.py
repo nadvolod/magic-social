@@ -196,7 +196,6 @@ class TestLoadGoodPostsExamples:
             assert len(ex) > 0
 
     def test_loads_from_good_posts_dir(self, tmp_path):
-        from pathlib import Path
         import src.post_generator as pg
         # Temporarily override the directory to a tmp location
         original = pg._GOOD_POSTS_DIR
