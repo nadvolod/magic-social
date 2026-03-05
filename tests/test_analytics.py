@@ -331,6 +331,37 @@ class TestReactionAndCheckboxFeedback:
         assert fb.published is True
         assert fb.rating == 5
 
+    def test_publish_to_linkedin_checkbox_not_quick_feedback(self):
+        # A publishing checklist item like "- [x] Publish to LinkedIn" must NOT
+        # be parsed as quick-publish feedback — the regex is intentionally strict.
+        body = "- [x] Publish to LinkedIn\n- [ ] Rewrite"
+        fb = parse_feedback_from_issue_body(body, "post-abc")
+        assert fb is None or not fb.published
+
+
+class TestShorthandWordBoundary:
+    def test_bad_inside_longer_word_not_matched(self):
+        # "bad" as a substring of "badge" must not trigger negative feedback.
+        fb = parse_feedback_from_comment("badge", "post-abc")
+        assert fb is None
+
+    def test_bad_with_trailing_punctuation_still_matches(self):
+        # "bad." should still be recognised because \b matches before punctuation.
+        fb = parse_feedback_from_comment("bad.", "post-abc")
+        assert fb is not None
+        assert fb.published is False
+
+    def test_rewrite_inside_longer_word_not_matched(self):
+        # "rewrite" as a prefix/infix should not match inside a composite word.
+        fb = parse_feedback_from_comment("rewritten", "post-abc")
+        assert fb is None
+
+    def test_skip_exact_match(self):
+        fb = parse_feedback_from_comment("skip", "post-abc")
+        assert fb is not None
+        assert fb.published is False
+        assert fb.not_published_reason == "skip"
+
 
 class TestFeedbackDeduplication:
     def test_deduplicates_same_feedback(self):
