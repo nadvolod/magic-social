@@ -22,6 +22,10 @@ BASE_LABELS = ["social-post"]
 # Label names and their descriptions (created on first run)
 LABEL_DEFINITIONS = {
     "social-post": {"color": "0075ca", "description": "AI-generated social media post"},
+    "social-screenshot": {"color": "1d76db", "description": "LinkedIn screenshot for learning/classification"},
+    "screenshot:processed": {"color": "0e8a16", "description": "Screenshot has been analyzed and learned"},
+    "screenshot:top10": {"color": "5319e7", "description": "Screenshot classified as top 10% performance"},
+    "screenshot:bottom90": {"color": "d93f0b", "description": "Screenshot classified as bottom 90% performance"},
     "status:draft": {"color": "e4e669", "description": "Post is a draft awaiting approval"},
     "status:approved": {"color": "0e8a16", "description": "Post approved for publishing"},
     "status:published": {"color": "006b75", "description": "Post has been published"},

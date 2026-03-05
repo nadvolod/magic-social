@@ -119,6 +119,24 @@ def _load_external_social_lessons() -> str:
         return ""
 
 
+@lru_cache(maxsize=1)
+def _load_screenshot_signal_guidance() -> str:
+    """
+    Load compact guidance distilled from screenshot-learning state.
+
+    This lets generation inherit observed external winners/losers without
+    requiring manual curation every time.
+    """
+    try:
+        from .screenshot_learning import ScreenshotLearningState, build_prompt_guidance  # noqa: PLC0415
+
+        state = ScreenshotLearningState.load("screenshot_learning.json")
+        return build_prompt_guidance(state, top_n=5)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Could not load screenshot signal guidance: %s", exc)
+        return ""
+
+
 def _build_system_prompt() -> str:
     examples = _load_good_posts_examples()
     example_block = ""
@@ -135,6 +153,15 @@ def _build_system_prompt() -> str:
             f"{lessons}"
         )
 
+    screenshot_guidance = _load_screenshot_signal_guidance()
+    screenshot_block = ""
+    if screenshot_guidance:
+        screenshot_block = (
+            "\n\nSignals learned from LinkedIn screenshot benchmarking "
+            "(top 10% vs bottom 90% observed posts):\n\n"
+            f"{screenshot_guidance}"
+        )
+
     return textwrap.dedent(f"""
         You are an expert technical LinkedIn content creator for senior engineers and tech leads.
 
@@ -149,7 +176,7 @@ def _build_system_prompt() -> str:
         - Avoid: hashtag spam (0-2 max, only if highly relevant)
         - Topics that work: AI/LLMs, distributed systems, Temporal.io, testing, engineering career
 
-        Tone: Direct. Confident. Specific. Human.{example_block}{lessons_block}
+        Tone: Direct. Confident. Specific. Human.{example_block}{lessons_block}{screenshot_block}
     """).strip()
 
 

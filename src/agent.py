@@ -49,6 +49,12 @@ from .post_generator import (
     QUALITY_GATE_DEFAULT_THRESHOLD,
     generate_post_with_quality_gate,
 )
+from .screenshot_learning import (
+    DEFAULT_SCREENSHOT_STATE_PATH,
+    ScreenshotLearningState,
+    build_signal_balance,
+    run_screenshot_learning_cycle,
+)
 from .scoring import SCORE_THRESHOLD
 from .self_improvement import run_self_improvement_cycle
 
@@ -658,6 +664,9 @@ Examples:
 
   # Run weekly self-improvement analysis (writes SELF_IMPROVEMENT.md)
   python -m src.agent self-improve --repo owner/repo --apply
+
+  # Learn from screenshot-only benchmark issues
+  python -m src.agent screenshot-learn --repo owner/repo
         """,
     )
 
@@ -754,6 +763,11 @@ Examples:
         help="Path to the experiments JSON file",
     )
     metrics_parser.add_argument(
+        "--screenshot-state",
+        default=DEFAULT_SCREENSHOT_STATE_PATH,
+        help="Path to screenshot-learning state JSON file",
+    )
+    metrics_parser.add_argument(
         "--readme",
         default="README.md",
         help="README path containing metrics markers for auto-sync",
@@ -820,6 +834,29 @@ Examples:
         help="Apply safe tuning adjustments to the config file",
     )
 
+    # screenshot-learn command
+    screenshot_parser = subparsers.add_parser(
+        "screenshot-learn",
+        help="Learn from screenshot-only LinkedIn benchmark issues",
+    )
+    screenshot_parser.add_argument("--repo", required=True, help="GitHub repo (owner/repo)")
+    screenshot_parser.add_argument(
+        "--state",
+        default=DEFAULT_SCREENSHOT_STATE_PATH,
+        help="Path to screenshot-learning state JSON file",
+    )
+    screenshot_parser.add_argument(
+        "--max-issues",
+        type=int,
+        default=25,
+        help="Maximum screenshot issues to process per run",
+    )
+    screenshot_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Process and classify without writing state/comments/labels",
+    )
+
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -875,6 +912,7 @@ Examples:
         output = generate_metrics_report(
             learning_state_path=getattr(args, "state", DEFAULT_LEARNING_STATE_PATH),
             experiments_path=getattr(args, "experiments", DEFAULT_EXPERIMENTS_PATH),
+            screenshot_state_path=getattr(args, "screenshot_state", DEFAULT_SCREENSHOT_STATE_PATH),
         )
         out_file = getattr(args, "output", "METRICS.md")
         with open(out_file, "w", encoding="utf-8") as f:
@@ -938,6 +976,26 @@ Examples:
         else:
             print("\nNo config changes applied.")
         print(f"\nReport written to: {args.output}")
+
+    elif args.command == "screenshot-learn":
+        openai_client = _get_openai_client()
+        if openai_client is None:
+            print("Error: OPENAI_API_KEY is required for screenshot learning.", file=sys.stderr)
+            sys.exit(1)
+        learned = run_screenshot_learning_cycle(
+            repo=args.repo,
+            token=token,
+            state_path=args.state,
+            max_issues=args.max_issues,
+            dry_run=args.dry_run,
+            openai_client=openai_client,
+        )
+        print(f"\n✅ Screenshot issues learned: {len(learned)}")
+        for ex in learned[:10]:
+            print(
+                f"  - #{ex.issue_number}: {ex.classification} "
+                f"(score={ex.engagement_score:.1f}, p={ex.percentile * 100:.1f}%)"
+            )
 
 
 def backfill_feedback_comments(repo: str, token: str, dry_run: bool = False) -> int:
@@ -1075,6 +1133,7 @@ def generate_metrics_report(
     learning_state_path: str = DEFAULT_LEARNING_STATE_PATH,
     experiments_path: str = DEFAULT_EXPERIMENTS_PATH,
     linkedin_metrics_path: str = "linkedin_metrics.json",
+    screenshot_state_path: str = DEFAULT_SCREENSHOT_STATE_PATH,
 ) -> str:
     """
     Generate a Markdown metrics dashboard from the current learning state and experiments.
@@ -1086,6 +1145,7 @@ def generate_metrics_report(
     state = LearningState.load(learning_state_path)
     experiments = ExperimentManager(experiments_path)
     linkedin = load_latest_snapshot(linkedin_metrics_path)
+    screenshot_state = ScreenshotLearningState.load(screenshot_state_path)
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
     lines: list[str] = []
@@ -1115,6 +1175,8 @@ def generate_metrics_report(
         f"| Feedback received | {total_feedback} |",
         f"| Average post rating | {avg_rating_str} |",
         f"| Best performing posts (rolling 20) | {len(state.best_performing_posts)} |",
+        f"| Screenshot examples analyzed | {len(screenshot_state.examples)} |",
+        f"| Screenshot top 10% | {screenshot_state.top_10_count} |",
     ]
 
     if linkedin:
@@ -1283,6 +1345,35 @@ def generate_metrics_report(
 
     lines += ["", "---", ""]
 
+    # ------------------------------------------------- screenshot learning
+    lines += [
+        "## 🖼️ Screenshot Learning",
+        "",
+        "Benchmark issues labeled `social-screenshot` are AI-read from screenshots only,",
+        "classified into top 10% vs bottom 90%, then converted into signal memory.",
+        "",
+        f"- Screenshots processed: **{len(screenshot_state.examples)}**",
+        f"- Top 10% examples: **{screenshot_state.top_10_count}**",
+        f"- Bottom 90% examples: **{screenshot_state.bottom_90_count}**",
+        "",
+    ]
+    positives, negatives = build_signal_balance(screenshot_state, top_n=6)
+    if positives:
+        lines.append("**Winning signals to repeat:**")
+        lines.extend(f"- `{p}`" for p in positives)
+        lines.append("")
+    if negatives:
+        lines.append("**Signals to avoid:**")
+        lines.extend(f"- `{n}`" for n in negatives)
+        lines.append("")
+    if not positives and not negatives:
+        lines += [
+            "_No screenshot signal deltas yet. Open an issue with label `social-screenshot` and upload one screenshot._",
+            "",
+        ]
+
+    lines += ["---", ""]
+
     # ------------------------------------------------- qualitative feedback
     lines += [
         "## 💬 Qualitative Feedback",
@@ -1429,6 +1520,9 @@ def generate_metrics_report(
         "",
         "# Poll LinkedIn API for post metrics + follower count",
         "python -m src.agent linkedin-poll",
+        "",
+        "# Learn from screenshot-only benchmark issues",
+        "python -m src.agent screenshot-learn --repo owner/repo",
         "",
         "# Collect analytics (updates learning state, then regenerate)",
         "python -m src.agent analytics --repo owner/repo --posts posts.json",

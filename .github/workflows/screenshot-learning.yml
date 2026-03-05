@@ -1,0 +1,66 @@
+name: Learn From Screenshot Issues
+
+on:
+  issues:
+    types: [opened, edited, reopened]
+  workflow_dispatch:
+    inputs:
+      max_issues:
+        description: "Maximum screenshot issues to process"
+        required: false
+        default: "25"
+  schedule:
+    # Daily catch-up pass
+    - cron: "30 6 * * *"
+
+jobs:
+  screenshot-learn:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Learn from screenshot issues
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          MAX_ISSUES="${{ inputs.max_issues || '25' }}"
+          python -m src.agent screenshot-learn \
+            --repo "${{ github.repository }}" \
+            --state screenshot_learning.json \
+            --max-issues "$MAX_ISSUES"
+
+      - name: Regenerate metrics dashboard
+        run: python -m src.agent metrics
+
+      - name: Commit updated screenshot learning + dashboard
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          for f in screenshot_learning.json METRICS.md README.md; do
+            if [ -f "$f" ]; then
+              git add "$f"
+            fi
+          done
+
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: learn from LinkedIn screenshots [skip ci]"
+            git push
+          fi
