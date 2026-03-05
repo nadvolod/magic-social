@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Optional
 
 import requests
-import yaml
+from ruamel.yaml import YAML
 
 from .analytics import LearningState
 
@@ -131,7 +131,11 @@ def apply_config_tunings(config_path: str, state: LearningState, ctx: Improvemen
         logger.warning("Config path not found: %s", config_path)
         return []
 
-    config = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+    ryaml = YAML()
+    ryaml.preserve_quotes = True
+    with path.open(encoding="utf-8") as fh:
+        config = ryaml.load(fh) or {}
+
     agent = config.setdefault("agent", {})
     post_gen = config.setdefault("post_generation", {})
 
@@ -173,7 +177,8 @@ def apply_config_tunings(config_path: str, state: LearningState, ctx: Improvemen
             changes.append(f"Raised `agent.score_threshold` from {score_threshold:.1f} to {new_threshold:.1f}")
 
     if changes:
-        path.write_text(yaml.safe_dump(config, sort_keys=False), encoding="utf-8")
+        with path.open("w", encoding="utf-8") as fh:
+            ryaml.dump(config, fh)
 
     return changes
 
