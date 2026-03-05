@@ -103,6 +103,7 @@ LOW_VALUE_PATTERNS = [
     r"whitespace",
 ]
 
+
 # Privacy/security-sensitive patterns that should never be published
 SENSITIVE_PATTERNS = [
     r"api[_\s]?key",

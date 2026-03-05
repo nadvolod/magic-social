@@ -118,6 +118,17 @@ def _build_issue_body(post: Post) -> str:
 Whether or not you publish this post, please add a comment with your honest feedback.
 This helps the agent learn your preferences and improve future posts.
 
+Quick mobile options (copy one or two lines):
+```
+## Post Feedback
+- Verdict: ✅ published
+- Verdict: ❌ skipped
+- Reason: quality
+- Rating: 4
+- Improve: add one concrete metric and stronger takeaway
+```
+
+Detailed option:
 ```
 ## Post Feedback — [DATE]
 

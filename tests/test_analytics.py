@@ -263,6 +263,38 @@ class TestParseFeedbackFromComment:
         assert fb.published is False
         assert fb.not_published_reason is None  # placeholder, not filled
 
+    def test_mobile_quick_format_with_verdict_reason_and_improve(self):
+        comment = (
+            "## Post Feedback\n"
+            "- Verdict: ❌ skipped\n"
+            "- Reason: quality\n"
+            "- Improve: add concrete numbers\n"
+            "- Rating: 2\n"
+        )
+        fb = parse_feedback_from_comment(comment, "post-abc")
+        assert fb is not None
+        assert fb.published is False
+        assert fb.not_published_reason == "quality"
+        assert "concrete numbers" in (fb.improvement_notes or "")
+        assert fb.rating == 2
+
+    def test_mobile_quick_format_with_published_checkmark(self):
+        comment = "## Post Feedback\n- Verdict: ✅ published\n- Rating: 5\n"
+        fb = parse_feedback_from_comment(comment, "post-abc")
+        assert fb is not None
+        assert fb.published is True
+        assert fb.rating == 5
+
+    def test_free_text_feedback_with_heading_is_captured(self):
+        comment = (
+            "## Post Feedback\n"
+            "Too generic for my audience. Lead with one specific result and clear takeaway.\n"
+        )
+        fb = parse_feedback_from_comment(comment, "post-abc")
+        assert fb is not None
+        assert fb.improvement_notes is not None
+        assert "Too generic" in fb.improvement_notes
+
 
 class TestApplyQualitativeFeedback:
     def test_increments_feedback_count(self):
