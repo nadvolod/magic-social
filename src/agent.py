@@ -1406,7 +1406,7 @@ def generate_metrics_report(
         "",
         "### 🟢 Roadmap (Phase 2)",
         "",
-        "- [ ] Auto-commit `METRICS.md` and `linkedin_metrics.json` via GitHub Actions after each daily poll",
+        "- [x] Auto-commit dashboard artifacts via GitHub Actions (`linkedin_metrics.json`, `METRICS.md`, `README.md`)",
         "- [ ] Publish rate tracker — detect published posts via LinkedIn API, no manual status updates",
         "- [ ] Slack/email alert when a post is ready for review",
         "- [ ] Topic gap analysis — highlight topics not covered in the last 30 days",
