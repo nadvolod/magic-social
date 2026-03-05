@@ -857,6 +857,14 @@ def backfill_feedback_comments(repo: str, token: str, dry_run: bool = False) -> 
         "it takes under 30 seconds:\n\n"
         "```\n"
         "## Post Feedback\n\n"
+        "- Verdict: ✅ published  OR  ❌ skipped\n"
+        "- Reason: quality / style / not relevant / too long / too technical / other\n"
+        "- Improve: <short text>\n"
+        "- Rating: 1-5\n"
+        "```\n\n"
+        "Or use the detailed format:\n\n"
+        "```\n"
+        "## Post Feedback\n\n"
         "- Published: yes / no\n"
         "- If not published, why: quality / style / not relevant / too long / too technical / other\n"
         "- What would make it better: \n"
@@ -1164,7 +1172,18 @@ def generate_metrics_report(
         "",
         "### How to Give Feedback",
         "",
-        "On any generated GitHub Issue, add a comment:",
+        "Quick mobile format:",
+        "",
+        "```",
+        "## Post Feedback",
+        "",
+        "- Verdict: ✅ published  OR  ❌ skipped",
+        "- Reason: quality / style / not relevant / too long / too technical / other",
+        "- Improve: ",
+        "- Rating: 1-5",
+        "```",
+        "",
+        "Detailed format:",
         "",
         "```",
         "## Post Feedback — YYYY-MM-DD",
@@ -1173,6 +1192,13 @@ def generate_metrics_report(
         "- If not published, why: quality / style / not relevant / too long / too technical / other",
         "- What would make it better: ",
         "- Rating (1-5): ",
+        "```",
+        "",
+        "Free-text also works (still include `## Post Feedback`):",
+        "",
+        "```",
+        "## Post Feedback",
+        "This one felt too generic. Make it sharper and include one concrete number.",
         "```",
         "",
         "---",
