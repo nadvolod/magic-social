@@ -40,7 +40,12 @@ from .github_storage import (
     update_issue_status,
 )
 from .models import Post, PostStatus
-from .post_generator import HOOK_PATTERNS, generate_post
+from .post_generator import (
+    HOOK_PATTERNS,
+    QUALITY_GATE_DEFAULT_MAX_REWRITES,
+    QUALITY_GATE_DEFAULT_THRESHOLD,
+    generate_post_with_quality_gate,
+)
 from .scoring import SCORE_THRESHOLD
 from .self_improvement import run_self_improvement_cycle
 
@@ -79,6 +84,8 @@ def run_scan(
     dry_run: bool = False,
     username: Optional[str] = None,
     threshold: float = SCORE_THRESHOLD,
+    quality_threshold: float = QUALITY_GATE_DEFAULT_THRESHOLD,
+    max_rewrites: int = QUALITY_GATE_DEFAULT_MAX_REWRITES,
 ) -> list[Post]:
     """
     Run a full commit scan → post generation → GitHub Issue creation cycle.
@@ -94,6 +101,8 @@ def run_scan(
         dry_run:              If True, print posts but don't create issues.
         username:             GitHub username — scan ALL repos for this user.
         threshold:            Minimum commit score to qualify for post generation.
+        quality_threshold:    Minimum LinkedIn post quality score required (0-100).
+        max_rewrites:         Maximum OpenAI rewrite attempts when quality is low.
 
     Returns:
         List of generated Post objects.
@@ -155,13 +164,22 @@ def run_scan(
                 hook_pattern = experiment_variant
                 experiment_id = active_exp.id
 
-        post = generate_post(
+        post = generate_post_with_quality_gate(
             source=source,
             hook_pattern=hook_pattern,
             experiment_id=experiment_id,
             experiment_variant=experiment_variant,
             openai_client=openai_client,
+            quality_threshold=quality_threshold,
+            max_rewrites=max_rewrites,
         )
+        if post is None:
+            logger.info(
+                "Skipping commit %s — generated post failed quality gate (threshold=%.1f)",
+                source.sha[:8],
+                quality_threshold,
+            )
+            continue
 
         if dry_run:
             print("\n" + "=" * 60)
@@ -324,6 +342,18 @@ Examples:
     scan_parser.add_argument("--max-posts", type=int, default=10, help="Max posts per run")
     scan_parser.add_argument("--dry-run", action="store_true", help="Print posts, don't create issues")
     scan_parser.add_argument("--threshold", type=float, default=SCORE_THRESHOLD, help="Min score threshold")
+    scan_parser.add_argument(
+        "--quality-threshold",
+        type=float,
+        default=QUALITY_GATE_DEFAULT_THRESHOLD,
+        help="Minimum post quality score to accept (0-100)",
+    )
+    scan_parser.add_argument(
+        "--max-rewrites",
+        type=int,
+        default=QUALITY_GATE_DEFAULT_MAX_REWRITES,
+        help="Maximum rewrite attempts when quality is below threshold",
+    )
 
     # analytics command
     analytics_parser = subparsers.add_parser("analytics", help="Collect analytics for published posts")
@@ -448,6 +478,8 @@ Examples:
             dry_run=args.dry_run,
             username=args.username,
             threshold=args.threshold,
+            quality_threshold=args.quality_threshold,
+            max_rewrites=args.max_rewrites,
         )
         print(f"\n✅ Generated {len(posts)} post(s).")
 
