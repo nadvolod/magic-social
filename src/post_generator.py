@@ -7,9 +7,12 @@ import logging
 import re
 import textwrap
 from dataclasses import dataclass, field
+import os
+from functools import lru_cache
 from pathlib import Path
 from typing import Optional
 
+from .lesson_source import load_social_lessons
 from .models import Post, PostStatus, SourceCommit
 
 logger = logging.getLogger(__name__)
@@ -34,6 +37,14 @@ QUALITY_GATE_DEFAULT_MAX_REWRITES = 2
 
 # Directory containing hand-picked example posts (relative to repo root)
 _GOOD_POSTS_DIR = Path(__file__).parent.parent / "good-social-posts"
+
+# Default external lesson source. Can be overridden with SOCIAL_LESSONS_DOC_URL.
+DEFAULT_SOCIAL_LESSONS_DOC_URL = (
+    "https://docs.google.com/document/d/1GQD7a49V9B96wzTYt33mlJb3gae5quJzRcf4d3GiPh0/edit?usp=sharing"
+)
+
+# Keep external lesson context bounded for prompt efficiency.
+MAX_EXTERNAL_LESSONS_CHARS = 3500
 
 
 def _load_good_posts_examples() -> list[str]:
@@ -81,12 +92,48 @@ def _extract_linkedin_section(content: str) -> str:
     return "\n".join(post_lines).strip()
 
 
+@lru_cache(maxsize=1)
+def _load_external_social_lessons() -> str:
+    """
+    Load maintained social-post lessons from env-configured sources.
+
+    Priority:
+      1) SOCIAL_LESSONS_FILE (local file path)
+      2) SOCIAL_LESSONS_DOC_URL (Google Doc URL)
+      3) DEFAULT_SOCIAL_LESSONS_DOC_URL
+    """
+    lessons_file = os.environ.get("SOCIAL_LESSONS_FILE", "").strip()
+    doc_url = os.environ.get("SOCIAL_LESSONS_DOC_URL", "").strip()
+    if not doc_url:
+        doc_url = DEFAULT_SOCIAL_LESSONS_DOC_URL
+    if doc_url.lower() in {"off", "none", "false", "0"}:
+        doc_url = ""
+    try:
+        return load_social_lessons(
+            doc_url=doc_url,
+            file_path=lessons_file or None,
+            max_chars=MAX_EXTERNAL_LESSONS_CHARS,
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Could not load external social lessons: %s", exc)
+        return ""
+
+
 def _build_system_prompt() -> str:
     examples = _load_good_posts_examples()
     example_block = ""
     if examples:
         formatted = "\n\n---\n\n".join(examples)
         example_block = f"\n\nHere are real examples of high-performing posts. Study their structure, tone, and style closely — your output must match this quality:\n\n{formatted}"
+
+    lessons = _load_external_social_lessons()
+    lessons_block = ""
+    if lessons:
+        lessons_block = (
+            "\n\nAdditional social-post lessons from the maintained playbook. "
+            "Treat them as high-priority guidance when drafting:\n\n"
+            f"{lessons}"
+        )
 
     return textwrap.dedent(f"""
         You are an expert technical LinkedIn content creator for senior engineers and tech leads.
@@ -102,7 +149,7 @@ def _build_system_prompt() -> str:
         - Avoid: hashtag spam (0-2 max, only if highly relevant)
         - Topics that work: AI/LLMs, distributed systems, Temporal.io, testing, engineering career
 
-        Tone: Direct. Confident. Specific. Human.{example_block}
+        Tone: Direct. Confident. Specific. Human.{example_block}{lessons_block}
     """).strip()
 
 

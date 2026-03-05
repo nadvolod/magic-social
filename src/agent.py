@@ -22,10 +22,12 @@ from typing import Optional
 from .analytics import (
     LearningState,
     _apply_qualitative_feedback,
+    infer_implicit_feedback,
     fetch_issue_analytics,
     fetch_issue_feedback,
     get_analytics_prompt,
     get_best_hook_pattern,
+    should_apply_feedback,
     update_learning_state,
 )
 from .commit_scanner import scan_all_user_commits, scan_commits
@@ -34,6 +36,7 @@ from .github_storage import (
     add_analytics_comment,
     create_post_issue,
     get_analytics_request_message,
+    load_posts_from_issues,
     update_issue_status,
 )
 from .models import Post, PostStatus
@@ -44,6 +47,7 @@ from .post_generator import (
     generate_post_with_quality_gate,
 )
 from .scoring import SCORE_THRESHOLD
+from .self_improvement import run_self_improvement_cycle
 
 logger = logging.getLogger(__name__)
 
@@ -140,6 +144,11 @@ def run_scan(
 
     # Generate posts
     openai_client = _get_openai_client()
+    if openai_client is None and not dry_run:
+        raise RuntimeError(
+            "OPENAI_API_KEY is required for non-dry-run scans. "
+            "Refusing to create low-quality placeholder issues."
+        )
     generated_posts: list[Post] = []
 
     for source in source_commits[:max_posts]:
@@ -222,9 +231,38 @@ def run_analytics_collection(
         # This runs regardless of status so that rejection reasons from
         # non-published (draft/archived) posts are also captured.
         feedback = fetch_issue_feedback(repo, token, post.github_issue_number, post.id)
-        if feedback is not None:
+        has_explicit_feedback = feedback is not None
+        explicit_published = feedback is not None and feedback.published is True
+        if feedback is not None and should_apply_feedback(learning_state, post.id, feedback):
             _apply_qualitative_feedback(learning_state, feedback)
             learning_state.save(learning_state_path)
+
+        # Promote to published when quick feedback explicitly says it's published.
+        if explicit_published and post.status != PostStatus.PUBLISHED:
+            update_issue_status(repo, token, post.github_issue_number, PostStatus.PUBLISHED)
+            post.status = PostStatus.PUBLISHED
+
+        # --- Pass 1b: infer feedback from inactivity for non-published posts ---
+        implicit_feedback = infer_implicit_feedback(
+            state=learning_state,
+            post=post,
+            has_explicit_feedback=has_explicit_feedback,
+            explicit_published=explicit_published,
+        )
+        for event_key, inferred in implicit_feedback:
+            if should_apply_feedback(learning_state, post.id, inferred):
+                _apply_qualitative_feedback(learning_state, inferred)
+                learning_state.save(learning_state_path)
+                logger.info("Applied implicit feedback for %s: %s", post.id, event_key)
+
+        # Auto-archive stale unpublished drafts after 7 days.
+        if (
+            post.status not in (PostStatus.PUBLISHED, PostStatus.ARCHIVED)
+            and any(event_key == "stale_unpublished_7d" for event_key, _ in implicit_feedback)
+        ):
+            update_issue_status(repo, token, post.github_issue_number, PostStatus.ARCHIVED)
+            post.status = PostStatus.ARCHIVED
+            logger.info("Auto-archived stale unpublished draft: %s", post.id)
 
         # --- Pass 2: quantitative analytics (published posts only) ---
         if post.status != PostStatus.PUBLISHED:
@@ -286,6 +324,9 @@ Examples:
 
   # Show learning state summary (feedback, ratings, not-published reasons)
   python -m src.agent feedback --summary
+
+  # Run weekly self-improvement analysis (writes SELF_IMPROVEMENT.md)
+  python -m src.agent self-improve --repo owner/repo --apply
         """,
     )
 
@@ -388,6 +429,33 @@ Examples:
         help="Path to write the snapshot history (default: linkedin_metrics.json)",
     )
 
+    # self-improve command
+    improve_parser = subparsers.add_parser(
+        "self-improve",
+        help="Analyze backlog + feedback signals and produce weekly tuning recommendations",
+    )
+    improve_parser.add_argument("--repo", required=True, help="GitHub repo (owner/repo)")
+    improve_parser.add_argument(
+        "--state",
+        default=DEFAULT_LEARNING_STATE_PATH,
+        help="Path to the learning state JSON file",
+    )
+    improve_parser.add_argument(
+        "--config",
+        default="config.yaml",
+        help="Path to config YAML for automatic tuning",
+    )
+    improve_parser.add_argument(
+        "--output",
+        default="SELF_IMPROVEMENT.md",
+        help="Output markdown report path (default: SELF_IMPROVEMENT.md)",
+    )
+    improve_parser.add_argument(
+        "--apply",
+        action="store_true",
+        help="Apply safe tuning adjustments to the config file",
+    )
+
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -423,6 +491,9 @@ Examples:
                 posts_data = _json.load(f)
             from .models import Post as _Post  # noqa: PLC0415
             posts = [_Post.from_dict(p) for p in posts_data]
+        else:
+            posts = load_posts_from_issues(args.repo, token, state="all")
+            logger.info("Loaded %d posts from GitHub issues for analytics", len(posts))
         run_analytics_collection(repo=args.repo, token=token, posts=posts)
 
     elif args.command == "experiments":
@@ -467,6 +538,29 @@ Examples:
             output=args.output,
         )
 
+    elif args.command == "self-improve":
+        changes, ctx = run_self_improvement_cycle(
+            repo=args.repo,
+            token=token,
+            learning_state_path=args.state,
+            config_path=args.config,
+            report_output=args.output,
+            apply=args.apply,
+        )
+        print("\n🛠 Self-Improvement Summary")
+        print("=" * 50)
+        print(f"Social issues:         {ctx.total_social_issues}")
+        print(f"Open unpublished:      {ctx.open_unpublished}")
+        print(f"Stale unpublished 7d:  {ctx.stale_unpublished_7d}")
+        print(f"Unreviewed 72h:        {ctx.old_unreviewed_72h}")
+        if changes:
+            print("\nApplied config changes:")
+            for change in changes:
+                print(f"  - {change}")
+        else:
+            print("\nNo config changes applied.")
+        print(f"\nReport written to: {args.output}")
+
 
 def backfill_feedback_comments(repo: str, token: str, dry_run: bool = False) -> int:
     """
@@ -505,9 +599,11 @@ def backfill_feedback_comments(repo: str, token: str, dry_run: bool = False) -> 
 
     # Minimal feedback template — as short as possible while still being parseable
     feedback_template = (
-        "## Post Feedback\n\n"
-        "Add your feedback by editing this comment or replying below — "
-        "it takes under 30 seconds:\n\n"
+        "## Quick Feedback\n\n"
+        "Fastest options:\n\n"
+        "- React to the issue: 👍 good, 👎 bad, 🚀 published\n"
+        "- Or comment one word: `publish`, `rewrite`, `skip`, `too long`, `not relevant`, `weak hook`\n\n"
+        "Optional full template:\n\n"
         "```\n"
         "## Post Feedback\n\n"
         "- Published: yes / no\n"
@@ -531,11 +627,11 @@ def backfill_feedback_comments(repo: str, token: str, dry_run: bool = False) -> 
         existing_comments = comments_resp.json()
 
         already_has_feedback = any(
-            "Post Feedback" in c.get("body", "")
+            "Post Feedback" in c.get("body", "") or "Quick Feedback" in c.get("body", "")
             for c in existing_comments
         )
-        # Also check the issue body itself (new issues already have the template)
-        if "Post Feedback" in issue.get("body", ""):
+        # Also check the issue body itself (new issues already have quick feedback section)
+        if "Post Feedback" in issue.get("body", "") or "Quick Mobile Feedback" in issue.get("body", ""):
             already_has_feedback = True
 
         if already_has_feedback:
@@ -673,7 +769,7 @@ def generate_metrics_report(
             bar = "█" * count
             lines.append(f"- **{reason}** — {count}× {bar}")
     else:
-        lines.append("- _No feedback collected yet. Add a `## Post Feedback` comment to any issue._")
+        lines.append("- _No feedback collected yet. Use issue reactions (👍/👎/🚀) or a quick comment._")
 
     lines += ["", "---", ""]
 
@@ -805,7 +901,7 @@ def generate_metrics_report(
     lines += [
         "## 💬 Qualitative Feedback",
         "",
-        "Parsed from `## Post Feedback` comments on GitHub Issues.",
+        "Parsed from GitHub Issue reactions, quick comments, and `## Post Feedback` templates.",
         "",
         f"- Total feedback comments received: **{state.total_feedback_received}**",
         f"- Posts rated: **{state.total_ratings_received}**",
@@ -813,11 +909,16 @@ def generate_metrics_report(
         "",
         "**Improvement themes** (from 'What would make it better?'):",
         "",
-        "_Add a `## Post Feedback` comment to any post issue to contribute data here._",
+        "_Use quick reactions (👍/👎/🚀) or a short comment on any post issue to contribute data here._",
         "",
         "### How to Give Feedback",
         "",
-        "On any generated GitHub Issue, add a comment:",
+        "On any generated GitHub Issue, choose the fastest option:",
+        "",
+        "- React to the issue: 👍 good draft, 👎 bad draft, 🚀 published",
+        "- Add a short comment: `publish`, `rewrite`, `skip`, `too long`, `not relevant`, `weak hook`",
+        "",
+        "Optional full template:",
         "",
         "```",
         "## Post Feedback — YYYY-MM-DD",

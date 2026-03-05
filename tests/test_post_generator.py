@@ -9,6 +9,7 @@ from src.post_generator import (
     QUALITY_GATE_DEFAULT_MAX_REWRITES,
     QUALITY_GATE_DEFAULT_THRESHOLD,
     QualityScore,
+    _build_system_prompt,
     _extract_lesson,
     _extract_linkedin_section,
     _infer_tags,
@@ -374,3 +375,10 @@ class TestQualityGateGeneration:
             max_rewrites=2,
         )
         assert result is None
+class TestSystemPrompt:
+    def test_includes_external_lessons_when_available(self, monkeypatch):
+        monkeypatch.setattr(pg, "_load_good_posts_examples", lambda: [])
+        monkeypatch.setattr(pg, "_load_external_social_lessons", lambda: "Use stronger proof.\nAvoid weak hooks.")
+        prompt = _build_system_prompt()
+        assert "Use stronger proof." in prompt
+        assert "Avoid weak hooks." in prompt

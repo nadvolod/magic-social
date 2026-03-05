@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -39,6 +40,11 @@ LABEL_DEFINITIONS = {
     "engineering": {"color": "006b75", "description": "General engineering topic"},
     "experiment": {"color": "f9d0c4", "description": "Part of an A/B experiment"},
 }
+
+RAW_POST_JSON_RE = re.compile(
+    r"Raw Post Data.*?```json\s*(\{.*?\})\s*```",
+    re.IGNORECASE | re.DOTALL,
+)
 
 
 def _headers(token: str) -> dict:
@@ -99,6 +105,24 @@ def _build_issue_body(post: Post) -> str:
 <!-- Copy-paste the text below into LinkedIn -->
 
 {post.linkedin_post}
+
+---
+
+## ⚡ Quick Mobile Feedback
+
+If you're on mobile, use any one of these:
+
+- [ ] Publish
+- [ ] Rewrite
+- [ ] Skip
+- [ ] Too long
+- [ ] Not relevant
+- [ ] Weak hook
+
+Or just react to this issue:
+- 👍 good draft
+- 👎 bad draft
+- 🚀 published
 
 ---
 
@@ -175,6 +199,114 @@ After publishing, add a comment to this issue with your metrics:
 
 </details>
 """
+
+
+def _extract_post_json(issue_body: str) -> Optional[dict]:
+    """Extract the raw Post JSON payload from the issue body."""
+    if not issue_body:
+        return None
+    match = RAW_POST_JSON_RE.search(issue_body)
+    if match is None:
+        return None
+    try:
+        return json.loads(match.group(1))
+    except json.JSONDecodeError:
+        return None
+
+
+def _status_from_labels(labels: list[dict]) -> Optional[PostStatus]:
+    """Return status parsed from status:* labels."""
+    for label in labels:
+        name = label.get("name", "")
+        if name.startswith("status:"):
+            status_raw = name.split(":", 1)[1]
+            try:
+                return PostStatus(status_raw)
+            except ValueError:
+                return None
+    return None
+
+
+def list_social_post_issues(repo: str, token: str, state: str = "all") -> list[dict]:
+    """Fetch social-post issues from GitHub (excluding pull requests)."""
+    issues: list[dict] = []
+    page = 1
+    while True:
+        url = f"{GITHUB_API}/repos/{repo}/issues"
+        resp = requests.get(
+            url,
+            headers=_headers(token),
+            params={"state": state, "labels": "social-post", "per_page": 100, "page": page},
+            timeout=30,
+        )
+        resp.raise_for_status()
+        batch = resp.json()
+        if not batch:
+            break
+        for issue in batch:
+            if "pull_request" not in issue:
+                issues.append(issue)
+        if len(batch) < 100:
+            break
+        page += 1
+    return issues
+
+
+def load_posts_from_issues(repo: str, token: str, state: str = "all") -> list[Post]:
+    """
+    Load Post objects from existing social-post issues.
+
+    Uses embedded Raw Post Data JSON when available; falls back to minimal
+    inferred fields if the JSON block is missing.
+    """
+    issues = list_social_post_issues(repo, token, state=state)
+    posts: list[Post] = []
+
+    for issue in issues:
+        issue_number = issue["number"]
+        labels = issue.get("labels", [])
+        status = _status_from_labels(labels) or PostStatus.DRAFT
+        issue_created = issue.get("created_at", datetime.now(timezone.utc).isoformat())
+        issue_updated = issue.get("updated_at", issue_created)
+
+        payload = _extract_post_json(issue.get("body", ""))
+        if payload:
+            try:
+                post = Post.from_dict(payload)
+            except Exception:  # noqa: BLE001
+                post = Post(
+                    id=f"issue-{issue_number}",
+                    source_commit_sha="unknown",
+                    repo=repo,
+                    lesson=issue.get("title", f"Issue #{issue_number}"),
+                    linkedin_post="",
+                    x_thread="",
+                    ig_caption="",
+                    hook_pattern="result",
+                )
+        else:
+            post = Post(
+                id=f"issue-{issue_number}",
+                source_commit_sha="unknown",
+                repo=repo,
+                lesson=issue.get("title", f"Issue #{issue_number}"),
+                linkedin_post="",
+                x_thread="",
+                ig_caption="",
+                hook_pattern="result",
+            )
+
+        post.github_issue_number = issue_number
+        post.status = status
+        post.created_at = post.created_at or issue_created
+        if post.created_at == "":
+            post.created_at = issue_created
+        if post.status == PostStatus.PUBLISHED and not post.published_at:
+            post.published_at = issue_updated
+        posts.append(post)
+
+    posts.sort(key=lambda p: p.created_at, reverse=True)
+    return posts
 
 
 def create_post_issue(

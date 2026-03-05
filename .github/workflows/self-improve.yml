@@ -1,0 +1,57 @@
+name: Weekly Self-Improvement PR
+
+on:
+  schedule:
+    # Every Monday at 10:00 UTC
+    - cron: "0 10 * * 1"
+  workflow_dispatch:
+
+jobs:
+  self-improve:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run weekly self-improvement analysis
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python -m src.agent self-improve \
+            --repo "${{ github.repository }}" \
+            --state learning_state.json \
+            --config config.yaml \
+            --output SELF_IMPROVEMENT.md \
+            --apply
+
+      - name: Create pull request with improvements
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: codex/weekly-self-improvement
+          delete-branch: true
+          commit-message: "chore: weekly self-improvement tuning [skip ci]"
+          title: "chore: weekly self-improvement tuning"
+          body: |
+            Automated weekly self-improvement update.
+
+            Includes:
+            - latest `SELF_IMPROVEMENT.md` report
+            - safe tuning adjustments to `config.yaml` based on stale/unreviewed backlog signals
+          add-paths: |
+            SELF_IMPROVEMENT.md
+            config.yaml

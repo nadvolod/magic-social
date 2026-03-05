@@ -14,7 +14,7 @@ jobs:
   collect-analytics:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       issues: write
 
     steps:
@@ -46,5 +46,26 @@ jobs:
 
           python -m src.agent analytics $ARGS
 
+      - name: Regenerate METRICS.md
+        run: python -m src.agent metrics
+
       - name: Show experiment summary
         run: python -m src.agent experiments
+
+      - name: Commit updated learning state + metrics
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          for f in learning_state.json experiments.json METRICS.md; do
+            if [ -f "$f" ]; then
+              git add "$f"
+            fi
+          done
+
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: update learning state and metrics [skip ci]"
+            git push
+          fi
