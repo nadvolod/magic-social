@@ -4,10 +4,15 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import re
 import textwrap
+from dataclasses import dataclass, field
+import os
+from functools import lru_cache
 from pathlib import Path
 from typing import Optional
 
+from .lesson_source import load_social_lessons
 from .models import Post, PostStatus, SourceCommit
 
 logger = logging.getLogger(__name__)
@@ -27,9 +32,19 @@ HOOK_PATTERNS = {
 
 # LinkedIn post hard limit; the prompt instructs the model to stay within 800-1500 chars
 MAX_LINKEDIN_CHARS = 3000
+QUALITY_GATE_DEFAULT_THRESHOLD = 75.0
+QUALITY_GATE_DEFAULT_MAX_REWRITES = 2
 
 # Directory containing hand-picked example posts (relative to repo root)
 _GOOD_POSTS_DIR = Path(__file__).parent.parent / "good-social-posts"
+
+# Default external lesson source. Can be overridden with SOCIAL_LESSONS_DOC_URL.
+DEFAULT_SOCIAL_LESSONS_DOC_URL = (
+    "https://docs.google.com/document/d/1GQD7a49V9B96wzTYt33mlJb3gae5quJzRcf4d3GiPh0/edit?usp=sharing"
+)
+
+# Keep external lesson context bounded for prompt efficiency.
+MAX_EXTERNAL_LESSONS_CHARS = 3500
 
 
 def _load_good_posts_examples() -> list[str]:
@@ -77,12 +92,48 @@ def _extract_linkedin_section(content: str) -> str:
     return "\n".join(post_lines).strip()
 
 
+@lru_cache(maxsize=1)
+def _load_external_social_lessons() -> str:
+    """
+    Load maintained social-post lessons from env-configured sources.
+
+    Priority:
+      1) SOCIAL_LESSONS_FILE (local file path)
+      2) SOCIAL_LESSONS_DOC_URL (Google Doc URL)
+      3) DEFAULT_SOCIAL_LESSONS_DOC_URL
+    """
+    lessons_file = os.environ.get("SOCIAL_LESSONS_FILE", "").strip()
+    doc_url = os.environ.get("SOCIAL_LESSONS_DOC_URL", "").strip()
+    if not doc_url:
+        doc_url = DEFAULT_SOCIAL_LESSONS_DOC_URL
+    if doc_url.lower() in {"off", "none", "false", "0"}:
+        doc_url = ""
+    try:
+        return load_social_lessons(
+            doc_url=doc_url,
+            file_path=lessons_file or None,
+            max_chars=MAX_EXTERNAL_LESSONS_CHARS,
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Could not load external social lessons: %s", exc)
+        return ""
+
+
 def _build_system_prompt() -> str:
     examples = _load_good_posts_examples()
     example_block = ""
     if examples:
         formatted = "\n\n---\n\n".join(examples)
         example_block = f"\n\nHere are real examples of high-performing posts. Study their structure, tone, and style closely — your output must match this quality:\n\n{formatted}"
+
+    lessons = _load_external_social_lessons()
+    lessons_block = ""
+    if lessons:
+        lessons_block = (
+            "\n\nAdditional social-post lessons from the maintained playbook. "
+            "Treat them as high-priority guidance when drafting:\n\n"
+            f"{lessons}"
+        )
 
     return textwrap.dedent(f"""
         You are an expert technical LinkedIn content creator for senior engineers and tech leads.
@@ -98,7 +149,7 @@ def _build_system_prompt() -> str:
         - Avoid: hashtag spam (0-2 max, only if highly relevant)
         - Topics that work: AI/LLMs, distributed systems, Temporal.io, testing, engineering career
 
-        Tone: Direct. Confident. Specific. Human.{example_block}
+        Tone: Direct. Confident. Specific. Human.{example_block}{lessons_block}
     """).strip()
 
 
@@ -181,6 +232,278 @@ def _build_ig_caption_prompt(linkedin_post: str) -> str:
 
         Return ONLY the Instagram caption text.
     """).strip()
+
+
+@dataclass
+class QualityScore:
+    """Rubric result for a generated LinkedIn post."""
+
+    total: float
+    breakdown: dict[str, float] = field(default_factory=dict)
+    issues: list[str] = field(default_factory=list)
+
+
+def _split_paragraphs(text: str) -> list[str]:
+    return [p.strip() for p in re.split(r"\n\s*\n", text) if p.strip()]
+
+
+def _has_indented_code_block(text: str) -> bool:
+    for line in text.splitlines():
+        if line.startswith("    ") and line.strip():
+            return True
+    return False
+
+
+def _contains_proof_signals(text: str) -> bool:
+    patterns = [
+        r"\d+%",
+        r"\bfrom\s+\d+[^\s]*\s+to\s+\d+",
+        r"\b\d+x\b",
+        r"\b(p\d{2}|p99|latency|throughput|saves?|reposts?)\b",
+    ]
+    text_lower = text.lower()
+    return any(re.search(pattern, text_lower) for pattern in patterns)
+
+
+def _average_words_per_sentence(text: str) -> float:
+    sentences = [s.strip() for s in re.split(r"[.!?]+", text) if s.strip()]
+    if not sentences:
+        return 99.0
+    word_counts = [len(s.split()) for s in sentences]
+    return sum(word_counts) / len(word_counts)
+
+
+def score_linkedin_post_quality(
+    linkedin_post: str,
+    min_chars: int = 800,
+    max_chars: int = 1500,
+) -> QualityScore:
+    """
+    Score LinkedIn post quality from 0-100 using deterministic rubric checks.
+
+    Dimensions (20 points each):
+      - hook
+      - structure
+      - proof
+      - cta
+      - clarity
+    """
+    text = linkedin_post.strip()
+    issues: list[str] = []
+    breakdown: dict[str, float] = {
+        "hook": 0.0,
+        "structure": 0.0,
+        "proof": 0.0,
+        "cta": 0.0,
+        "clarity": 0.0,
+    }
+
+    if not text:
+        return QualityScore(total=0.0, breakdown=breakdown, issues=["Post is empty."])
+
+    paragraphs = _split_paragraphs(text)
+    first_line = text.splitlines()[0].strip() if text.splitlines() else ""
+    char_len = len(text)
+
+    # Hook
+    if first_line:
+        breakdown["hook"] += 8.0
+    if 20 <= len(first_line) <= 120:
+        breakdown["hook"] += 8.0
+    if re.search(r"\?|mistake|wrong|cut|failed|broke|learned|surprise|debug", first_line.lower()):
+        breakdown["hook"] += 4.0
+    if breakdown["hook"] < 12.0:
+        issues.append("Strengthen the opening hook to create sharper curiosity/tension.")
+
+    # Structure
+    if 5 <= len(paragraphs) <= 12:
+        breakdown["structure"] += 8.0
+    elif len(paragraphs) >= 3:
+        breakdown["structure"] += 4.0
+    else:
+        issues.append("Use more paragraph separation (1-2 sentences each).")
+
+    if _has_indented_code_block(text):
+        breakdown["structure"] += 6.0
+    else:
+        issues.append("Include an indented code/config snippet for concrete teaching value.")
+
+    if min_chars <= char_len <= max_chars:
+        breakdown["structure"] += 6.0
+    elif min_chars - 150 <= char_len <= max_chars + 200:
+        breakdown["structure"] += 3.0
+        issues.append(f"Post length is slightly off target ({char_len} chars).")
+    else:
+        issues.append(f"Post length is far from target ({char_len} chars; target {min_chars}-{max_chars}).")
+
+    # Proof
+    if _contains_proof_signals(text):
+        breakdown["proof"] = 20.0
+    else:
+        breakdown["proof"] = 5.0
+        issues.append("Add measurable proof (numbers, before/after, or concrete outcomes).")
+
+    # CTA
+    last_para = paragraphs[-1] if paragraphs else ""
+    if "?" in last_para:
+        breakdown["cta"] = 20.0
+    elif "?" in text:
+        breakdown["cta"] = 12.0
+        issues.append("Move the question-style CTA to the final paragraph.")
+    else:
+        breakdown["cta"] = 4.0
+        issues.append("End with an open-ended question to invite comments.")
+
+    # Clarity
+    avg_words = _average_words_per_sentence(text)
+    if avg_words <= 16:
+        breakdown["clarity"] += 12.0
+    elif avg_words <= 20:
+        breakdown["clarity"] += 8.0
+        issues.append("Tighten sentence length for easier mobile reading.")
+    else:
+        breakdown["clarity"] += 3.0
+        issues.append("Sentences are too long; use shorter lines.")
+
+    cliches = ["i'm excited to share", "in this post", "game changer", "journey", "passionate"]
+    found_cliches = [c for c in cliches if c in text.lower()]
+    if found_cliches:
+        issues.append("Remove generic/cliche phrasing.")
+    else:
+        breakdown["clarity"] += 8.0
+
+    total = round(sum(breakdown.values()), 2)
+    return QualityScore(total=total, breakdown=breakdown, issues=issues)
+
+
+def _build_rewrite_prompt(
+    source: SourceCommit,
+    current_post: str,
+    quality: QualityScore,
+    hook_pattern: str,
+    attempt: int,
+) -> str:
+    issues = "\n".join(f"- {issue}" for issue in quality.issues) or "- Improve overall value density and specificity."
+    return textwrap.dedent(f"""
+        Rewrite this LinkedIn post to pass a strict quality rubric.
+
+        Rewrite attempt: {attempt}
+        Hook pattern target: {hook_pattern}
+        Current score: {quality.total}/100
+        Score breakdown: {quality.breakdown}
+
+        Known issues to fix:
+        {issues}
+
+        Source commit context:
+        - Commit message: {source.message}
+        - Repository: {source.repo}
+        - Files changed: {', '.join(source.files_changed[:5])}
+        - Diff summary: {source.diff_summary}
+
+        Current LinkedIn post:
+        {current_post}
+
+        Rewrite requirements:
+        1. Keep one clear lesson only.
+        2. Add specific proof (numbers or before/after).
+        3. Include an indented code/config snippet (4 spaces).
+        4. Keep 800-1500 characters.
+        5. End with an open-ended question.
+        6. Keep short paragraphs and short sentences.
+        7. Avoid clichés and fluff.
+
+        Return ONLY the rewritten LinkedIn post text.
+    """).strip()
+
+
+def generate_post_with_quality_gate(
+    source: SourceCommit,
+    hook_pattern: str = "result",
+    experiment_id: Optional[str] = None,
+    experiment_variant: Optional[str] = None,
+    openai_client=None,
+    model: str = "gpt-4o",
+    quality_threshold: float = QUALITY_GATE_DEFAULT_THRESHOLD,
+    max_rewrites: int = QUALITY_GATE_DEFAULT_MAX_REWRITES,
+    min_chars: int = 800,
+    max_chars: int = 1500,
+) -> Optional[Post]:
+    """
+    Generate a post and enforce rubric quality before returning it.
+
+    Returns None if the post fails the quality gate after rewrite attempts.
+    """
+    post = generate_post(
+        source=source,
+        hook_pattern=hook_pattern,
+        experiment_id=experiment_id,
+        experiment_variant=experiment_variant,
+        openai_client=openai_client,
+        model=model,
+    )
+    quality = score_linkedin_post_quality(post.linkedin_post, min_chars=min_chars, max_chars=max_chars)
+    if quality.total >= quality_threshold:
+        return post
+
+    if openai_client is None:
+        logger.warning(
+            "Post %s failed quality gate (%.1f < %.1f) and cannot be rewritten without OpenAI client",
+            post.id,
+            quality.total,
+            quality_threshold,
+        )
+        return None
+
+    rewritten = post.linkedin_post
+    best_quality = quality
+    for attempt in range(1, max_rewrites + 1):
+        rewritten = _generate_with_openai(
+            openai_client,
+            model,
+            _build_system_prompt(),
+            _build_rewrite_prompt(
+                source=source,
+                current_post=rewritten,
+                quality=best_quality,
+                hook_pattern=hook_pattern,
+                attempt=attempt,
+            ),
+        )
+        candidate_quality = score_linkedin_post_quality(rewritten, min_chars=min_chars, max_chars=max_chars)
+        if candidate_quality.total > best_quality.total:
+            best_quality = candidate_quality
+            post.linkedin_post = rewritten
+        if candidate_quality.total >= quality_threshold:
+            post.linkedin_post = rewritten
+            break
+
+    final_quality = score_linkedin_post_quality(post.linkedin_post, min_chars=min_chars, max_chars=max_chars)
+    if final_quality.total < quality_threshold:
+        logger.warning(
+            "Post %s rejected by quality gate after %d rewrites (%.1f < %.1f): %s",
+            post.id,
+            max_rewrites,
+            final_quality.total,
+            quality_threshold,
+            "; ".join(final_quality.issues[:3]),
+        )
+        return None
+
+    # Regenerate platform variants based on final LinkedIn text to keep message consistent.
+    post.x_thread = _generate_with_openai(
+        openai_client,
+        model,
+        _build_system_prompt(),
+        _build_x_thread_prompt(post.linkedin_post),
+    )
+    post.ig_caption = _generate_with_openai(
+        openai_client,
+        model,
+        _build_system_prompt(),
+        _build_ig_caption_prompt(post.linkedin_post),
+    )
+    return post
 
 
 def _extract_lesson(source: SourceCommit) -> str:

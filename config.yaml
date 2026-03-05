@@ -11,7 +11,7 @@ agent:
   max_posts_per_run: 10
 
   # Minimum commit score to qualify for post generation (0-100)
-  score_threshold: 15.0
+  score_threshold: 30.0
 
   # OpenAI model to use for post generation
   openai_model: gpt-4o

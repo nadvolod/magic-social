@@ -51,8 +51,13 @@ class _DummyExperiments:
 def _patch_run_scan_dependencies(monkeypatch, source: SourceCommit):
     monkeypatch.setattr(agent, "ExperimentManager", _DummyExperiments)
     monkeypatch.setattr(agent, "get_best_hook_pattern", lambda state: "result")
-    monkeypatch.setattr(agent, "_get_openai_client", lambda: None)
-    monkeypatch.setattr(agent, "generate_post", lambda **kwargs: _make_post(source))
+    monkeypatch.setattr(agent, "_get_openai_client", lambda: object())
+    monkeypatch.setattr(
+        agent,
+        "decide_commit_with_openai",
+        lambda *args, **kwargs: agent.CommitDecision(accept=True, reason="ok", confidence=1.0),
+    )
+    monkeypatch.setattr(agent, "generate_post_with_quality_gate", lambda **kwargs: _make_post(source))
 
 
 def test_backlog_throttle_blocks_generation(monkeypatch):

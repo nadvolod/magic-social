@@ -6,6 +6,7 @@ import json
 import logging
 import re
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import requests
@@ -35,6 +36,21 @@ METRIC_KEYS = [
     "follower_delta",
     "click_through",
 ]
+
+# Implicit-feedback timing thresholds
+NO_FEEDBACK_HOURS = 72
+STALE_UNPUBLISHED_DAYS = 7
+
+# Fast mobile feedback shortcuts
+SHORT_POSITIVE_MARKERS = {"publish", "published", "ship", "ship it", "lgtm", "good", "👍", "+1"}
+SHORT_NEGATIVE_REASON_MARKERS = {
+    "skip": "skip",
+    "rewrite": "needs_rewrite",
+    "too long": "too_long",
+    "not relevant": "not_relevant",
+    "weak hook": "weak_hook",
+    "bad": "quality",
+}
 
 
 def _github_headers(token: str) -> dict:
@@ -133,6 +149,15 @@ def parse_feedback_from_comment(comment_body: str, post_id: str) -> Optional[Pos
     field has been meaningfully filled in (i.e., the template was posted but
     left blank).
     """
+    templated = _parse_feedback_template(comment_body, post_id)
+    if templated is not None:
+        return templated
+
+    return _parse_shorthand_feedback(comment_body, post_id)
+
+
+def _parse_feedback_template(comment_body: str, post_id: str) -> Optional[PostFeedback]:
+    """Parse the full 'Post Feedback' template format from a comment."""
     if "Post Feedback" not in comment_body:
         return None
 
@@ -217,6 +242,77 @@ def parse_feedback_from_comment(comment_body: str, post_id: str) -> Optional[Pos
     )
 
 
+def _parse_shorthand_feedback(comment_body: str, post_id: str) -> Optional[PostFeedback]:
+    """
+    Parse short mobile-first feedback comments.
+
+    Examples:
+      "publish"
+      "rewrite"
+      "too long"
+      "not relevant"
+      "weak hook"
+      "👍"
+    """
+    text = comment_body.strip().lower()
+    if not text:
+        return None
+
+    # Keep shorthand parsing conservative: apply only to short comments.
+    if len(text) > 80:
+        return None
+
+    if text in SHORT_POSITIVE_MARKERS:
+        return PostFeedback(post_id=post_id, published=True, rating=5)
+
+    for marker, reason in SHORT_NEGATIVE_REASON_MARKERS.items():
+        if marker in text:
+            return PostFeedback(
+                post_id=post_id,
+                published=False,
+                not_published_reason=reason,
+                rating=2 if reason == "needs_rewrite" else 1,
+            )
+    return None
+
+
+def parse_feedback_from_issue_body(issue_body: str, post_id: str) -> Optional[PostFeedback]:
+    """Parse quick checkbox feedback from the issue body."""
+    if not issue_body:
+        return None
+
+    # Prioritize explicit publish signal over negative checkboxes if multiple are checked.
+    if re.search(r"- \[[xX]\]\s*.*publish", issue_body, re.IGNORECASE):
+        return PostFeedback(post_id=post_id, published=True, rating=5)
+
+    checkbox_reason_map = {
+        "rewrite": "needs_rewrite",
+        "skip": "skip",
+        "too long": "too_long",
+        "not relevant": "not_relevant",
+        "weak hook": "weak_hook",
+    }
+    for label, reason in checkbox_reason_map.items():
+        if re.search(rf"- \[[xX]\]\s*.*{re.escape(label)}", issue_body, re.IGNORECASE):
+            return PostFeedback(post_id=post_id, published=False, not_published_reason=reason, rating=2)
+
+    return None
+
+
+def parse_feedback_from_reactions(reactions: dict, post_id: str) -> Optional[PostFeedback]:
+    """Map issue-level reactions to quick feedback signals."""
+    if not reactions:
+        return None
+
+    if reactions.get("rocket", 0) > 0:
+        return PostFeedback(post_id=post_id, published=True, rating=5)
+    if reactions.get("+1", 0) > 0:
+        return PostFeedback(post_id=post_id, published=None, rating=4)
+    if reactions.get("-1", 0) > 0:
+        return PostFeedback(post_id=post_id, published=False, not_published_reason="quality", rating=1)
+    return None
+
+
 def fetch_issue_feedback(
     repo: str,
     token: str,
@@ -224,26 +320,40 @@ def fetch_issue_feedback(
     post_id: str,
 ) -> Optional[PostFeedback]:
     """
-    Fetch qualitative feedback from a GitHub Issue by reading its comments.
+    Fetch qualitative feedback from a GitHub Issue from three signal sources:
+      1) Latest comment-based feedback (full template or shorthand)
+      2) Quick checkbox feedback in the issue body
+      3) Issue reactions (👍 / 👎 / 🚀)
 
-    Returns the last feedback comment (in API order) parsed as a PostFeedback object.
-    The GitHub API returns comments in ascending created_at order, so the last
-    matching comment is the most recent one.
+    Precedence: comments > checkbox body > reactions.
     """
-    url = f"{GITHUB_API}/repos/{repo}/issues/{issue_number}/comments"
-    resp = requests.get(url, headers=_github_headers(token), timeout=30)
-    resp.raise_for_status()
-    comments = resp.json()
+    issue_url = f"{GITHUB_API}/repos/{repo}/issues/{issue_number}"
+    issue_resp = requests.get(issue_url, headers=_github_headers(token), timeout=30)
+    issue_resp.raise_for_status()
+    issue = issue_resp.json()
 
-    latest_feedback: Optional[PostFeedback] = None
+    body_feedback = parse_feedback_from_issue_body(issue.get("body", ""), post_id)
+    if body_feedback is not None:
+        body_feedback.recorded_at = issue.get("updated_at", body_feedback.recorded_at)
+
+    reaction_feedback = parse_feedback_from_reactions(issue.get("reactions", {}), post_id)
+    if reaction_feedback is not None:
+        reaction_feedback.recorded_at = issue.get("updated_at", reaction_feedback.recorded_at)
+
+    comments_url = f"{GITHUB_API}/repos/{repo}/issues/{issue_number}/comments"
+    comments_resp = requests.get(comments_url, headers=_github_headers(token), timeout=30)
+    comments_resp.raise_for_status()
+    comments = comments_resp.json()
+
+    latest_comment_feedback: Optional[PostFeedback] = None
     for comment in comments:
         body = comment.get("body", "")
         fb = parse_feedback_from_comment(body, post_id)
         if fb:
-            # Keep the last matching feedback based on the API's comment ordering
-            latest_feedback = fb
+            fb.recorded_at = comment.get("updated_at", comment.get("created_at", fb.recorded_at))
+            latest_comment_feedback = fb
 
-    return latest_feedback
+    return latest_comment_feedback or body_feedback or reaction_feedback
 # -------------------------------------------------------------------
 # Learning loop — adjusts scoring weights based on analytics
 # -------------------------------------------------------------------
@@ -266,6 +376,8 @@ class LearningState:
     total_feedback_received: int = 0
     total_ratings_received: int = 0
     average_rating: float = 0.0
+    applied_feedback_fingerprints: dict = field(default_factory=dict)  # post_id -> fingerprint
+    implicit_feedback_events: dict = field(default_factory=dict)        # post_id -> [event_keys]
     version: int = 1
 
     def to_dict(self) -> dict:
@@ -279,6 +391,8 @@ class LearningState:
             "total_feedback_received": self.total_feedback_received,
             "total_ratings_received": self.total_ratings_received,
             "average_rating": self.average_rating,
+            "applied_feedback_fingerprints": self.applied_feedback_fingerprints,
+            "implicit_feedback_events": self.implicit_feedback_events,
             "version": self.version,
         }
 
@@ -294,6 +408,8 @@ class LearningState:
             total_feedback_received=data.get("total_feedback_received", 0),
             total_ratings_received=data.get("total_ratings_received", 0),
             average_rating=data.get("average_rating", 0.0),
+            applied_feedback_fingerprints=data.get("applied_feedback_fingerprints", {}),
+            implicit_feedback_events=data.get("implicit_feedback_events", {}),
             version=data.get("version", 1),
         )
 
@@ -407,6 +523,113 @@ def _apply_qualitative_feedback(state: LearningState, feedback: PostFeedback) ->
         feedback.rating,
         state.not_published_reasons,
     )
+
+
+def feedback_fingerprint(feedback: PostFeedback) -> str:
+    """Return a stable fingerprint for deduplicating repeated feedback processing."""
+    return "|".join(
+        [
+            str(feedback.published),
+            (feedback.not_published_reason or "").strip().lower(),
+            (feedback.improvement_notes or "").strip().lower(),
+            str(feedback.rating),
+            feedback.recorded_at or "",
+        ]
+    )
+
+
+def should_apply_feedback(state: LearningState, post_id: str, feedback: PostFeedback) -> bool:
+    """
+    Return True if this feedback is new for the given post.
+
+    Prevents counting the same feedback repeatedly on every analytics run.
+    """
+    fp = feedback_fingerprint(feedback)
+    if state.applied_feedback_fingerprints.get(post_id) == fp:
+        return False
+    state.applied_feedback_fingerprints[post_id] = fp
+    return True
+
+
+def _has_implicit_event(state: LearningState, post_id: str, event_key: str) -> bool:
+    events = state.implicit_feedback_events.get(post_id, [])
+    return event_key in events
+
+
+def _record_implicit_event(state: LearningState, post_id: str, event_key: str) -> None:
+    events = list(state.implicit_feedback_events.get(post_id, []))
+    if event_key not in events:
+        events.append(event_key)
+        state.implicit_feedback_events[post_id] = events
+
+
+def infer_implicit_feedback(
+    state: LearningState,
+    post: Post,
+    has_explicit_feedback: bool,
+    explicit_published: bool = False,
+    now: Optional[datetime] = None,
+) -> list[tuple[str, PostFeedback]]:
+    """
+    Infer weak-negative feedback from inactivity for non-published posts.
+
+    Rules:
+    - No feedback for 72h => weak negative signal.
+    - Unpublished for 7d => stale negative signal.
+    Each implicit event is applied at most once per post.
+    """
+    if post.status.value in ("published", "archived") or explicit_published:
+        return []
+
+    if now is None:
+        now = datetime.now(timezone.utc)
+
+    created_at_str = post.created_at or ""
+    try:
+        created_at = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+        if created_at.tzinfo is None:
+            created_at = created_at.replace(tzinfo=timezone.utc)
+    except ValueError:
+        return []
+
+    age = now - created_at
+    events: list[tuple[str, PostFeedback]] = []
+
+    if not has_explicit_feedback and age >= timedelta(hours=NO_FEEDBACK_HOURS):
+        event_key = "no_feedback_72h"
+        if not _has_implicit_event(state, post.id, event_key):
+            events.append(
+                (
+                    event_key,
+                    PostFeedback(
+                        post_id=post.id,
+                        published=False,
+                        not_published_reason=event_key,
+                        rating=2,
+                        recorded_at=now.isoformat(),
+                    ),
+                )
+            )
+            _record_implicit_event(state, post.id, event_key)
+
+    if age >= timedelta(days=STALE_UNPUBLISHED_DAYS):
+        event_key = "stale_unpublished_7d"
+        if not _has_implicit_event(state, post.id, event_key):
+            events.append(
+                (
+                    event_key,
+                    PostFeedback(
+                        post_id=post.id,
+                        published=False,
+                        not_published_reason=event_key,
+                        rating=1,
+                        recorded_at=now.isoformat(),
+                    ),
+                )
+            )
+            _record_implicit_event(state, post.id, event_key)
+
+    return events
 
 
 def _adjust_weights(
