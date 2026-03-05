@@ -240,9 +240,9 @@ Every generated post is stored as a GitHub Issue with:
 1. LinkedIn post (copy-paste ready)
 2. **Quick mobile feedback section** (checkboxes + reactions)
 3. Publishing checklist
-4. Analytics input template
-5. Full optional post feedback template
-6. Post metadata + raw JSON (for agent use)
+4. Full optional post feedback template
+5. Analytics input template
+6. Post metadata + lesson + raw JSON (for agent use)
 
 **Fast feedback (no form required):**
 - React to the issue: `👍` good draft, `👎` bad draft, `🚀` published
@@ -341,12 +341,12 @@ Sequential A/B experiments run automatically:
 1. User gives quick feedback with reactions/checklist/short comments (mobile-first)
 2. After publishing, user adds analytics to the GitHub Issue comment
 3. Analytics workflow reads metrics and qualitative signals, then updates learning state
-3. `update_learning_state()` updates:
+4. `update_learning_state()` updates:
    - **Hook pattern scores** — tracks avg engagement per pattern
    - **Topic scores** — tracks which topics resonate most
    - **Scoring weights** — dimensions that correlate with high engagement get a small boost
-4. Inactivity is also a signal: no feedback for 72h and unpublished drafts older than 7d are down-ranked automatically
-5. Next scan uses the best hook pattern and highest-weight scoring dimensions
+5. Inactivity is also a signal: no feedback for 72h and unpublished drafts older than 7d are down-ranked automatically
+6. Next scan uses the best hook pattern and highest-weight scoring dimensions
 
 **Guardrails against overfitting:**
 - Minimum 3 posts before any weight adjustments

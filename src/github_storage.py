@@ -274,17 +274,11 @@ def load_posts_from_issues(repo: str, token: str, state: str = "all") -> list[Po
             try:
                 post = Post.from_dict(payload)
             except Exception:  # noqa: BLE001
-                post = Post(
-                    id=f"issue-{issue_number}",
-                    source_commit_sha="unknown",
-                    repo=repo,
-                    lesson=issue.get("title", f"Issue #{issue_number}"),
-                    linkedin_post="",
-                    x_thread="",
-                    ig_caption="",
-                    hook_pattern="result",
-                )
+                post = None
         else:
+            post = None
+
+        if post is None:
             post = Post(
                 id=f"issue-{issue_number}",
                 source_commit_sha="unknown",
