@@ -14,7 +14,7 @@ jobs:
   collect-analytics:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       issues: write
 
     steps:
@@ -45,6 +45,27 @@ jobs:
           fi
 
           python -m src.agent analytics $ARGS
+
+      - name: Regenerate metrics dashboard
+        run: python -m src.agent metrics
+
+      - name: Commit updated learning + dashboard artifacts
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          for f in learning_state.json experiments.json METRICS.md README.md; do
+            if [ -f "$f" ]; then
+              git add "$f"
+            fi
+          done
+
+          if git diff --staged --quiet; then
+            echo "No changes to commit."
+          else
+            git commit -m "chore: persist learning state and refresh dashboard [skip ci]"
+            git push
+          fi
 
       - name: Show experiment summary
         run: python -m src.agent experiments

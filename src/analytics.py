@@ -143,35 +143,65 @@ def parse_feedback_from_comment(comment_body: str, post_id: str) -> Optional[Pos
         value = m.group(1).strip()
         return value if value else None
 
-    published_raw = _first_match(r"published:[ \t]*([^\n]+)")
+    published_raw = _first_match(r"(?:published|verdict|status):[ \t]*([^\n]+)")
     published: Optional[bool] = None
     if published_raw:
-        # Require the value to be unambiguously "yes" or "no" after stripping —
-        # not a placeholder like "yes / no" that still contains a slash.
+        # Require an unambiguous value (reject placeholders like "yes / no").
         stripped = published_raw.strip()
+        lowered = stripped.lower()
         if "/" not in stripped:
-            if re.fullmatch(r"yes", stripped, re.IGNORECASE):
-                published = True
-            elif re.fullmatch(r"no", stripped, re.IGNORECASE):
+            if ("❌" in stripped) or re.search(r"\b(no|not|skip|skipped|reject|rejected)\b", lowered):
                 published = False
+            elif ("✅" in stripped) or ("👍" in stripped) or re.search(
+                r"\b(yes|published|live|posted|approve|approved)\b",
+                lowered,
+            ):
+                published = True
 
-    not_published_reason_raw = _first_match(r"(?:if not published,? why|why not):[ \t]*([^\n]+)")
+    not_published_reason_raw = _first_match(
+        r"(?:if not published,? why|why not|reason(?: if skipped)?):[ \t]*([^\n]+)"
+    )
     # Reject slash-separated option lists (unfilled placeholder)
     not_published_reason: Optional[str] = None
     if not_published_reason_raw and "/" not in not_published_reason_raw:
         not_published_reason = not_published_reason_raw
 
-    improvement_notes_raw = _first_match(r"(?:what would make it better|improvement):[ \t]*([^\n]+)")
+    improvement_notes_raw = _first_match(
+        r"(?:what would make it better|improvement|improve|notes?|feedback):[ \t]*([^\n]+)"
+    )
     # Reject empty or whitespace-only improvement notes
     improvement_notes: Optional[str] = improvement_notes_raw if improvement_notes_raw else None
 
     rating: Optional[int] = None
-    rating_raw = _first_match(r"rating[^:]*:[ \t]*([1-5])")
+    rating_raw = _first_match(r"rating[^:]*:[ \t]*([1-5])(?:\s*/\s*5)?")
     if rating_raw:
         try:
             rating = int(rating_raw)
         except ValueError:
             pass
+
+    # Fallback: allow one-line free-text feedback under "Post Feedback".
+    if published is None and not_published_reason is None and improvement_notes is None and rating is None:
+        for line in comment_body.splitlines():
+            text = line.strip()
+            if not text:
+                continue
+            lowered = text.lower()
+            if lowered.startswith("## post feedback"):
+                continue
+            if lowered.startswith(("- published:", "- verdict:", "- status:")):
+                continue
+            if lowered.startswith(("- if not published", "- why not", "- reason")):
+                continue
+            if lowered.startswith(("- what would make it better", "- improvement", "- improve", "- notes:", "- feedback:")):
+                continue
+            if lowered.startswith("- rating"):
+                continue
+            if text.startswith("- "):
+                text = text[2:].strip()
+            if text:
+                improvement_notes = text
+                break
 
     # Return None if no field was actually filled in — this prevents blank or
     # copy-paste templates from being recorded as real feedback.
