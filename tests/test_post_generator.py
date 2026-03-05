@@ -1,5 +1,7 @@
 """Tests for the post generator."""
 
+import logging
+
 import src.post_generator as pg
 import pytest
 
@@ -374,49 +376,38 @@ class TestQualityGateGeneration:
         )
         assert result is None
 
-    def test_keeps_best_rewrite_when_later_rewrite_passes_at_lower_score(self, monkeypatch):
-        """Regression: always use the highest-scoring rewrite, not the first one that passes."""
+    def test_warning_reports_best_score_when_all_rewrites_fail(self, monkeypatch, caplog):
+        """Regression: when no rewrite passes threshold, the rejection warning reports
+        the best-scoring draft's quality (65.0), not the last scored draft's quality (55.0).
+        This verifies that best_quality tracks the highest score seen, not the final score."""
         source = _make_source()
         base_post = generate_post(source, openai_client=None)
         base_post.linkedin_post = "Very weak initial draft."
 
         monkeypatch.setattr(pg, "generate_post", lambda *args, **kwargs: base_post)
 
-        # Initial fails; first rewrite is best (92); second rewrite also passes but at lower score (80).
+        # Initial (40) fails; attempt 1 is best (65); attempt 2 is worse (55). None pass threshold=75.
         scores = [
             QualityScore(total=40.0, breakdown={}, issues=["too vague"]),
-            QualityScore(total=92.0, breakdown={}, issues=["minor nit"]),
-            QualityScore(total=80.0, breakdown={}, issues=["ok but weaker"]),
+            QualityScore(total=65.0, breakdown={}, issues=["missing proof"]),
+            QualityScore(total=55.0, breakdown={}, issues=["weak hook"]),
         ]
 
         def fake_score(*args, **kwargs):
             return scores.pop(0)
 
         monkeypatch.setattr(pg, "score_linkedin_post_quality", fake_score)
+        monkeypatch.setattr(pg, "_generate_with_openai", lambda *args, **kwargs: "Improved draft.")
 
-        rewrite_calls: list[str] = []
+        with caplog.at_level(logging.WARNING, logger="src.post_generator"):
+            result = generate_post_with_quality_gate(
+                source=source,
+                openai_client=object(),
+                quality_threshold=75.0,
+                max_rewrites=2,
+            )
 
-        def fake_openai(client, model, system, user):
-            if "Rewrite this LinkedIn post" in user:
-                idx = len(rewrite_calls)
-                rewrite_calls.append(user)
-                if idx == 0:
-                    return "First improved draft (should win)."
-                return "Second improved draft (lower quality)."
-            if "Convert this LinkedIn post into a tight X (Twitter) thread." in user:
-                return "1/ thread for best draft"
-            if "Create an Instagram caption based on this LinkedIn post." in user:
-                return "IG caption for best draft"
-            return "unexpected"
-
-        monkeypatch.setattr(pg, "_generate_with_openai", fake_openai)
-
-        result = generate_post_with_quality_gate(
-            source=source,
-            openai_client=object(),
-            quality_threshold=75.0,
-            max_rewrites=QUALITY_GATE_DEFAULT_MAX_REWRITES,
-        )
-
-        assert result is not None
-        assert result.linkedin_post == "First improved draft (should win)."
+        assert result is None
+        # Warning must reference the best quality score (65.0), not the last scored draft (55.0).
+        assert "65.0" in caplog.text
+        assert "missing proof" in caplog.text
