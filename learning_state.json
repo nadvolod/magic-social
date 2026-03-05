@@ -1,0 +1,20 @@
+{
+  "scoring_weights": {
+    "novelty": 1.0,
+    "impact": 1.0,
+    "teachability": 1.0,
+    "relevance": 1.0,
+    "proof": 1.0
+  },
+  "hook_pattern_scores": {},
+  "topic_scores": {},
+  "best_performing_posts": [],
+  "total_posts_analyzed": 0,
+  "not_published_reasons": {
+    "historical_batch_bad_practice_pre_2026-03-03_2359_est": 37
+  },
+  "total_feedback_received": 37,
+  "total_ratings_received": 0,
+  "average_rating": 0.0,
+  "version": 1
+}

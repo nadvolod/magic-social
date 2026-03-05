@@ -19,10 +19,6 @@ env/
 .coverage
 htmlcov/
 
-# Agent state files (generated at runtime)
-learning_state.json
-experiments.json
-
 # IDE
 .idea/
 .vscode/
