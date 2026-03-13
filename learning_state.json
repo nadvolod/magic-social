@@ -12,19 +12,19 @@
   "total_posts_analyzed": 0,
   "not_published_reasons": {
     "historical_batch_bad_practice_pre_2026-03-03_2359_est": 37,
-    "not_relevant": 2,
-    "skip": 4,
-    "this doesn't match what we have in the good-social-posts folder at all": 6,
+    "not_relevant": 3,
+    "skip": 6,
+    "this doesn't match what we have in the good-social-posts folder at all": 9,
     "no_feedback_72h": 16,
-    "stale_unpublished_7d": 6
+    "stale_unpublished_7d": 18
   },
-  "total_feedback_received": 71,
-  "total_ratings_received": 34,
-  "average_rating": 1.6470588235294117,
+  "total_feedback_received": 89,
+  "total_ratings_received": 52,
+  "average_rating": 1.4807692307692308,
   "applied_feedback_fingerprints": {
-    "post-8f1a85ba3a8d": "False|not_relevant||2|2026-03-05T01:18:23Z",
+    "post-8f1a85ba3a8d": "False|stale_unpublished_7d||1|2026-03-13T09:15:49.053608+00:00",
     "post-85b8bb070c0d": "False|skip||2|2026-03-05T00:33:45Z",
-    "post-22bccc5329b7": "False|no_feedback_72h||2|2026-03-11T09:17:34.068492+00:00",
+    "post-22bccc5329b7": "False|stale_unpublished_7d||1|2026-03-13T09:15:55.191376+00:00",
     "post-8ce52cf163ca": "False|this doesn't match what we have in the good-social-posts folder at all|this post provides no value, there is nothing learned, and a user can't understand much|1|2026-03-04T19:02:06Z",
     "post-34d224411fba": "False|this doesn't match what we have in the good-social-posts folder at all|this post provides no value, there is nothing learned, and a user can't understand much|1|2026-03-04T19:02:30Z",
     "post-6effcce6fbc8": "False|this doesn't match what we have in the good-social-posts folder at all|this post provides no value, there is nothing learned, and a user can't understand much|1|2026-03-04T19:03:10Z",
@@ -34,12 +34,12 @@
     "post-83e353eba525": "False|stale_unpublished_7d||1|2026-03-06T09:14:54.932446+00:00",
     "post-bfc8ae3e241a": "False|stale_unpublished_7d||1|2026-03-06T09:14:58.716264+00:00",
     "post-b980461a7247": "False|stale_unpublished_7d||1|2026-03-06T09:15:02.179384+00:00",
-    "post-06971f6623d5": "False|no_feedback_72h||2|2026-03-11T09:17:31.707038+00:00",
-    "post-adf22c90a9a4": "False|no_feedback_72h||2|2026-03-11T09:17:32.293041+00:00",
-    "post-7b0f30066ac7": "False|no_feedback_72h||2|2026-03-11T09:17:32.855504+00:00",
-    "post-32cb5266e537": "False|no_feedback_72h||2|2026-03-11T09:17:40.752428+00:00",
-    "post-c107d249b421": "False|no_feedback_72h||2|2026-03-11T09:17:41.962410+00:00",
-    "post-46f0d5adae48": "False|no_feedback_72h||2|2026-03-11T09:17:42.574419+00:00"
+    "post-06971f6623d5": "False|stale_unpublished_7d||1|2026-03-13T09:15:58.242246+00:00",
+    "post-adf22c90a9a4": "False|stale_unpublished_7d||1|2026-03-13T09:16:01.532565+00:00",
+    "post-7b0f30066ac7": "False|stale_unpublished_7d||1|2026-03-13T09:16:04.654514+00:00",
+    "post-32cb5266e537": "False|stale_unpublished_7d||1|2026-03-13T09:16:20.716051+00:00",
+    "post-c107d249b421": "False|stale_unpublished_7d||1|2026-03-13T09:16:27.624445+00:00",
+    "post-46f0d5adae48": "False|stale_unpublished_7d||1|2026-03-13T09:16:30.790963+00:00"
   },
   "implicit_feedback_events": {
     "post-caa23c680e4f": [
@@ -67,34 +67,50 @@
       "stale_unpublished_7d"
     ],
     "post-06971f6623d5": [
-      "no_feedback_72h"
+      "no_feedback_72h",
+      "stale_unpublished_7d"
     ],
     "post-adf22c90a9a4": [
-      "no_feedback_72h"
+      "no_feedback_72h",
+      "stale_unpublished_7d"
     ],
     "post-7b0f30066ac7": [
-      "no_feedback_72h"
+      "no_feedback_72h",
+      "stale_unpublished_7d"
     ],
     "post-22bccc5329b7": [
-      "no_feedback_72h"
+      "no_feedback_72h",
+      "stale_unpublished_7d"
     ],
     "post-8ce52cf163ca": [
-      "no_feedback_72h"
+      "no_feedback_72h",
+      "stale_unpublished_7d"
     ],
     "post-34d224411fba": [
-      "no_feedback_72h"
+      "no_feedback_72h",
+      "stale_unpublished_7d"
     ],
     "post-32cb5266e537": [
-      "no_feedback_72h"
+      "no_feedback_72h",
+      "stale_unpublished_7d"
     ],
     "post-6effcce6fbc8": [
-      "no_feedback_72h"
+      "no_feedback_72h",
+      "stale_unpublished_7d"
     ],
     "post-c107d249b421": [
-      "no_feedback_72h"
+      "no_feedback_72h",
+      "stale_unpublished_7d"
     ],
     "post-46f0d5adae48": [
-      "no_feedback_72h"
+      "no_feedback_72h",
+      "stale_unpublished_7d"
+    ],
+    "post-8f1a85ba3a8d": [
+      "stale_unpublished_7d"
+    ],
+    "post-85b8bb070c0d": [
+      "stale_unpublished_7d"
     ]
   },
   "version": 1
