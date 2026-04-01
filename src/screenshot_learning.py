@@ -7,7 +7,7 @@ import json
 import logging
 import math
 import re
-import urllib.request
+import subprocess
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -227,38 +227,34 @@ def download_image_as_data_url(image_url: str, token: str, web_token: Optional[s
     download_token = web_token or token
     is_user_attachment = "user-attachments/assets" in image_url
 
-    # Step 1 – resolve the redirect manually so we never send an auth
-    # header to the storage backend (avoids IDNA / cross-domain issues).
+    # For user-attachment URLs, use curl to avoid Python idna/urllib3
+    # validation errors that occur in some CI environments.
     if is_user_attachment:
-        headers = {"Authorization": f"token {download_token}", "Accept": "*/*"}
-        resp = requests.get(
-            image_url, headers=headers, timeout=30, allow_redirects=False,
+        result = subprocess.run(
+            ["curl", "-sL", "-H", f"Authorization: token {download_token}", image_url],
+            capture_output=True,
+            timeout=60,
         )
-        if resp.status_code in (301, 302, 303, 307, 308):
-            redirect_url = resp.headers.get("Location", "")
-            if redirect_url:
-                # Use urllib (no idna validation) to avoid IDNA errors
-                # from S3 redirect hostnames in some CI environments.
-                try:
-                    resp = requests.get(redirect_url, timeout=30)
-                    resp.raise_for_status()
-                    content = resp.content
-                    content_type = resp.headers.get("Content-Type", "image/png").split(";", 1)[0].strip() or "image/png"
-                except Exception:
-                    req = urllib.request.Request(redirect_url)
-                    with urllib.request.urlopen(req, timeout=30) as uresp:
-                        content = uresp.read()
-                        content_type = (uresp.headers.get("Content-Type") or "image/png").split(";", 1)[0].strip()
-                encoded = base64.b64encode(content).decode("ascii")
-                return f"data:{content_type};base64,{encoded}"
-        resp.raise_for_status()
+        if result.returncode != 0 or not result.stdout:
+            raise RuntimeError(f"curl failed for {image_url}: {result.stderr.decode()}")
+        content = result.stdout
     else:
         headers = {"Authorization": f"Bearer {token}", "Accept": "image/*,*/*"}
         resp = requests.get(image_url, headers=headers, timeout=30)
         resp.raise_for_status()
+        content = resp.content
 
-    content_type = resp.headers.get("Content-Type", "image/png").split(";", 1)[0].strip() or "image/png"
-    encoded = base64.b64encode(resp.content).decode("ascii")
+    # Infer content type from magic bytes
+    if content[:8].startswith(b"\x89PNG"):
+        content_type = "image/png"
+    elif content[:3] in (b"\xff\xd8\xff",):
+        content_type = "image/jpeg"
+    elif content[:4] == b"RIFF" and content[8:12] == b"WEBP":
+        content_type = "image/webp"
+    else:
+        content_type = "image/png"
+
+    encoded = base64.b64encode(content).decode("ascii")
     return f"data:{content_type};base64,{encoded}"
 
 
