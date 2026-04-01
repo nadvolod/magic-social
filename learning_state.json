@@ -13,14 +13,14 @@
   "not_published_reasons": {
     "historical_batch_bad_practice_pre_2026-03-03_2359_est": 37,
     "not_relevant": 5,
-    "skip": 14,
+    "skip": 16,
     "this doesn't match what we have in the good-social-posts folder at all": 9,
     "no_feedback_72h": 16,
     "stale_unpublished_7d": 18
   },
-  "total_feedback_received": 99,
-  "total_ratings_received": 62,
-  "average_rating": 1.564516129032258,
+  "total_feedback_received": 101,
+  "total_ratings_received": 64,
+  "average_rating": 1.578125,
   "applied_feedback_fingerprints": {
     "post-8f1a85ba3a8d": "False|not_relevant||2|2026-03-13T09:15:51Z",
     "post-85b8bb070c0d": "False|skip||2|2026-03-05T00:33:45Z",
