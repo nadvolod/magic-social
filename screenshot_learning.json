@@ -1,4 +1,113 @@
 {
-  "examples": [],
+  "examples": [
+    {
+      "issue_number": 92,
+      "issue_url": "https://github.com/nadvolod/magic-social/issues/92",
+      "image_url": "https://github.com/user-attachments/assets/8a81c8fb-ea7a-4c84-ab47-148633e966a0",
+      "recorded_at": "2026-04-01T20:20:29.686923+00:00",
+      "metrics": {
+        "impressions": 5883,
+        "reactions": 27,
+        "comments": 2,
+        "reposts": 1,
+        "saves": 0
+      },
+      "engagement_score": 36.0,
+      "percentile": 1.0,
+      "classification": "top_10_percent",
+      "reason": "The candidate percentile is 1.0000, indicating it is in the top 100% of the distribution.",
+      "confidence": 0.95,
+      "signals": {
+        "hook_style": "informative",
+        "tone": "educational",
+        "structure": "list",
+        "cta_type": "link",
+        "has_code": false,
+        "has_numbers": false,
+        "topic": "AI and technology"
+      },
+      "summary": "The post introduces a video tutorial on building a deep research agent using Temporal Technologies and OpenAI.",
+      "hook_excerpt": "Build a Deep Research Agent Tutorial"
+    },
+    {
+      "issue_number": 93,
+      "issue_url": "https://github.com/nadvolod/magic-social/issues/93",
+      "image_url": "https://github.com/user-attachments/assets/f50f74a4-8c5c-47b5-9e67-00f0216f4bcc",
+      "recorded_at": "2026-04-01T20:20:36.323249+00:00",
+      "metrics": {
+        "impressions": 0,
+        "reactions": 0,
+        "comments": 0,
+        "reposts": 0,
+        "saves": 0
+      },
+      "engagement_score": 0.0,
+      "percentile": 0.5,
+      "classification": "bottom_90_percent",
+      "reason": "The candidate percentile is 0.5000, which is below the top 10% threshold.",
+      "confidence": 0.95,
+      "signals": {},
+      "summary": "",
+      "hook_excerpt": ""
+    },
+    {
+      "issue_number": 94,
+      "issue_url": "https://github.com/nadvolod/magic-social/issues/94",
+      "image_url": "https://github.com/user-attachments/assets/cfbad499-c21f-4d6a-90ee-2851ec73a2de",
+      "recorded_at": "2026-04-01T20:20:46.682530+00:00",
+      "metrics": {
+        "impressions": 0,
+        "reactions": 60,
+        "comments": 10,
+        "reposts": 7,
+        "saves": 0
+      },
+      "engagement_score": 111.0,
+      "percentile": 1.0,
+      "classification": "top_10_percent",
+      "reason": "The candidate percentile is 1.0000, indicating it is higher than 100% of historical posts.",
+      "confidence": 0.95,
+      "signals": {
+        "hook_style": "personal story",
+        "tone": "informative",
+        "structure": "list",
+        "cta_type": "contact",
+        "has_code": false,
+        "has_numbers": false,
+        "topic": "software development"
+      },
+      "summary": "The post describes a web app built to track sales pipeline using Temporal Cloud.",
+      "hook_excerpt": "I've been at Temporal for 3 months now, so I built something with it:"
+    },
+    {
+      "issue_number": 96,
+      "issue_url": "https://github.com/nadvolod/magic-social/issues/96",
+      "image_url": "https://github.com/user-attachments/assets/0eaeff2c-0127-4712-9111-949a345e1bdc",
+      "recorded_at": "2026-04-01T20:20:54.543643+00:00",
+      "metrics": {
+        "impressions": 10535,
+        "reactions": 48,
+        "comments": 3,
+        "reposts": 1,
+        "saves": 0
+      },
+      "engagement_score": 60.0,
+      "percentile": 0.75,
+      "classification": "bottom_90_percent",
+      "reason": "The candidate percentile of 0.7500 is below the 90th percentile threshold.",
+      "confidence": 0.85,
+      "signals": {
+        "hook_style": "informative",
+        "tone": "educational",
+        "structure": "list",
+        "cta_type": "link",
+        "has_code": false,
+        "has_numbers": false,
+        "topic": "AI and technology tutorial"
+      },
+      "summary": "The post introduces a tutorial on building a deep research agent using Temporal Technologies and OpenAI SDK.",
+      "hook_excerpt": "Build a Deep Research Agent Tutorial"
+    }
+  ],
   "version": 1
 }
