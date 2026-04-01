@@ -137,6 +137,43 @@ def _load_screenshot_signal_guidance() -> str:
         return ""
 
 
+@lru_cache(maxsize=1)
+def _load_linkedin_data_guidance() -> str:
+    """
+    Load compact guidance from ingested LinkedIn engagement data.
+
+    When linkedin_insights.json exists, distill the key findings
+    into a short prompt section for the generator.
+    """
+    try:
+        from .linkedin_data import LinkedInDataInsights  # noqa: PLC0415
+
+        insights = LinkedInDataInsights.load("linkedin_insights.json")
+        if insights.total_posts == 0:
+            return ""
+
+        parts = [f"Data from {insights.total_posts} real LinkedIn posts:"]
+
+        if insights.optimal_length_range != (800, 1500):
+            lo, hi = insights.optimal_length_range
+            parts.append(f"- Optimal post length: {lo}-{hi} characters")
+
+        if insights.engagement_by_day_of_week:
+            best_day = max(insights.engagement_by_day_of_week, key=insights.engagement_by_day_of_week.get)  # type: ignore[arg-type]
+            parts.append(f"- Best posting day: {best_day}")
+
+        if insights.high_engagement_patterns:
+            hooks = insights.high_engagement_patterns[:3]
+            parts.append("- Top-performing hook patterns:")
+            for hook in hooks:
+                parts.append(f'  "{hook}"')
+
+        return "\n".join(parts)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Could not load LinkedIn data guidance: %s", exc)
+        return ""
+
+
 def _build_system_prompt() -> str:
     examples = _load_good_posts_examples()
     example_block = ""
@@ -162,6 +199,14 @@ def _build_system_prompt() -> str:
             f"{screenshot_guidance}"
         )
 
+    linkedin_data_guidance = _load_linkedin_data_guidance()
+    linkedin_data_block = ""
+    if linkedin_data_guidance:
+        linkedin_data_block = (
+            "\n\nSignals from real LinkedIn post engagement data:\n\n"
+            f"{linkedin_data_guidance}"
+        )
+
     return textwrap.dedent(f"""
         You are an expert technical LinkedIn content creator for senior engineers and tech leads.
 
@@ -176,7 +221,7 @@ def _build_system_prompt() -> str:
         - Avoid: hashtag spam (0-2 max, only if highly relevant)
         - Topics that work: AI/LLMs, distributed systems, Temporal.io, testing, engineering career
 
-        Tone: Direct. Confident. Specific. Human.{example_block}{lessons_block}{screenshot_block}
+        Tone: Direct. Confident. Specific. Human.{example_block}{lessons_block}{screenshot_block}{linkedin_data_block}
     """).strip()
 
 
@@ -482,8 +527,9 @@ def generate_post_with_quality_gate(
         )
         return None
 
-    rewritten = post.linkedin_post
+    best_text = post.linkedin_post
     best_quality = quality
+    rewritten = post.linkedin_post  # seed for the first rewrite prompt's current_post arg
     for attempt in range(1, max_rewrites + 1):
         rewritten = _generate_with_openai(
             openai_client,
@@ -500,20 +546,19 @@ def generate_post_with_quality_gate(
         candidate_quality = score_linkedin_post_quality(rewritten, min_chars=min_chars, max_chars=max_chars)
         if candidate_quality.total > best_quality.total:
             best_quality = candidate_quality
-            post.linkedin_post = rewritten
+            best_text = rewritten
         if candidate_quality.total >= quality_threshold:
-            post.linkedin_post = rewritten
             break
 
-    final_quality = score_linkedin_post_quality(post.linkedin_post, min_chars=min_chars, max_chars=max_chars)
-    if final_quality.total < quality_threshold:
+    post.linkedin_post = best_text
+    if best_quality.total < quality_threshold:
         logger.warning(
             "Post %s rejected by quality gate after %d rewrites (%.1f < %.1f): %s",
             post.id,
             max_rewrites,
-            final_quality.total,
+            best_quality.total,
             quality_threshold,
-            "; ".join(final_quality.issues[:3]),
+            "; ".join(best_quality.issues[:3]),
         )
         return None
 

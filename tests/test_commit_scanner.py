@@ -8,6 +8,7 @@ import requests
 from src.commit_scanner import (
     fetch_user_repos,
     scan_all_user_commits,
+    scan_repos,
     _summarize_diff,
 )
 
@@ -141,6 +142,56 @@ class TestScanAllUserCommits:
             branch="develop",
             threshold=20.0,
         )
+
+
+class TestScanRepos:
+    def test_scan_repos_aggregates_results(self):
+        """Scanning 2 repos returns commits from both, sorted by score."""
+        from src.models import SourceCommit
+        commit_a = SourceCommit(
+            sha="aaa", repo="nadvolod/LifeNotes", message="feat: X", author="n", timestamp="", score=80.0
+        )
+        commit_b = SourceCommit(
+            sha="bbb", repo="nadvolod/temporal-learning", message="feat: Y", author="n", timestamp="", score=60.0
+        )
+        with patch("src.commit_scanner.scan_commits") as mock_scan:
+            mock_scan.side_effect = [[commit_a], [commit_b]]
+            results = scan_repos(
+                ["nadvolod/LifeNotes", "nadvolod/temporal-learning"],
+                "fake-token",
+            )
+        assert len(results) == 2
+        assert results[0].score == 80.0
+        assert results[1].score == 60.0
+        assert mock_scan.call_count == 2
+
+    def test_scan_repos_skips_failing_repo(self):
+        """If one repo 404s, others still scan."""
+        from src.models import SourceCommit
+        good = SourceCommit(
+            sha="aaa", repo="nadvolod/LifeNotes", message="feat: X", author="n", timestamp="", score=50.0
+        )
+        with patch("src.commit_scanner.scan_commits") as mock_scan:
+            mock_scan.side_effect = [[good], requests.HTTPError("404")]
+            results = scan_repos(
+                ["nadvolod/LifeNotes", "nadvolod/temporal-learning"],
+                "fake-token",
+            )
+        assert len(results) == 1
+        assert results[0].repo == "nadvolod/LifeNotes"
+
+    def test_scan_repos_sorts_combined_results(self):
+        """Combined list must be sorted by score descending."""
+        from src.models import SourceCommit
+        commits = [
+            [SourceCommit(sha="c", repo="r1", message="m", author="n", timestamp="", score=30.0)],
+            [SourceCommit(sha="a", repo="r2", message="m", author="n", timestamp="", score=90.0)],
+        ]
+        with patch("src.commit_scanner.scan_commits") as mock_scan:
+            mock_scan.side_effect = commits
+            results = scan_repos(["r1", "r2"], "token")
+        assert results[0].score == 90.0
+        assert results[1].score == 30.0
 
 
 class TestSummarizeDiff:

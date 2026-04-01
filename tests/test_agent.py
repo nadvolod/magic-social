@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import subprocess
+import sys
 from datetime import datetime, timedelta, timezone
 
 import src.agent as agent
@@ -235,6 +237,26 @@ class _FakeChat:
 class _FakeOpenAI:
     def __init__(self, content: str):
         self.chat = _FakeChat(content)
+
+
+class TestCLIArgValidation:
+    def test_quality_threshold_rejects_out_of_range(self):
+        """--quality-threshold outside [0, 100] must fail with a clear error."""
+        result = subprocess.run(
+            [sys.executable, "-m", "src.agent", "scan", "--repo", "o/r", "--quality-threshold", "150"],
+            capture_output=True, text=True, env={**__import__("os").environ, "GITHUB_TOKEN": "fake"},
+        )
+        assert result.returncode != 0
+        assert "quality-threshold" in result.stderr.lower()
+
+    def test_max_rewrites_rejects_negative(self):
+        """--max-rewrites must be >= 0."""
+        result = subprocess.run(
+            [sys.executable, "-m", "src.agent", "scan", "--repo", "o/r", "--max-rewrites", "-1"],
+            capture_output=True, text=True, env={**__import__("os").environ, "GITHUB_TOKEN": "fake"},
+        )
+        assert result.returncode != 0
+        assert "max-rewrites" in result.stderr.lower()
 
 
 def test_decide_commit_with_openai_accepts_valid_json():

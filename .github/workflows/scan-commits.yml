@@ -41,6 +41,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Validate OpenAI key
+        if: ${{ !inputs.dry_run }}
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
@@ -55,7 +56,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           SOCIAL_LESSONS_DOC_URL: ${{ vars.SOCIAL_LESSONS_DOC_URL }}
         run: |
-          ARGS="--repo ${{ github.repository }} --branch main"
+          ARGS="--repos nadvolod/LifeNotes nadvolod/temporal-learning --branch main --issue-repo nadvolod/magic-social"
 
           if [ -n "${{ inputs.since }}" ]; then
             ARGS="$ARGS --since ${{ inputs.since }}"

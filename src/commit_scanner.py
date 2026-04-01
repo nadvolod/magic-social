@@ -181,6 +181,42 @@ def scan_commits(
     return results
 
 
+def scan_repos(
+    repos: list[str],
+    token: str,
+    since: Optional[str] = None,
+    per_page: int = 100,
+    branch: str = "main",
+    threshold: float = SCORE_THRESHOLD,
+) -> list[SourceCommit]:
+    """
+    Scan commits across an explicit list of repositories.
+
+    This is the preferred entry point when the set of source repos
+    is known (see ``config.yaml`` → ``agent.source_repos``).
+    Repos that fail to fetch are skipped with a warning.
+
+    Returns:
+        Combined list of SourceCommit objects sorted by score descending.
+    """
+    all_commits: list[SourceCommit] = []
+    for repo in repos:
+        try:
+            commits = scan_commits(
+                repo, token, since=since, per_page=per_page, branch=branch, threshold=threshold
+            )
+            all_commits.extend(commits)
+        except requests.HTTPError as exc:
+            logger.warning("Could not scan repo %s: %s", repo, exc)
+    all_commits.sort(key=lambda c: c.score, reverse=True)
+    logger.info(
+        "Found %d total lesson-worthy commits across %d explicit repos",
+        len(all_commits),
+        len(repos),
+    )
+    return all_commits
+
+
 def scan_all_user_commits(
     username: str,
     token: str,

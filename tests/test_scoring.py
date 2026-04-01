@@ -58,6 +58,12 @@ class TestLowValueFilter:
     def test_initial_commit_filtered(self):
         assert is_low_value("Initial commit")
 
+    def test_merge_colon_style_is_low_value(self):
+        assert is_low_value("merge: integrate origin/main with latest social feedback pipeline updates")
+
+    def test_merge_space_style_still_filtered(self):
+        assert is_low_value("Merge pull request #69 from nadvolod/codex/post-quality-gate-rewrite-loop")
+
 
 class TestIndividualScorers:
     def test_novelty_rewards_insight_words(self):
@@ -153,3 +159,33 @@ class TestScoreCommit:
             files_changed=["ai.py", "temporal.py", "distributed.py", "agent.py", "test.py"],
         )
         assert total <= 100.0
+
+    def test_scoring_uses_learned_weights(self):
+        """When weights are provided, dimensions are multiplied before summing."""
+        msg = "fix Temporal.io workflow saga timeout because activities were not idempotent"
+        diff = "refactored retry logic +45 lines, -12 lines"
+        files = ["workflow/saga.go", "tests/test.go"]
+
+        total_default, bd_default = score_commit(msg, diff, files)
+        # Double the relevance weight, zero out proof
+        weights = {"novelty": 1.0, "impact": 1.0, "teachability": 1.0, "relevance": 2.0, "proof": 0.0}
+        total_weighted, bd_weighted = score_commit(msg, diff, files, weights=weights)
+
+        # Weighted total should differ from default
+        assert total_weighted != total_default
+        # Relevance dimension should be doubled in the total
+        expected = (
+            bd_default.novelty * 1.0
+            + bd_default.impact * 1.0
+            + bd_default.teachability * 1.0
+            + bd_default.relevance * 2.0
+            + bd_default.proof * 0.0
+        )
+        assert abs(total_weighted - expected) < 0.01
+
+    def test_default_weights_unchanged(self):
+        """Without weights, behavior is identical to current."""
+        msg = "implement distributed tracing for AI agent workflows"
+        total_no_weights, _ = score_commit(msg)
+        total_none_weights, _ = score_commit(msg, weights=None)
+        assert total_no_weights == total_none_weights

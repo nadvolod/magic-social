@@ -275,13 +275,25 @@ python -m src.agent metrics
 | Component | File | Responsibility |
 |-----------|------|----------------|
 | Orchestrator | `src/agent.py` | End-to-end pipeline, CLI |
-| Commit scanner | `src/commit_scanner.py` | Fetches + filters GitHub commits |
-| Scoring | `src/scoring.py` | Rates commits 0–100 for lesson-worthiness |
+| Commit scanner | `src/commit_scanner.py` | Fetches + filters GitHub commits (multi-repo via `scan_repos()`) |
+| Scoring | `src/scoring.py` | Rates commits 0–100 with optional learned weights |
 | Post generator | `src/post_generator.py` | AI-powered LinkedIn/X/IG content |
 | GitHub storage | `src/github_storage.py` | Creates/updates GitHub Issues |
 | Analytics | `src/analytics.py` | Parses metrics, drives learning loop |
+| LinkedIn data | `src/linkedin_data.py` | Ingests LinkedIn export Excel, analyzes engagement patterns |
 | Experiments | `src/experiments.py` | A/B test management |
 | Data models | `src/models.py` | Typed schemas for all entities |
+
+#### Source Repos
+
+The agent scans commits from these repositories (configured in `config.yaml` → `agent.source_repos`):
+
+| Repo | Topics |
+|------|--------|
+| `nadvolod/LifeNotes` | AI (GPT-4o, Whisper), Playwright E2E, Next.js/Vercel, performance budgeting, Clerk auth, encryption |
+| `nadvolod/temporal-learning` | Temporal.io, distributed systems, workflow orchestration, AI agents |
+
+Social-post Issues are created in `nadvolod/magic-social` (configured via `agent.issue_repo`). magic-social itself is never scanned — its commits are about the agent, not engineering lessons.
 
 ---
 
@@ -400,11 +412,14 @@ To enable daily follower count + post engagement polling:
 ### CLI
 
 ```bash
-# Scan commits and generate posts (dry run — no issues created)
-python -m src.agent scan --repo owner/repo --dry-run
+# Scan commits from configured source repos (dry run — no issues created)
+python -m src.agent scan --repos nadvolod/LifeNotes nadvolod/temporal-learning --dry-run
 
-# Scan and create GitHub Issues
-python -m src.agent scan --repo owner/repo
+# Scan and create GitHub Issues in magic-social
+python -m src.agent scan --repos nadvolod/LifeNotes nadvolod/temporal-learning --issue-repo nadvolod/magic-social
+
+# Scan a single repo
+python -m src.agent scan --repo owner/repo --dry-run
 
 # Scan only recent commits (last 14 days)
 python -m src.agent scan --repo owner/repo --since 2024-01-01T00:00:00Z
@@ -413,13 +428,16 @@ python -m src.agent scan --repo owner/repo --since 2024-01-01T00:00:00Z
 python -m src.agent scan --repo owner/repo --max-posts 2
 
 # Backlog throttle tuning (pause generation if draft backlog is too high)
-python -m src.agent scan --repo owner/repo --max-open-unpublished 8 --max-stale-unpublished 3
+python -m src.agent scan --repos nadvolod/LifeNotes nadvolod/temporal-learning --max-open-unpublished 8 --max-stale-unpublished 3
 
 # Override backlog throttle for emergency/manual runs
 python -m src.agent scan --repo owner/repo --disable-backlog-throttle
 
 # Enforce stricter quality and allow more rewrite attempts
 python -m src.agent scan --repo owner/repo --quality-threshold 80 --max-rewrites 3
+
+# Ingest LinkedIn Content Export for engagement analysis
+python -m src.agent ingest-linkedin-data --file Content_2025-03-31_2026-03-30.xlsx
 
 # Collect analytics for published posts
 python -m src.agent analytics --repo owner/repo --posts posts.json
@@ -452,7 +470,7 @@ Four workflows are included:
 
 | Workflow | File | Trigger |
 |----------|------|---------|
-| Scan commits | `.github/workflows/scan-commits.yml` | push to main, daily 08:00 UTC, manual |
+| Scan commits | `.github/workflows/scan-commits.yml` | push to main, daily 08:00 UTC, manual (scans LifeNotes + temporal-learning) |
 | Collect analytics | `.github/workflows/analytics-update.yml` | Wed + Fri 09:00 UTC, manual |
 | Poll LinkedIn metrics | `.github/workflows/linkedin-poll.yml` | daily 07:00 UTC, manual |
 | Weekly self-improvement PR | `.github/workflows/self-improve.yml` | every Monday 10:00 UTC, manual |

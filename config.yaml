@@ -1,6 +1,16 @@
 # GitHub Commit → Social Post Agent Configuration
 
 agent:
+  # Explicit list of repos to scan for lesson-worthy commits.
+  # magic-social is excluded — its Issues are generated output, not lessons.
+  # Expand this list to add more sources in the future.
+  source_repos:
+    - nadvolod/LifeNotes
+    - nadvolod/temporal-learning
+
+  # Repo where social-post Issues are created (separate from scan sources)
+  issue_repo: nadvolod/magic-social
+
   # Default branch to scan for commits
   default_branch: main
 

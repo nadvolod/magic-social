@@ -33,7 +33,7 @@ from .analytics import (
     should_apply_feedback,
     update_learning_state,
 )
-from .commit_scanner import scan_all_user_commits, scan_commits
+from .commit_scanner import scan_all_user_commits, scan_commits, scan_repos
 from .experiments import ExperimentManager, EXPERIMENT_PLAN
 from .github_storage import (
     add_analytics_comment,
@@ -363,6 +363,8 @@ def run_scan(
     experiments_path: str = DEFAULT_EXPERIMENTS_PATH,
     dry_run: bool = False,
     username: Optional[str] = None,
+    repos: Optional[list[str]] = None,
+    issue_repo: Optional[str] = None,
     threshold: float = SCORE_THRESHOLD,
     backlog_throttle_enabled: bool = True,
     max_open_unpublished: int = DEFAULT_MAX_OPEN_UNPUBLISHED,
@@ -375,7 +377,7 @@ def run_scan(
     Run a full commit scan → post generation → GitHub Issue creation cycle.
 
     Args:
-        repo:                 Full repo name (owner/repo).  Mutually exclusive with username.
+        repo:                 Full repo name (owner/repo).  Mutually exclusive with username/repos.
         token:                GitHub token with repo + issues write access.
         since:                ISO 8601 date string; only scan commits after this.
         branch:               Branch to scan.
@@ -384,6 +386,8 @@ def run_scan(
         experiments_path:     Path to the experiments JSON file.
         dry_run:              If True, print posts but don't create issues.
         username:             GitHub username — scan ALL repos for this user.
+        repos:                Explicit list of repos to scan (e.g. from config.yaml source_repos).
+        issue_repo:           Repo where social-post Issues are created (defaults to repo if single).
         threshold:            Minimum commit score to qualify for post generation.
         backlog_throttle_enabled:
                               If True, pause generation when draft backlog is too high.
@@ -397,17 +401,22 @@ def run_scan(
     Returns:
         List of generated Post objects.
     """
-    if not repo and not username:
-        raise ValueError("Either 'repo' or 'username' must be provided.")
+    if not repo and not username and not repos:
+        raise ValueError("Either 'repo', 'username', or 'repos' must be provided.")
     if since is None:
         cutoff = datetime.now(timezone.utc) - timedelta(days=DEFAULT_SCAN_DAYS)
         since = cutoff.isoformat()
 
     logger.info("Starting commit scan (since=%s)", since)
 
+    # Resolve issue_repo: where social-post Issues are created.
+    # Falls back to repo (single-repo mode) or the first source repo.
+    if issue_repo is None:
+        issue_repo = repo or (repos[0] if repos else None)
+
     # Backlog throttle: pause generation when too many unpublished drafts accumulate.
-    if backlog_throttle_enabled and not dry_run and repo:
-        backlog = fetch_social_post_backlog(repo, token, stale_days=stale_days)
+    if backlog_throttle_enabled and not dry_run and issue_repo:
+        backlog = fetch_social_post_backlog(issue_repo, token, stale_days=stale_days)
         if (
             backlog.open_unpublished >= max_open_unpublished
             or backlog.stale_unpublished >= max_stale_unpublished
@@ -444,8 +453,13 @@ def run_scan(
     # Pick the best hook pattern from learning state
     best_hook = get_best_hook_pattern(learning_state)
 
-    # Scan commits — either a single repo or all repos for a user
-    if username:
+    # Scan commits — explicit repo list, single repo, or all repos for a user
+    if repos:
+        logger.info("Scanning explicit repo list: %s", repos)
+        source_commits = scan_repos(
+            repos, token, since=since, branch=branch, threshold=threshold
+        )
+    elif username:
         logger.info("Scanning all repositories for user %s", username)
         source_commits = scan_all_user_commits(
             username, token, since=since, branch=branch, threshold=threshold
@@ -527,8 +541,8 @@ def run_scan(
             generated_posts.append(post)
             continue
 
-        # Store as GitHub Issue
-        issue_number = create_post_issue(post, repo, token)
+        # Store as GitHub Issue in the issue_repo (not the source repo)
+        issue_number = create_post_issue(post, issue_repo, token)  # type: ignore[arg-type]
         post.github_issue_number = issue_number
         generated_posts.append(post)
 
@@ -677,6 +691,11 @@ Examples:
     repo_group = scan_parser.add_mutually_exclusive_group(required=True)
     repo_group.add_argument("--repo", help="GitHub repo (owner/repo)")
     repo_group.add_argument("--username", help="GitHub username — scan ALL repos for this user")
+    repo_group.add_argument("--repos", nargs="+", help="Explicit list of repos to scan (e.g. owner/repo1 owner/repo2)")
+    scan_parser.add_argument(
+        "--issue-repo",
+        help="Repo where social-post Issues are created (defaults to --repo or first --repos entry)",
+    )
     scan_parser.add_argument("--branch", default="main", help="Branch to scan")
     scan_parser.add_argument("--since", help="ISO 8601 date (e.g. 2024-01-01T00:00:00Z)")
     scan_parser.add_argument("--max-posts", type=int, default=10, help="Max posts per run")
@@ -857,6 +876,18 @@ Examples:
         help="Process and classify without writing state/comments/labels",
     )
 
+    # ingest-linkedin-data command
+    ingest_parser = subparsers.add_parser(
+        "ingest-linkedin-data",
+        help="Parse a LinkedIn Content Export Excel file and produce engagement insights",
+    )
+    ingest_parser.add_argument("--file", required=True, help="Path to the .xlsx export file")
+    ingest_parser.add_argument(
+        "--output",
+        default="linkedin_insights.json",
+        help="Path to write insights JSON (default: linkedin_insights.json)",
+    )
+
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -870,6 +901,12 @@ Examples:
         sys.exit(1)
 
     if args.command == "scan":
+        if not (0 <= args.quality_threshold <= 100):
+            print("Error: --quality-threshold must be between 0 and 100", file=sys.stderr)
+            sys.exit(1)
+        if args.max_rewrites < 0:
+            print("Error: --max-rewrites must be a non-negative integer", file=sys.stderr)
+            sys.exit(1)
         posts = run_scan(
             repo=args.repo,
             token=token,
@@ -878,6 +915,8 @@ Examples:
             max_posts=args.max_posts,
             dry_run=args.dry_run,
             username=args.username,
+            repos=getattr(args, "repos", None),
+            issue_repo=getattr(args, "issue_repo", None),
             threshold=args.threshold,
             backlog_throttle_enabled=not args.disable_backlog_throttle,
             max_open_unpublished=args.max_open_unpublished,
@@ -996,6 +1035,22 @@ Examples:
                 f"  - #{ex.issue_number}: {ex.classification} "
                 f"(score={ex.engagement_score:.1f}, p={ex.percentile * 100:.1f}%)"
             )
+
+    elif args.command == "ingest-linkedin-data":
+        from .linkedin_data import parse_linkedin_export, analyze_linkedin_data  # noqa: PLC0415
+
+        records = parse_linkedin_export(args.file)
+        insights = analyze_linkedin_data(records)
+        insights.save(args.output)
+        print(f"\n✅ Ingested {insights.total_posts} LinkedIn posts → {args.output}")
+        if insights.top_posts:
+            print(f"  Top engagement score: {insights.top_posts[0]['score']:.1f}")
+        if insights.optimal_length_range != (800, 1500):
+            lo, hi = insights.optimal_length_range
+            print(f"  Optimal length: {lo}-{hi} chars")
+        if insights.engagement_by_day_of_week:
+            best_day = max(insights.engagement_by_day_of_week, key=insights.engagement_by_day_of_week.get)  # type: ignore[arg-type]
+            print(f"  Best day: {best_day}")
 
 
 def backfill_feedback_comments(repo: str, token: str, dry_run: bool = False) -> int:

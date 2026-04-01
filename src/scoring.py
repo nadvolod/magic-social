@@ -86,7 +86,7 @@ IMPACT_SIGNALS = [
 
 # Low-value commit patterns to filter out
 LOW_VALUE_PATTERNS = [
-    r"^merge\s+",
+    r"^merge[\s:]",
     r"^wip\s*:",
     r"^typo",
     r"^bump\s+version",
@@ -221,9 +221,16 @@ def score_commit(
     message: str,
     diff_summary: str = "",
     files_changed: list[str] | None = None,
+    weights: dict[str, float] | None = None,
 ) -> tuple[float, ScoreBreakdown]:
     """
     Score a commit for lesson-worthiness.
+
+    Args:
+        weights: Optional dimension multipliers from the learning state.
+                 Keys: novelty, impact, teachability, relevance, proof.
+                 When provided, each raw dimension score is multiplied by
+                 its weight before summing.
 
     Returns (total_score, breakdown).
     Total score is 0-100.
@@ -246,7 +253,16 @@ def score_commit(
     relevance = score_relevance(message, diff_summary, files_changed)
     proof = score_proof(message, diff_summary)
 
-    total = novelty + impact + teachability + relevance + proof
+    if weights:
+        total = (
+            novelty * weights.get("novelty", 1.0)
+            + impact * weights.get("impact", 1.0)
+            + teachability * weights.get("teachability", 1.0)
+            + relevance * weights.get("relevance", 1.0)
+            + proof * weights.get("proof", 1.0)
+        )
+    else:
+        total = novelty + impact + teachability + relevance + proof
 
     breakdown = ScoreBreakdown(
         novelty=novelty,
