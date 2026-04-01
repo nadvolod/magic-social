@@ -186,11 +186,15 @@ def extract_image_urls(markdown: str) -> list[str]:
     """Extract image URLs from markdown/image HTML snippets."""
     if not markdown:
         return []
-    urls: list[str] = []
 
-    md_matches = re.findall(r"!\[[^\]]*]\((https?://[^)\s]+)\)", markdown, flags=re.IGNORECASE)
-    html_matches = re.findall(r'<img[^>]+src=["\'](https?://[^"\']+)["\']', markdown, flags=re.IGNORECASE)
-    bare_matches = re.findall(r"(https?://\S+\.(?:png|jpe?g|webp|gif)(?:\?\S*)?)", markdown, flags=re.IGNORECASE)
+    # Strip HTML comments so template examples (<!-- ![img](https://...) -->)
+    # don't get picked up as real image URLs.
+    cleaned = re.sub(r"<!--.*?-->", "", markdown, flags=re.DOTALL)
+
+    urls: list[str] = []
+    md_matches = re.findall(r"!\[[^\]]*]\((https?://[^)\s]+)\)", cleaned, flags=re.IGNORECASE)
+    html_matches = re.findall(r'<img[^>]+src=["\'](https?://[^"\']+)["\']', cleaned, flags=re.IGNORECASE)
+    bare_matches = re.findall(r"(https?://\S+\.(?:png|jpe?g|webp|gif)(?:\?\S*)?)", cleaned, flags=re.IGNORECASE)
 
     for url in md_matches + html_matches + bare_matches:
         clean = url.strip()
