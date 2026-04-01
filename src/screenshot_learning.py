@@ -7,6 +7,7 @@ import json
 import logging
 import math
 import re
+import urllib.request
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -236,7 +237,20 @@ def download_image_as_data_url(image_url: str, token: str, web_token: Optional[s
         if resp.status_code in (301, 302, 303, 307, 308):
             redirect_url = resp.headers.get("Location", "")
             if redirect_url:
-                resp = requests.get(redirect_url, timeout=30)
+                # Use urllib (no idna validation) to avoid IDNA errors
+                # from S3 redirect hostnames in some CI environments.
+                try:
+                    resp = requests.get(redirect_url, timeout=30)
+                    resp.raise_for_status()
+                    content = resp.content
+                    content_type = resp.headers.get("Content-Type", "image/png").split(";", 1)[0].strip() or "image/png"
+                except Exception:
+                    req = urllib.request.Request(redirect_url)
+                    with urllib.request.urlopen(req, timeout=30) as uresp:
+                        content = uresp.read()
+                        content_type = (uresp.headers.get("Content-Type") or "image/png").split(";", 1)[0].strip()
+                encoded = base64.b64encode(content).decode("ascii")
+                return f"data:{content_type};base64,{encoded}"
         resp.raise_for_status()
     else:
         headers = {"Authorization": f"Bearer {token}", "Accept": "image/*,*/*"}
