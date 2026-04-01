@@ -214,14 +214,35 @@ def find_first_image_url(issue: dict, comments: list[dict]) -> Optional[str]:
     return None
 
 
-def download_image_as_data_url(image_url: str, token: str) -> str:
-    """Download image bytes and return a data URL for OpenAI vision."""
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Accept": "image/*,*/*",
-    }
-    resp = requests.get(image_url, headers=headers, timeout=30)
-    resp.raise_for_status()
+def download_image_as_data_url(image_url: str, token: str, web_token: Optional[str] = None) -> str:
+    """Download image bytes and return a data URL for OpenAI vision.
+
+    ``web_token``, when provided, is used for the initial request to
+    ``github.com/user-attachments/`` URLs.  The default ``GITHUB_TOKEN``
+    issued to GitHub-Actions is a *repository installation* token and
+    **cannot** access private user-attachment URLs.  A classic PAT with
+    ``repo`` scope (or a fine-grained token with Issues-read) works.
+    """
+    download_token = web_token or token
+    is_user_attachment = "user-attachments/assets" in image_url
+
+    # Step 1 – resolve the redirect manually so we never send an auth
+    # header to the storage backend (avoids IDNA / cross-domain issues).
+    if is_user_attachment:
+        headers = {"Authorization": f"token {download_token}", "Accept": "*/*"}
+        resp = requests.get(
+            image_url, headers=headers, timeout=30, allow_redirects=False,
+        )
+        if resp.status_code in (301, 302, 303, 307, 308):
+            redirect_url = resp.headers.get("Location", "")
+            if redirect_url:
+                resp = requests.get(redirect_url, timeout=30)
+        resp.raise_for_status()
+    else:
+        headers = {"Authorization": f"Bearer {token}", "Accept": "image/*,*/*"}
+        resp = requests.get(image_url, headers=headers, timeout=30)
+        resp.raise_for_status()
+
     content_type = resp.headers.get("Content-Type", "image/png").split(";", 1)[0].strip() or "image/png"
     encoded = base64.b64encode(resp.content).decode("ascii")
     return f"data:{content_type};base64,{encoded}"
@@ -491,6 +512,7 @@ def process_screenshot_issue(
     state: ScreenshotLearningState,
     openai_client,
     dry_run: bool = False,
+    web_token: Optional[str] = None,
 ) -> Optional[ScreenshotExample]:
     """Process one screenshot issue into a learned example."""
     issue_number = int(issue["number"])
@@ -509,7 +531,7 @@ def process_screenshot_issue(
             )
         return None
 
-    image_data_url = download_image_as_data_url(image_url, token)
+    image_data_url = download_image_as_data_url(image_url, token, web_token=web_token)
     extracted = extract_metrics_and_signals_with_openai(openai_client, image_data_url)
     metrics = _normalize_metrics(extracted.get("metrics", {}) or {})
     score = engagement_score(metrics)
@@ -593,6 +615,7 @@ def run_screenshot_learning_cycle(
     max_issues: int = 25,
     dry_run: bool = False,
     openai_client=None,
+    web_token: Optional[str] = None,
 ) -> list[ScreenshotExample]:
     """
     Process open screenshot issues and update learning state.
@@ -625,6 +648,7 @@ def run_screenshot_learning_cycle(
                 state=state,
                 openai_client=openai_client,
                 dry_run=dry_run,
+                web_token=web_token,
             )
             if example is not None:
                 learned.append(example)

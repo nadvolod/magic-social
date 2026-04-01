@@ -1021,6 +1021,7 @@ Examples:
         if openai_client is None:
             print("Error: OPENAI_API_KEY is required for screenshot learning.", file=sys.stderr)
             sys.exit(1)
+        web_token = os.environ.get("GH_WEB_TOKEN") or os.environ.get("GH_PAT")
         learned = run_screenshot_learning_cycle(
             repo=args.repo,
             token=token,
@@ -1028,6 +1029,7 @@ Examples:
             max_issues=args.max_issues,
             dry_run=args.dry_run,
             openai_client=openai_client,
+            web_token=web_token,
         )
         print(f"\n✅ Screenshot issues learned: {len(learned)}")
         for ex in learned[:10]:
