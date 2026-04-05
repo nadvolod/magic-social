@@ -165,6 +165,35 @@
       },
       "summary": "The post announces the launch of GPT-5.4 Mini and Nano, highlighting their features and performance improvements.",
       "hook_excerpt": "\ud83c\udf89 GPT-5.4 Mini & Nano are here"
+    },
+    {
+      "issue_number": 98,
+      "issue_url": "https://github.com/nadvolod/magic-social/issues/98",
+      "image_url": "https://github.com/user-attachments/assets/9fc3c1c5-be65-40a7-85c1-7854afb93339",
+      "recorded_at": "2026-04-05T20:17:08.869861+00:00",
+      "metrics": {
+        "impressions": 10535,
+        "reactions": 48,
+        "comments": 3,
+        "reposts": 1,
+        "saves": 0
+      },
+      "engagement_score": 60.0,
+      "percentile": 0.7142857142857143,
+      "classification": "bottom_90_percent",
+      "reason": "The candidate percentile of 0.7143 is below the 90th percentile threshold.",
+      "confidence": 0.85,
+      "signals": {
+        "hook_style": "informative",
+        "tone": "educational",
+        "structure": "bullet points",
+        "cta_type": "link",
+        "has_code": false,
+        "has_numbers": false,
+        "topic": "AI and technology tutorial"
+      },
+      "summary": "The post introduces a tutorial on building a deep research agent using Temporal Technologies and OpenAI SDK.",
+      "hook_excerpt": "Build a Deep Research Agent Tutorial"
     }
   ],
   "version": 1
