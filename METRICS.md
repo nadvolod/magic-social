@@ -13,7 +13,7 @@
 | Feedback received | 104 |
 | Average post rating | 1.6 / 5 |
 | Best performing posts (rolling 20) | 0 |
-| Screenshot examples analyzed | 7 |
+| Screenshot examples analyzed | 8 |
 | Screenshot top 10% | 3 |
 | LinkedIn followers/connections | 0 |
 | LinkedIn posts tracked | 0 |
@@ -96,9 +96,9 @@ Sequential A/B experiments, each running until ≥3 posts per variant.
 Benchmark issues labeled `social-screenshot` are AI-read from screenshots only,
 classified into top 10% vs bottom 90%, then converted into signal memory.
 
-- Screenshots processed: **7**
+- Screenshots processed: **8**
 - Top 10% examples: **3**
-- Bottom 90% examples: **4**
+- Bottom 90% examples: **5**
 
 **Winning signals to repeat:**
 - `cta_type=contact`
@@ -109,12 +109,12 @@ classified into top 10% vs bottom 90%, then converted into signal memory.
 - `structure=introduction, features, comparison, cta`
 
 **Signals to avoid:**
-- `topic=ai and technology tutorial`
-- `cta_type=curiosity`
 - `cta_type=link`
 - `has_code=true`
 - `hook_style=informative`
-- `hook_style=problem statement`
+- `topic=ai and software development`
+- `topic=ai and technology tutorial`
+- `cta_type=curiosity`
 
 ---
 

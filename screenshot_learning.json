@@ -194,6 +194,35 @@
       },
       "summary": "The post introduces a tutorial on building a deep research agent using Temporal Technologies and OpenAI SDK.",
       "hook_excerpt": "Build a Deep Research Agent Tutorial"
+    },
+    {
+      "issue_number": 99,
+      "issue_url": "https://github.com/nadvolod/magic-social/issues/99",
+      "image_url": "https://github.com/user-attachments/assets/c0115fca-b602-4367-be40-61fae3e43c59",
+      "recorded_at": "2026-04-05T20:17:30.231244+00:00",
+      "metrics": {
+        "impressions": 0,
+        "reactions": 64,
+        "comments": 21,
+        "reposts": 5,
+        "saves": 0
+      },
+      "engagement_score": 142.0,
+      "percentile": 0.875,
+      "classification": "bottom_90_percent",
+      "reason": "The candidate percentile of 0.8750 is below the 90th percentile threshold.",
+      "confidence": 0.85,
+      "signals": {
+        "hook_style": "informative",
+        "tone": "professional",
+        "structure": "list",
+        "cta_type": "link",
+        "has_code": true,
+        "has_numbers": false,
+        "topic": "AI and software development"
+      },
+      "summary": "The post discusses a multi-agent PR review workflow using AI for code, test, and security quality checks.",
+      "hook_excerpt": "I implemented a multi-agent PR review workflow in which reliability and orchestration are first-class, not afterthoughts."
     }
   ],
   "version": 1
