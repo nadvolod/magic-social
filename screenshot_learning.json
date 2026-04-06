@@ -223,6 +223,35 @@
       },
       "summary": "The post discusses a multi-agent PR review workflow using AI for code, test, and security quality checks.",
       "hook_excerpt": "I implemented a multi-agent PR review workflow in which reliability and orchestration are first-class, not afterthoughts."
+    },
+    {
+      "issue_number": 100,
+      "issue_url": "https://github.com/nadvolod/magic-social/issues/100",
+      "image_url": "https://github.com/user-attachments/assets/725bb55a-3acb-471e-bbc2-5888965a3598",
+      "recorded_at": "2026-04-06T14:49:21.924231+00:00",
+      "metrics": {
+        "impressions": 3480,
+        "reactions": 31,
+        "comments": 5,
+        "reposts": 1,
+        "saves": 0
+      },
+      "engagement_score": 49.0,
+      "percentile": 0.4444444444444444,
+      "classification": "bottom_90_percent",
+      "reason": "The candidate percentile of 0.4444 is below the 90th percentile threshold.",
+      "confidence": 0.85,
+      "signals": {
+        "hook_style": "informative",
+        "tone": "professional",
+        "structure": "step-by-step",
+        "cta_type": "engagement",
+        "has_code": true,
+        "has_numbers": false,
+        "topic": "development tools"
+      },
+      "summary": "The post discusses using .claude/settings.json to streamline development by managing tool permissions.",
+      "hook_excerpt": "Adding tool use permissions to .claude/settings.json has significantly sped up my development."
     }
   ],
   "version": 1
