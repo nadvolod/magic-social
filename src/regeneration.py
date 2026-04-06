@@ -84,8 +84,8 @@ def classify_feedback(
 
     notes = (feedback.improvement_notes or "").lower().strip()
     if notes:
-        # Check for abandon keywords in free-text
-        if any(word in notes for word in ("abandon", "kill", "stop trying", "give up")):
+        # Check for abandon keywords in free-text (word boundaries to avoid false positives like "skill")
+        if any(re.search(rf"\b{re.escape(word)}\b", notes) for word in ("abandon", "kill", "stop trying", "give up")):
             return "abandon"
 
         # Check for directive/generic language
@@ -112,11 +112,14 @@ def extract_feedback_keywords(feedback: PostFeedback) -> list[str]:
     words = re.findall(r"[a-z][a-z0-9.]+", text)
     keywords = [w for w in words if w not in _STOP_WORDS and len(w) > 2]
 
-    # Also match against known relevant topics
+    # Also match against known relevant topics. These are regex patterns, so
+    # use them directly and normalize the matched text into a keyword label.
     for topic in RELEVANT_TOPICS:
-        pattern = topic.replace(".", r"\.")
-        if re.search(pattern, text):
-            keywords.append(topic.replace(".", ""))
+        match = re.search(topic, text)
+        if match:
+            normalized = re.sub(r"[^a-z0-9]+", "-", match.group(0).lower()).strip("-")
+            if normalized:
+                keywords.append(normalized)
 
     return list(dict.fromkeys(keywords))  # deduplicate preserving order
 
@@ -422,13 +425,14 @@ def apply_generic_feedback(
                 new_issue,
             )
         else:
-            # Close without replacement if no material found
+            # Don't close without a replacement — core principle.
+            # Leave the post open with a comment explaining the situation.
             add_comment(
                 issue_repo, token, post.github_issue_number,
-                f"Closed — doesn't match niche focus per feedback on #{feedback_source_issue}: "
-                f"_{directive_summary}_\n\nNo replacement material found.",
+                f"Doesn't match niche focus per feedback on #{feedback_source_issue}: "
+                f"_{directive_summary}_\n\n"
+                "No replacement material found yet. Will retry on next scan.",
             )
-            close_issue(issue_repo, token, post.github_issue_number)
 
     # Write lesson about the directive
     _write_lesson(

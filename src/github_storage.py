@@ -98,9 +98,10 @@ def _build_issue_body(post: Post) -> str:
     """
     lineage = ""
     if post.parent_issue_number:
+        from .regeneration import MAX_REGENERATION_ATTEMPTS  # noqa: PLC0415
         lineage = (
             f"> Regenerated from #{post.parent_issue_number} "
-            f"(attempt {post.regeneration_attempt}/{3})"
+            f"(attempt {post.regeneration_attempt}/{MAX_REGENERATION_ATTEMPTS})"
         )
         if post.regeneration_feedback:
             lineage += f"\n> Feedback: _{post.regeneration_feedback}_"

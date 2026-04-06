@@ -754,19 +754,35 @@ def run_scan(
     return generated_posts
 
 
-def _load_source_repos() -> list[str]:
-    """Load source_repos from config.yaml."""
+def _load_config_section(section: str) -> dict:
+    """Load a section from config.yaml."""
     from pathlib import Path as _Path  # noqa: PLC0415
     config_path = _Path("config.yaml")
     if not config_path.exists():
-        return []
+        return {}
     try:
         import yaml  # noqa: PLC0415
         with config_path.open() as f:
             config = yaml.safe_load(f) or {}
-        return config.get("agent", {}).get("source_repos", [])
+        return config.get(section, {})
     except Exception:  # noqa: BLE001
-        return []
+        return {}
+
+
+def _load_source_repos() -> list[str]:
+    """Load source_repos from config.yaml."""
+    return _load_config_section("agent").get("source_repos", [])
+
+
+def _load_regeneration_config() -> dict:
+    """Load regeneration config with defaults."""
+    cfg = _load_config_section("regeneration")
+    return {
+        "enabled": cfg.get("enabled", True),
+        "max_attempts": cfg.get("max_attempts", 3),
+        "scan_days": cfg.get("scan_days", 14),
+        "score_threshold": cfg.get("score_threshold", 20.0),
+    }
 
 
 def run_analytics_collection(
@@ -822,8 +838,10 @@ def run_analytics_collection(
                 logger.info("Applied implicit feedback for %s: %s", post.id, event_key)
 
         # --- Pass 1c: feedback-driven regeneration ---
+        regen_cfg = _load_regeneration_config()
         if (
-            has_explicit_feedback
+            regen_cfg["enabled"]
+            and has_explicit_feedback
             and feedback is not None
             and post.status not in (PostStatus.PUBLISHED, PostStatus.ABANDONED, PostStatus.ARCHIVED)
         ):
@@ -872,6 +890,8 @@ def run_analytics_collection(
                         token=token,
                         openai_client=openai_client,
                         learning_state=learning_state,
+                        scan_days=regen_cfg["scan_days"],
+                        score_threshold=regen_cfg["score_threshold"],
                     )
                     if new_post:
                         logger.info("Regenerated post #%s → #%s", post.github_issue_number, new_post.github_issue_number)
