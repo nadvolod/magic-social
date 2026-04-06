@@ -107,6 +107,151 @@
       },
       "summary": "The post introduces a tutorial on building a deep research agent using Temporal Technologies and OpenAI SDK.",
       "hook_excerpt": "Build a Deep Research Agent Tutorial"
+    },
+    {
+      "issue_number": 90,
+      "issue_url": "https://github.com/nadvolod/magic-social/issues/90",
+      "image_url": "https://github.com/user-attachments/assets/3c12b326-12bf-4389-8faa-37d828ea6c74",
+      "recorded_at": "2026-04-01T21:10:41.474897+00:00",
+      "metrics": {
+        "impressions": 515,
+        "reactions": 0,
+        "comments": 0,
+        "reposts": 0,
+        "saves": 0
+      },
+      "engagement_score": 0.0,
+      "percentile": 0.4,
+      "classification": "bottom_90_percent",
+      "reason": "The candidate percentile of 0.4000 indicates the post is below the 90th percentile threshold.",
+      "confidence": 0.9,
+      "signals": {
+        "hook_style": "problem statement",
+        "tone": "informative",
+        "structure": "narrative with bullet points",
+        "cta_type": "curiosity",
+        "has_code": true,
+        "has_numbers": true,
+        "topic": "AI and software development"
+      },
+      "summary": "The post discusses the complexities of implementing email reminders and how refining AI coding guidelines improved code quality.",
+      "hook_excerpt": "I thought email reminders would be easy."
+    },
+    {
+      "issue_number": 95,
+      "issue_url": "https://github.com/nadvolod/magic-social/issues/95",
+      "image_url": "https://github.com/user-attachments/assets/f12b3a1e-6af6-4681-9b2b-8b37f62a1556",
+      "recorded_at": "2026-04-01T21:10:49.323736+00:00",
+      "metrics": {
+        "impressions": 0,
+        "reactions": 379,
+        "comments": 12,
+        "reposts": 7,
+        "saves": 0
+      },
+      "engagement_score": 436.0,
+      "percentile": 1.0,
+      "classification": "top_10_percent",
+      "reason": "The candidate percentile is 1.0000, indicating it is at the top of the distribution.",
+      "confidence": 0.95,
+      "signals": {
+        "hook_style": "announcement",
+        "tone": "informative",
+        "structure": "introduction, features, comparison, CTA",
+        "cta_type": "more details",
+        "has_code": false,
+        "has_numbers": true,
+        "topic": "technology"
+      },
+      "summary": "The post announces the launch of GPT-5.4 Mini and Nano, highlighting their features and performance improvements.",
+      "hook_excerpt": "\ud83c\udf89 GPT-5.4 Mini & Nano are here"
+    },
+    {
+      "issue_number": 98,
+      "issue_url": "https://github.com/nadvolod/magic-social/issues/98",
+      "image_url": "https://github.com/user-attachments/assets/9fc3c1c5-be65-40a7-85c1-7854afb93339",
+      "recorded_at": "2026-04-05T20:17:08.869861+00:00",
+      "metrics": {
+        "impressions": 10535,
+        "reactions": 48,
+        "comments": 3,
+        "reposts": 1,
+        "saves": 0
+      },
+      "engagement_score": 60.0,
+      "percentile": 0.7142857142857143,
+      "classification": "bottom_90_percent",
+      "reason": "The candidate percentile of 0.7143 is below the 90th percentile threshold.",
+      "confidence": 0.85,
+      "signals": {
+        "hook_style": "informative",
+        "tone": "educational",
+        "structure": "bullet points",
+        "cta_type": "link",
+        "has_code": false,
+        "has_numbers": false,
+        "topic": "AI and technology tutorial"
+      },
+      "summary": "The post introduces a tutorial on building a deep research agent using Temporal Technologies and OpenAI SDK.",
+      "hook_excerpt": "Build a Deep Research Agent Tutorial"
+    },
+    {
+      "issue_number": 99,
+      "issue_url": "https://github.com/nadvolod/magic-social/issues/99",
+      "image_url": "https://github.com/user-attachments/assets/c0115fca-b602-4367-be40-61fae3e43c59",
+      "recorded_at": "2026-04-05T20:17:30.231244+00:00",
+      "metrics": {
+        "impressions": 0,
+        "reactions": 64,
+        "comments": 21,
+        "reposts": 5,
+        "saves": 0
+      },
+      "engagement_score": 142.0,
+      "percentile": 0.875,
+      "classification": "bottom_90_percent",
+      "reason": "The candidate percentile of 0.8750 is below the 90th percentile threshold.",
+      "confidence": 0.85,
+      "signals": {
+        "hook_style": "informative",
+        "tone": "professional",
+        "structure": "list",
+        "cta_type": "link",
+        "has_code": true,
+        "has_numbers": false,
+        "topic": "AI and software development"
+      },
+      "summary": "The post discusses a multi-agent PR review workflow using AI for code, test, and security quality checks.",
+      "hook_excerpt": "I implemented a multi-agent PR review workflow in which reliability and orchestration are first-class, not afterthoughts."
+    },
+    {
+      "issue_number": 100,
+      "issue_url": "https://github.com/nadvolod/magic-social/issues/100",
+      "image_url": "https://github.com/user-attachments/assets/725bb55a-3acb-471e-bbc2-5888965a3598",
+      "recorded_at": "2026-04-06T14:49:21.924231+00:00",
+      "metrics": {
+        "impressions": 3480,
+        "reactions": 31,
+        "comments": 5,
+        "reposts": 1,
+        "saves": 0
+      },
+      "engagement_score": 49.0,
+      "percentile": 0.4444444444444444,
+      "classification": "bottom_90_percent",
+      "reason": "The candidate percentile of 0.4444 is below the 90th percentile threshold.",
+      "confidence": 0.85,
+      "signals": {
+        "hook_style": "informative",
+        "tone": "professional",
+        "structure": "step-by-step",
+        "cta_type": "engagement",
+        "has_code": true,
+        "has_numbers": false,
+        "topic": "development tools"
+      },
+      "summary": "The post discusses using .claude/settings.json to streamline development by managing tool permissions.",
+      "hook_excerpt": "Adding tool use permissions to .claude/settings.json has significantly sped up my development."
     }
   ],
   "version": 1
