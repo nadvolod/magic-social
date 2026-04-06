@@ -1,0 +1,47 @@
+name: Weekly Learning Cycle
+
+on:
+  schedule:
+    # Run every Sunday at 20:00 UTC (before Monday's self-improve at 10:00 UTC)
+    - cron: "0 20 * * 0"
+  workflow_dispatch:
+
+jobs:
+  weekly-learn:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run weekly learning cycle
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python -m src.agent weekly-learn --repo nadvolod/magic-social
+
+      - name: Commit learning artifacts
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add -f prompt_patches.json WEEKLY_REPORT.md LESSONS_LEARNED.md good-social-posts/
+
+          if git diff --staged --quiet; then
+            echo "No learning artifacts to commit."
+          else
+            git commit -m "chore: weekly learning cycle — update prompts and report [skip ci]"
+            git push
+          fi

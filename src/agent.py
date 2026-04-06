@@ -462,7 +462,10 @@ def decide_commit_with_openai(openai_client, source, learning_state: LearningSta
         "You are an editorial gatekeeper for technical LinkedIn posts. "
         "Decide if a commit should become a post. Reject repetitive internal maintenance "
         "or meta tooling churn. Accept only if an external engineering audience will learn "
-        "a concrete, useful lesson. Respond ONLY valid JSON."
+        "a concrete, useful lesson. "
+        "NICHE REQUIREMENT: Posts must relate to AI agents, Temporal.io, distributed systems, "
+        "or LLMs (Claude, GPT, Gemini). Reject commits outside this niche. "
+        "Respond ONLY valid JSON."
     )
     user_prompt = (
         "Past content themes that underperformed (use as guidance, not hard blocks):\n"
@@ -769,6 +772,21 @@ def _load_config_section(section: str) -> dict:
         return {}
 
 
+def _auto_save_published_post(post: Post) -> None:
+    """Save a published post to good-social-posts/ as a few-shot example."""
+    good_posts_dir = Path("good-social-posts")
+    good_posts_dir.mkdir(exist_ok=True)
+    filename = f"post-{post.github_issue_number or post.id}.md"
+    filepath = good_posts_dir / filename
+    if filepath.exists():
+        return
+    filepath.write_text(
+        f"# Published Post (auto-saved)\n\n## Final LinkedIn Post\n\n{post.linkedin_post}\n",
+        encoding="utf-8",
+    )
+    logger.info("Auto-saved published post to %s", filepath)
+
+
 def _load_source_repos() -> list[str]:
     """Load source_repos from config.yaml."""
     return _load_config_section("agent").get("source_repos", [])
@@ -823,6 +841,8 @@ def run_analytics_collection(
         if explicit_published and post.status != PostStatus.PUBLISHED:
             update_issue_status(repo, token, post.github_issue_number, PostStatus.PUBLISHED)
             post.status = PostStatus.PUBLISHED
+            # Auto-save to good-social-posts as a few-shot example
+            _auto_save_published_post(post)
 
         # --- Pass 1b: infer feedback from inactivity for non-published posts ---
         implicit_feedback = infer_implicit_feedback(
@@ -1214,6 +1234,24 @@ Examples:
         help="Feedback to address (overrides issue feedback)",
     )
 
+    learn_parser = subparsers.add_parser(
+        "weekly-learn",
+        help="Run weekly learning cycle — synthesize feedback, update prompts, generate report",
+    )
+    learn_parser.add_argument("--repo", required=True, help="Issue repo")
+    learn_parser.add_argument(
+        "--state", default=DEFAULT_LEARNING_STATE_PATH,
+        help="Path to learning state JSON",
+    )
+    learn_parser.add_argument(
+        "--patches", default="prompt_patches.json",
+        help="Path to prompt patches JSON",
+    )
+    learn_parser.add_argument(
+        "--output", default="WEEKLY_REPORT.md",
+        help="Path to write weekly report",
+    )
+
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -1437,6 +1475,19 @@ Examples:
         else:
             print(f"\n❌ Could not regenerate #{args.issue} — no suitable material found.")
             sys.exit(1)
+
+    elif args.command == "weekly-learn":
+        from .weekly_learner import run_weekly_learning_cycle  # noqa: PLC0415
+        report = run_weekly_learning_cycle(
+            repo=args.repo,
+            token=token,
+            learning_state_path=args.state,
+            patches_path=args.patches,
+            report_output=args.output,
+        )
+        print(f"\n✅ Weekly learning cycle complete.")
+        print(f"   Report: {args.output}")
+        print(f"   Patches: {args.patches}")
 
 
 def run_health_check(

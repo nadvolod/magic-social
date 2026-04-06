@@ -203,11 +203,24 @@ def score_teachability(message: str, diff_summary: str) -> float:
     return min(20.0, score)
 
 
+# High-priority niche keywords get double weight in relevance scoring
+NICHE_KEYWORDS = [
+    "ai.agent", "agentic", "temporal", "distributed.system",
+    "claude", "openai", "gemini", "gpt", "llm", "durable.execution",
+    "workflow.orchestration",
+]
+
+
 def score_relevance(message: str, diff_summary: str, files_changed: list[str]) -> float:
-    """Score how relevant this commit is to target topics (0-20)."""
+    """Score how relevant this commit is to target topics (0-20).
+
+    Niche keywords (AI agents, Temporal, distributed systems, LLMs) get
+    double weight to prioritize content in the publishing niche.
+    """
     text = f"{message} {diff_summary} {' '.join(files_changed)}".lower()
     matched = sum(1 for topic in RELEVANT_TOPICS if re.search(topic, text))
-    return min(20.0, matched * 4.0)
+    niche_matched = sum(1 for kw in NICHE_KEYWORDS if re.search(kw, text))
+    return min(20.0, matched * 4.0 + niche_matched * 4.0)
 
 
 def score_proof(message: str, diff_summary: str) -> float:
