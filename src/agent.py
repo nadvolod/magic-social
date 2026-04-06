@@ -224,6 +224,97 @@ def fetch_social_post_backlog(
     return stats
 
 
+# Days without feedback before auto-archiving stale drafts during scan
+AUTO_ARCHIVE_STALE_DAYS = 14
+
+
+def auto_archive_stale_issues(
+    repo: str,
+    token: str,
+    stale_days: int = AUTO_ARCHIVE_STALE_DAYS,
+) -> int:
+    """
+    Close stale unpublished draft issues that have had no feedback.
+
+    Returns the number of issues archived.
+    """
+    import requests as _requests  # noqa: PLC0415
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=stale_days)
+    archived_count = 0
+
+    page = 1
+    while True:
+        url = f"https://api.github.com/repos/{repo}/issues"
+        resp = _requests.get(
+            url,
+            headers=headers,
+            params={"state": "open", "labels": "social-post", "per_page": 100, "page": page},
+            timeout=30,
+        )
+        resp.raise_for_status()
+        batch = resp.json()
+        if not batch:
+            break
+
+        for issue in batch:
+            if "pull_request" in issue:
+                continue
+            status = _issue_status_from_labels(issue.get("labels", [])) or "draft"
+            if status not in (PostStatus.DRAFT.value, PostStatus.APPROVED.value):
+                continue
+            created_at = _parse_iso_datetime(issue.get("created_at", ""))
+            if created_at is None or created_at > cutoff:
+                continue
+
+            issue_number = issue["number"]
+            title = issue.get("title", "")
+            # Close the issue and add an explanatory comment
+            comment_url = f"https://api.github.com/repos/{repo}/issues/{issue_number}/comments"
+            _requests.post(
+                comment_url,
+                headers=headers,
+                json={"body": (
+                    f"Auto-archived: this draft was open for {stale_days}+ days with no "
+                    "publish action. Closing to unblock new post generation. "
+                    "Reopen if you'd like to revisit this draft."
+                )},
+                timeout=30,
+            )
+            # Close the issue
+            close_url = f"https://api.github.com/repos/{repo}/issues/{issue_number}"
+            _requests.patch(
+                close_url,
+                headers=headers,
+                json={"state": "closed"},
+                timeout=30,
+            )
+            # Add auto-archived label
+            label_url = f"https://api.github.com/repos/{repo}/issues/{issue_number}/labels"
+            _requests.post(
+                label_url,
+                headers=headers,
+                json={"labels": ["auto-archived"]},
+                timeout=30,
+            )
+            archived_count += 1
+            logger.info("Auto-archived stale issue #%d: %s", issue_number, title)
+
+        if len(batch) < 100:
+            break
+        page += 1
+
+    if archived_count:
+        print(f"Auto-archived {archived_count} stale draft(s) older than {stale_days} days.")
+    return archived_count
+
+
 def _get_openai_client():
     """Return an openai.OpenAI client if the API key is set, else None."""
     api_key = os.environ.get("OPENAI_API_KEY")
@@ -238,6 +329,35 @@ def _get_openai_client():
         return None
 
 
+def _parse_bad_batch_date(reason: str) -> Optional[datetime]:
+    """Extract date from a bad-batch reason key like '..._pre_2026-03-03_...'."""
+    import re
+    match = re.search(r"_pre_(\d{4}-\d{2}-\d{2})", reason)
+    if match:
+        try:
+            return datetime.strptime(match.group(1), "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        except ValueError:
+            pass
+    return None
+
+
+def _decay_factor(age_days: float) -> float:
+    """Return a decay multiplier based on age in days.
+
+    0-30 days: full weight (1.0)
+    30-60 days: half weight (0.5)
+    60-90 days: quarter weight (0.25)
+    90+ days: ignored (0.0)
+    """
+    if age_days < 30:
+        return 1.0
+    if age_days < 60:
+        return 0.5
+    if age_days < 90:
+        return 0.25
+    return 0.0
+
+
 def apply_learning_guardrails(
     learning_state: LearningState,
     threshold: float,
@@ -249,41 +369,74 @@ def apply_learning_guardrails(
     If the learning state contains a strong historical bad-batch signal, we:
     - increase minimum commit threshold (quality-first)
     - reduce post volume per run (avoid flooding with weak drafts)
+
+    Signals decay over time so the system can recover from historical issues.
+    Also checks archived_not_published_reasons with decay applied.
     """
-    reasons = learning_state.not_published_reasons or {}
-    bad_batch_count = sum(
-        int(count)
-        for reason, count in reasons.items()
-        if reason.lower().startswith(HISTORICAL_BAD_BATCH_REASON_PREFIX)
-    )
+    now = datetime.now(timezone.utc)
+    bad_batch_count = 0.0
+
+    # Check both active and archived reasons for bad-batch signals (with decay)
+    for source in [
+        learning_state.not_published_reasons or {},
+        learning_state.archived_not_published_reasons or {},
+    ]:
+        for reason, count in source.items():
+            if reason.lower().startswith(HISTORICAL_BAD_BATCH_REASON_PREFIX):
+                batch_date = _parse_bad_batch_date(reason)
+                if batch_date:
+                    age_days = (now - batch_date).total_seconds() / 86400
+                    bad_batch_count += int(count) * _decay_factor(age_days)
+                else:
+                    bad_batch_count += int(count)
 
     adjusted_threshold = threshold
     adjusted_max_posts = max_posts
 
-    # This signal is coarse but high-confidence (explicitly user-marked batch).
     if bad_batch_count >= 10:
         adjusted_threshold = max(adjusted_threshold, 40.0)
         adjusted_max_posts = min(adjusted_max_posts, 3)
         logger.info(
-            "Learning guardrail active from historical bad-practice batch (count=%d): "
-            "threshold %.1f -> %.1f, max_posts %d -> %d",
+            "Learning guardrail active from historical bad-practice batch "
+            "(effective_count=%.1f): threshold %.1f -> %.1f, max_posts %d -> %d",
             bad_batch_count,
             threshold,
             adjusted_threshold,
             max_posts,
             adjusted_max_posts,
         )
+    elif bad_batch_count > 0:
+        logger.info(
+            "Historical bad-practice batch decayed below threshold "
+            "(effective_count=%.1f < 10). No guardrail applied.",
+            bad_batch_count,
+        )
 
     return adjusted_threshold, adjusted_max_posts
 
 
-def _historical_bad_practice_summary(learning_state: LearningState, top_n: int = 5) -> str:
-    """Return a compact summary of historical negative reasons for prompting."""
+# Implicit/automated reason keys that should not be fed into the editorial gate prompt.
+_IMPLICIT_REASON_KEYS = {"no_feedback_72h", "stale_unpublished_7d"}
+
+
+def _historical_bad_practice_summary(learning_state: LearningState, top_n: int = 3) -> str:
+    """Return a compact summary of explicit negative reasons for the editorial gate.
+
+    Excludes implicit/automated signals (no_feedback_72h, stale_unpublished_7d) which
+    reflect user inaction, not content quality. Caps to top_n reasons with count >= 3
+    to avoid overwhelming the prompt.
+    """
     reasons = learning_state.not_published_reasons or {}
-    if not reasons:
-        return "No historical bad-practice reasons recorded."
-    ranked = sorted(reasons.items(), key=lambda kv: -int(kv[1]))[:top_n]
-    return "; ".join(f"{reason}={count}" for reason, count in ranked)
+    # Filter to explicit user feedback only, with meaningful count
+    explicit = {
+        reason: int(count)
+        for reason, count in reasons.items()
+        if reason not in _IMPLICIT_REASON_KEYS and int(count) >= 3
+    }
+    if not explicit:
+        return "No significant content quality issues recorded."
+    ranked = sorted(explicit.items(), key=lambda kv: -kv[1])[:top_n]
+    return "; ".join(f"{reason} ({count}x)" for reason, count in ranked)
 
 
 def decide_commit_with_openai(openai_client, source, learning_state: LearningState, model: str = "gpt-4o") -> CommitDecision:
@@ -304,7 +457,7 @@ def decide_commit_with_openai(openai_client, source, learning_state: LearningSta
         "a concrete, useful lesson. Respond ONLY valid JSON."
     )
     user_prompt = (
-        "Historical negative signals (do not repeat):\n"
+        "Past content themes that underperformed (use as guidance, not hard blocks):\n"
         f"{history_summary}\n\n"
         "Commit candidate:\n"
         f"- message: {source.message}\n"
@@ -413,6 +566,13 @@ def run_scan(
     # Falls back to repo (single-repo mode) or the first source repo.
     if issue_repo is None:
         issue_repo = repo or (repos[0] if repos else None)
+
+    # Auto-archive very stale drafts (14+ days) to prevent permanent backlog deadlock.
+    if backlog_throttle_enabled and not dry_run and issue_repo:
+        try:
+            auto_archive_stale_issues(issue_repo, token, stale_days=AUTO_ARCHIVE_STALE_DAYS)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Auto-archive failed (non-fatal): %s", exc)
 
     # Backlog throttle: pause generation when too many unpublished drafts accumulate.
     if backlog_throttle_enabled and not dry_run and issue_repo:
@@ -888,6 +1048,20 @@ Examples:
         help="Path to write insights JSON (default: linkedin_insights.json)",
     )
 
+    health_parser = subparsers.add_parser(
+        "health-check",
+        help="Audit system health and report problems",
+    )
+    health_parser.add_argument(
+        "--state",
+        default=DEFAULT_LEARNING_STATE_PATH,
+        help="Path to learning state JSON file",
+    )
+    health_parser.add_argument(
+        "--repo",
+        help="Issue repo to check backlog (default: from config.yaml)",
+    )
+
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -896,7 +1070,7 @@ Examples:
     )
 
     token = os.environ.get("GITHUB_TOKEN")
-    if args.command not in ("experiments", "feedback", "metrics", "linkedin-poll") and not token:
+    if args.command not in ("experiments", "feedback", "metrics", "linkedin-poll", "health-check") and not token:
         print("Error: GITHUB_TOKEN environment variable is required", file=sys.stderr)
         sys.exit(1)
 
@@ -1053,6 +1227,124 @@ Examples:
         if insights.engagement_by_day_of_week:
             best_day = max(insights.engagement_by_day_of_week, key=insights.engagement_by_day_of_week.get)  # type: ignore[arg-type]
             print(f"  Best day: {best_day}")
+
+    elif args.command == "health-check":
+        problems = run_health_check(
+            learning_state_path=args.state,
+            token=token,
+            repo=args.repo,
+        )
+        if problems:
+            print(f"\n{'=' * 50}")
+            print(f"HEALTH CHECK: {len(problems)} problem(s) found")
+            print(f"{'=' * 50}")
+            for i, problem in enumerate(problems, 1):
+                print(f"\n  {i}. {problem}")
+            print()
+            sys.exit(1)
+        else:
+            print("\n✅ Health check passed — all systems operational.")
+            sys.exit(0)
+
+
+def run_health_check(
+    learning_state_path: str = DEFAULT_LEARNING_STATE_PATH,
+    token: Optional[str] = None,
+    repo: Optional[str] = None,
+) -> list[str]:
+    """
+    Audit system components and return a list of problems found.
+
+    Returns an empty list if everything is healthy.
+    """
+    from .linkedin_api import load_latest_snapshot  # noqa: PLC0415
+
+    state = LearningState.load(learning_state_path)
+    problems: list[str] = []
+
+    # Check backlog health
+    if repo and token:
+        try:
+            backlog = fetch_social_post_backlog(repo, token)
+            if backlog.stale_unpublished >= DEFAULT_MAX_STALE_UNPUBLISHED:
+                problems.append(
+                    f"BACKLOG THROTTLE ACTIVE: {backlog.stale_unpublished} stale unpublished "
+                    f"drafts (limit: {DEFAULT_MAX_STALE_UNPUBLISHED}). "
+                    "New post generation is blocked. Archive or review stale issues."
+                )
+            if backlog.open_unpublished >= DEFAULT_MAX_OPEN_UNPUBLISHED:
+                problems.append(
+                    f"OPEN BACKLOG HIGH: {backlog.open_unpublished} open unpublished "
+                    f"drafts (limit: {DEFAULT_MAX_OPEN_UNPUBLISHED}). "
+                    "Review, publish, or archive some drafts."
+                )
+        except Exception as exc:  # noqa: BLE001
+            problems.append(f"BACKLOG CHECK FAILED: {exc}")
+
+    # Check guardrail status
+    threshold, max_posts = apply_learning_guardrails(state, SCORE_THRESHOLD, 10)
+    if threshold > SCORE_THRESHOLD or max_posts < 10:
+        problems.append(
+            f"GUARDRAIL ACTIVE: threshold raised to {threshold:.1f} (base: {SCORE_THRESHOLD}), "
+            f"max_posts reduced to {max_posts}. "
+            "Historical bad-practice signal is still influencing generation."
+        )
+
+    # Check archived bad-batch signals
+    archived = state.archived_not_published_reasons or {}
+    for reason, count in archived.items():
+        if reason.startswith(HISTORICAL_BAD_BATCH_REASON_PREFIX):
+            problems.append(
+                f"ARCHIVED BAD BATCH: '{reason}' with count={count}. "
+                "This signal is archived and decaying over time."
+            )
+
+    # Check LinkedIn API
+    linkedin = load_latest_snapshot("linkedin_metrics.json")
+    if linkedin:
+        if linkedin.follower_count == 0 and not linkedin.post_metrics:
+            problems.append(
+                "LINKEDIN NOT CONNECTED: Daily polls return 0 followers and no posts. "
+                "Check that LINKEDIN_ACCESS_TOKEN is set and not expired."
+            )
+    else:
+        problems.append(
+            "LINKEDIN NEVER POLLED: No linkedin_metrics.json found. "
+            "Run `python -m src.agent linkedin-poll` to start collecting data."
+        )
+
+    # Check learning loop health
+    if state.total_posts_analyzed == 0:
+        problems.append(
+            "LEARNING LOOP INACTIVE: No posts have quantitative analytics. "
+            "Publish posts and enter analytics data to start the feedback loop."
+        )
+
+    # Check scoring weights (all at 1.0 = no learning)
+    all_default = all(w == 1.0 for w in state.scoring_weights.values())
+    if all_default and state.total_feedback_received > 10:
+        problems.append(
+            "WEIGHTS UNCHANGED: All scoring weights are at 1.0 despite "
+            f"{state.total_feedback_received} feedback entries. "
+            "The system has not learned from any published post analytics."
+        )
+
+    # Check good-social-posts calibration
+    good_posts_dir = Path("good-social-posts")
+    good_posts_count = len(list(good_posts_dir.glob("*.md"))) if good_posts_dir.exists() else 0
+    if good_posts_count < 3:
+        problems.append(
+            f"LOW CALIBRATION DATA: Only {good_posts_count} example(s) in good-social-posts/. "
+            "Add 3-5 high-performing LinkedIn posts for better generation quality."
+        )
+
+    # Check OpenAI key
+    if not os.environ.get("OPENAI_API_KEY"):
+        problems.append(
+            "OPENAI_API_KEY NOT SET: Post generation requires an OpenAI API key."
+        )
+
+    return problems
 
 
 def backfill_feedback_comments(repo: str, token: str, dry_run: bool = False) -> int:
@@ -1218,7 +1510,56 @@ def generate_metrics_report(
         "",
     ]
 
+    # ------------------------------------------------- system health (new)
+    linkedin_connected = bool(
+        linkedin and (linkedin.follower_count > 0 or linkedin.post_metrics)
+    )
+    any_weight_changed = any(w != 1.0 for w in state.scoring_weights.values())
+    any_experiment_running = any(
+        (e.status.value if hasattr(e.status, "value") else e.status) == "running"
+        for e in experiments.experiments
+    )
+    learning_active = any_weight_changed or any_experiment_running
+
+    # Detect generation stall: check not_published_reasons for stale signals
+    stale_count = state.not_published_reasons.get("stale_unpublished_7d", 0)
+    archived_bad_batch = sum(
+        int(v) for k, v in (state.archived_not_published_reasons or {}).items()
+        if k.startswith(HISTORICAL_BAD_BATCH_REASON_PREFIX)
+    )
+    generation_stalled = stale_count >= DEFAULT_MAX_STALE_UNPUBLISHED
+    stall_reasons = []
+    if generation_stalled:
+        stall_reasons.append(f"backlog throttle ({stale_count} stale drafts)")
+    if archived_bad_batch > 0:
+        stall_reasons.append(f"historical bad-batch archived ({archived_bad_batch} posts, decaying)")
+
+    gen_status = "STALLED" if generation_stalled else "ACTIVE"
+    gen_detail = " — " + ", ".join(stall_reasons) if stall_reasons else ""
+
+    lines += [
+        "## System Health",
+        "",
+        "| Component | Status |",
+        "|-----------|--------|",
+        f"| Post generation | **{gen_status}**{gen_detail} |",
+        f"| LinkedIn API | **{'CONNECTED' if linkedin_connected else 'NOT CONNECTED'}**"
+        f"{' — set up LINKEDIN_ACCESS_TOKEN' if not linkedin_connected else ''} |",
+        f"| Learning loop | **{'ACTIVE' if learning_active else 'WAITING'}**"
+        f"{' — needs published posts with analytics' if not learning_active else ''} |",
+        f"| A/B experiments | **{'RUNNING' if any_experiment_running else 'NOT STARTED'}**"
+        f"{' — needs 3+ published posts' if not any_experiment_running else ''} |",
+        "",
+        "---",
+        "",
+    ]
+
     # ------------------------------------------------- high-level scorecard
+    explicit_rating_str = (
+        f"{state.explicit_average_rating:.1f} / 5"
+        if state.explicit_ratings_received > 0
+        else "n/a (no explicit ratings yet)"
+    )
     avg_rating_str = f"{state.average_rating:.1f} / 5" if state.total_ratings_received > 0 else "n/a (no ratings yet)"
     total_posts = state.total_posts_analyzed
     total_feedback = state.total_feedback_received
@@ -1230,20 +1571,21 @@ def generate_metrics_report(
         "|--------|-------|",
         f"| Posts analyzed | {total_posts} |",
         f"| Feedback received | {total_feedback} |",
-        f"| Average post rating | {avg_rating_str} |",
+        f"| Average post rating (explicit) | {explicit_rating_str} |",
+        f"| Average post rating (all incl. implicit) | {avg_rating_str} |",
         f"| Best performing posts (rolling 20) | {len(state.best_performing_posts)} |",
         f"| Screenshot examples analyzed | {len(screenshot_state.examples)} |",
         f"| Screenshot top 10% | {screenshot_state.top_10_count} |",
     ]
 
-    if linkedin:
+    if linkedin_connected:
         lines += [
             f"| LinkedIn followers/connections | {linkedin.follower_count:,} |",
             f"| LinkedIn posts tracked | {len(linkedin.post_metrics)} |",
             f"| LinkedIn metrics last updated | {linkedin.recorded_at[:10]} |",
         ]
     else:
-        lines.append("| LinkedIn metrics | _not yet polled — run `linkedin-poll`_ |")
+        lines.append("| LinkedIn metrics | NOT CONNECTED — run `linkedin-poll` after setting `LINKEDIN_ACCESS_TOKEN` |")
 
     lines += [
         "",
@@ -1432,14 +1774,22 @@ def generate_metrics_report(
     lines += ["---", ""]
 
     # ------------------------------------------------- qualitative feedback
+    implicit_count = sum(
+        len(events) for events in state.implicit_feedback_events.values()
+    )
+    explicit_count = state.total_feedback_received - implicit_count
+
     lines += [
         "## 💬 Qualitative Feedback",
         "",
         "Parsed from GitHub Issue reactions, quick comments, and `## Post Feedback` templates.",
         "",
-        f"- Total feedback comments received: **{state.total_feedback_received}**",
-        f"- Posts rated: **{state.total_ratings_received}**",
-        f"- Average rating: **{avg_rating_str}**",
+        f"- Explicit user feedback: **{explicit_count}** comments, "
+        f"**{state.explicit_ratings_received}** ratings, "
+        f"avg **{explicit_rating_str}**",
+        f"- Implicit signals (automated): **{implicit_count}** "
+        "(posts auto-marked after 72h no feedback or 7d stale)",
+        f"- Combined total: **{state.total_feedback_received}** feedback entries",
         "",
         "**Improvement themes** (from 'What would make it better?'):",
         "",
@@ -1491,7 +1841,7 @@ def generate_metrics_report(
         "",
     ]
 
-    if linkedin:
+    if linkedin_connected:
         lines += [
             f"_Data from poll on {linkedin.recorded_at[:10]}_",
             "",
@@ -1514,55 +1864,68 @@ def generate_metrics_report(
             lines.append("")
     else:
         lines += [
-            "_LinkedIn metrics not yet collected._",
+            "**NOT CONNECTED** — LinkedIn API is not returning data.",
             "",
-            "To start tracking follower count and post engagement, run:",
-            "```bash",
-            "# One-time setup: add LINKEDIN_ACCESS_TOKEN to GitHub secrets",
-            "# Then poll manually or let the daily workflow do it:",
-            "python -m src.agent linkedin-poll",
-            "```",
+            "The daily poll has been running but returning 0 followers and no posts.",
+            "This usually means `LINKEDIN_ACCESS_TOKEN` is missing or expired.",
             "",
-            "See **LinkedIn API Setup** in the README for OAuth instructions.",
+            "To fix:",
+            "1. Create or refresh your LinkedIn OAuth token (see README for setup)",
+            "2. Add it as `LINKEDIN_ACCESS_TOKEN` in GitHub Secrets",
+            "3. Run `python -m src.agent linkedin-poll` to verify",
             "",
         ]
 
     lines += ["---", ""]
 
-    # ------------------------------------------------- next improvements
+    # ------------------------------------------------- dynamic action items
+    good_posts_dir = Path("good-social-posts")
+    good_posts_count = len(list(good_posts_dir.glob("*.md"))) if good_posts_dir.exists() else 0
+
+    action_items: list[str] = []
+
+    if generation_stalled:
+        action_items.append(
+            "**Unblock post generation** — stale drafts are blocking new posts. "
+            "Review/archive old draft issues or run a scan with `--disable-backlog-throttle`"
+        )
+    if not linkedin_connected:
+        action_items.append(
+            "**Connect LinkedIn API** — add `LINKEDIN_ACCESS_TOKEN` to GitHub Secrets "
+            "to start tracking real engagement data"
+        )
+    if good_posts_count < 3:
+        action_items.append(
+            f"**Add more good-post examples** — only {good_posts_count} example(s) in "
+            "`good-social-posts/`. Add 3-5 real LinkedIn posts that performed well"
+        )
+    if total_posts == 0:
+        action_items.append(
+            "**Publish your first post** — the learning loop, experiments, and weight "
+            "adjustments all need at least 1 published post with analytics"
+        )
+    if state.explicit_ratings_received > 0 and state.explicit_average_rating < 3.0:
+        action_items.append(
+            "**Review feedback themes** — explicit average rating is below 3.0. "
+            "Check recent feedback and update generation prompt or examples"
+        )
+    if not any_experiment_running and total_posts < 3:
+        action_items.append(
+            "**Run first A/B experiment** — publish 3+ posts to start testing "
+            "which hook patterns drive the most engagement"
+        )
+
     lines += [
-        "## 🚀 Next Improvements",
-        "",
-        "Prioritized by expected impact on post publish rate and engagement.",
-        "",
-        "### 🔴 High Priority (do this now)",
-        "",
-        "- [ ] **Collect your first batch of feedback** — run `python -m src.agent backfill-feedback --repo owner/repo`",
-        "      to post a feedback request on every existing open issue in one command",
-        "- [ ] **Add good-post examples** — drop any LinkedIn post that performed well into",
-        "      `good-social-posts/post-N.md` under `## Final LinkedIn Post`",
-        "- [ ] **Set up LinkedIn API polling** — add `LINKEDIN_ACCESS_TOKEN` secret and run",
-        "      `python -m src.agent linkedin-poll` to start tracking follower count + post engagement daily",
-        "",
-        "### 🟡 Medium Priority (this sprint)",
-        "",
-        "- [ ] **Add more curated examples** to `good-social-posts/` to improve few-shot quality",
-        "- [ ] **Enable the analytics workflow** — enter impressions/saves/comments 48 h after each publish",
-        "- [ ] **Review scoring weights** — after 5+ posts, run `python -m src.agent metrics` to see",
-        "      which dimensions correlate with high engagement",
-        "- [ ] **Run the first experiment** — publish at least 3 posts, then compare hook pattern scores",
-        "",
-        "### 🟢 Roadmap (Phase 2)",
-        "",
-        "- [x] Auto-commit dashboard artifacts via GitHub Actions (`linkedin_metrics.json`, `METRICS.md`, `README.md`)",
-        "- [ ] Publish rate tracker — detect published posts via LinkedIn API, no manual status updates",
-        "- [ ] Slack/email alert when a post is ready for review",
-        "- [ ] Topic gap analysis — highlight topics not covered in the last 30 days",
-        "- [ ] Follower growth trend chart (sparkline from `linkedin_metrics.json` history)",
-        "",
-        "---",
+        "## 🚀 Action Items",
         "",
     ]
+    if action_items:
+        lines.append("Prioritized by impact on getting the system producing and improving:\n")
+        for i, item in enumerate(action_items, 1):
+            lines.append(f"{i}. {item}")
+    else:
+        lines.append("System is healthy. Keep publishing posts and providing feedback to improve quality.")
+    lines += ["", "---", ""]
 
     # ------------------------------------------------- how to update
     lines += [
