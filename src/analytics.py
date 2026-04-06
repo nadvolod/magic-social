@@ -50,6 +50,7 @@ SHORT_NEGATIVE_REASON_MARKERS = {
     "not relevant": "not_relevant",
     "weak hook": "weak_hook",
     "useless topic": "useless_topic",
+    "abandon": "abandon",
     "bad": "quality",
 }
 
@@ -293,6 +294,7 @@ def parse_feedback_from_issue_body(issue_body: str, post_id: str) -> Optional[Po
         "not relevant": "not_relevant",
         "weak hook": "weak_hook",
         "useless topic": "useless_topic",
+        "abandon": "abandon",
     }
     for label, reason in checkbox_reason_map.items():
         if re.search(rf"- \[[xX]\]\s*.*{re.escape(label)}", issue_body, re.IGNORECASE):
@@ -383,6 +385,8 @@ class LearningState:
     explicit_average_rating: float = 0.0  # average from real user feedback only
     applied_feedback_fingerprints: dict = field(default_factory=dict)  # post_id -> fingerprint
     implicit_feedback_events: dict = field(default_factory=dict)        # post_id -> [event_keys]
+    applied_generic_feedback: dict = field(default_factory=dict)        # fingerprint -> timestamp
+    regeneration_history: list = field(default_factory=list)            # [{parent, child, feedback, timestamp}]
     version: int = 1
 
     def to_dict(self) -> dict:
@@ -401,6 +405,8 @@ class LearningState:
             "explicit_average_rating": self.explicit_average_rating,
             "applied_feedback_fingerprints": self.applied_feedback_fingerprints,
             "implicit_feedback_events": self.implicit_feedback_events,
+            "applied_generic_feedback": self.applied_generic_feedback,
+            "regeneration_history": self.regeneration_history,
             "version": self.version,
         }
 
@@ -421,6 +427,8 @@ class LearningState:
             explicit_average_rating=data.get("explicit_average_rating", 0.0),
             applied_feedback_fingerprints=data.get("applied_feedback_fingerprints", {}),
             implicit_feedback_events=data.get("implicit_feedback_events", {}),
+            applied_generic_feedback=data.get("applied_generic_feedback", {}),
+            regeneration_history=data.get("regeneration_history", []),
             version=data.get("version", 1),
         )
 

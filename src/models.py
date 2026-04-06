@@ -14,6 +14,7 @@ class PostStatus(str, Enum):
     APPROVED = "approved"
     PUBLISHED = "published"
     ARCHIVED = "archived"
+    ABANDONED = "abandoned"
 
 
 class ExperimentStatus(str, Enum):
@@ -75,6 +76,10 @@ class Post:
     experiment_id: Optional[str] = None
     experiment_variant: Optional[str] = None
     tags: list[str] = field(default_factory=list)
+    # Regeneration lineage tracking
+    parent_issue_number: Optional[int] = None
+    regeneration_attempt: int = 0
+    regeneration_feedback: Optional[str] = None
 
     def to_dict(self) -> dict:
         d = asdict(self)
@@ -83,9 +88,12 @@ class Post:
 
     @classmethod
     def from_dict(cls, data: dict) -> "Post":
+        import inspect  # noqa: PLC0415
         data = dict(data)
         data["status"] = PostStatus(data.get("status", PostStatus.DRAFT))
-        return cls(**data)
+        valid_keys = set(inspect.signature(cls).parameters.keys())
+        filtered = {k: v for k, v in data.items() if k in valid_keys}
+        return cls(**filtered)
 
     def to_json(self) -> str:
         return json.dumps(self.to_dict(), indent=2)

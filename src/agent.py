@@ -42,7 +42,7 @@ from .github_storage import (
     load_posts_from_issues,
     update_issue_status,
 )
-from .models import Post, PostStatus
+from .models import Post, PostFeedback, PostStatus
 from .post_generator import (
     HOOK_PATTERNS,
     QUALITY_GATE_DEFAULT_MAX_REWRITES,
@@ -54,6 +54,14 @@ from .screenshot_learning import (
     ScreenshotLearningState,
     build_signal_balance,
     run_screenshot_learning_cycle,
+)
+from .regeneration import (
+    apply_generic_feedback,
+    apply_similar_feedback,
+    classify_feedback,
+    handle_abandon,
+    regenerate_from_feedback,
+    should_regenerate,
 )
 from .scoring import SCORE_THRESHOLD
 from .self_improvement import run_self_improvement_cycle
@@ -439,7 +447,7 @@ def _historical_bad_practice_summary(learning_state: LearningState, top_n: int =
     return "; ".join(f"{reason} ({count}x)" for reason, count in ranked)
 
 
-def decide_commit_with_openai(openai_client, source, learning_state: LearningState, model: str = "gpt-4o") -> CommitDecision:
+def decide_commit_with_openai(openai_client, source, learning_state: LearningState, model: str = "gpt-5.4-mini") -> CommitDecision:
     """
     Ask OpenAI whether this commit should become a social post.
 
@@ -746,6 +754,37 @@ def run_scan(
     return generated_posts
 
 
+def _load_config_section(section: str) -> dict:
+    """Load a section from config.yaml."""
+    from pathlib import Path as _Path  # noqa: PLC0415
+    config_path = _Path("config.yaml")
+    if not config_path.exists():
+        return {}
+    try:
+        import yaml  # noqa: PLC0415
+        with config_path.open() as f:
+            config = yaml.safe_load(f) or {}
+        return config.get(section, {})
+    except Exception:  # noqa: BLE001
+        return {}
+
+
+def _load_source_repos() -> list[str]:
+    """Load source_repos from config.yaml."""
+    return _load_config_section("agent").get("source_repos", [])
+
+
+def _load_regeneration_config() -> dict:
+    """Load regeneration config with defaults."""
+    cfg = _load_config_section("regeneration")
+    return {
+        "enabled": cfg.get("enabled", True),
+        "max_attempts": cfg.get("max_attempts", 3),
+        "scan_days": cfg.get("scan_days", 14),
+        "score_threshold": cfg.get("score_threshold", 20.0),
+    }
+
+
 def run_analytics_collection(
     repo: str,
     token: str,
@@ -798,9 +837,70 @@ def run_analytics_collection(
                 learning_state.save(learning_state_path)
                 logger.info("Applied implicit feedback for %s: %s", post.id, event_key)
 
+        # --- Pass 1c: feedback-driven regeneration ---
+        regen_cfg = _load_regeneration_config()
+        if (
+            regen_cfg["enabled"]
+            and has_explicit_feedback
+            and feedback is not None
+            and post.status not in (PostStatus.PUBLISHED, PostStatus.ABANDONED, PostStatus.ARCHIVED)
+        ):
+            fb_type = classify_feedback(feedback, post)
+            openai_client = _get_openai_client()
+            source_repos = _load_source_repos()
+
+            if fb_type == "abandon":
+                handle_abandon(post, repo, token)
+                post.status = PostStatus.ABANDONED
+
+            elif fb_type == "generic" and source_repos:
+                new_posts = apply_generic_feedback(
+                    feedback=feedback,
+                    feedback_source_issue=post.github_issue_number,
+                    open_posts=posts,
+                    source_repos=source_repos,
+                    issue_repo=repo,
+                    token=token,
+                    openai_client=openai_client,
+                    learning_state=learning_state,
+                )
+                logger.info("Generic feedback: generated %d replacements", len(new_posts))
+
+            elif fb_type == "post_specific" and source_repos:
+                # Check if topic-level rejection applies to siblings
+                if feedback.not_published_reason in ("useless_topic", "not_relevant"):
+                    new_posts = apply_similar_feedback(
+                        feedback=feedback,
+                        source_post=post,
+                        open_posts=posts,
+                        source_repos=source_repos,
+                        issue_repo=repo,
+                        token=token,
+                        openai_client=openai_client,
+                        learning_state=learning_state,
+                    )
+                    logger.info("Similar-topic feedback: closed + replaced %d siblings", len(new_posts))
+
+                if should_regenerate(post):
+                    new_post = regenerate_from_feedback(
+                        rejected_post=post,
+                        feedback=feedback,
+                        source_repos=source_repos,
+                        issue_repo=repo,
+                        token=token,
+                        openai_client=openai_client,
+                        learning_state=learning_state,
+                        scan_days=regen_cfg["scan_days"],
+                        score_threshold=regen_cfg["score_threshold"],
+                    )
+                    if new_post:
+                        logger.info("Regenerated post #%s → #%s", post.github_issue_number, new_post.github_issue_number)
+
+            learning_state.save(learning_state_path)
+
         # Auto-archive stale unpublished drafts after 7 days.
         if (
-            post.status not in (PostStatus.PUBLISHED, PostStatus.ARCHIVED)
+            post.status not in (PostStatus.PUBLISHED, PostStatus.ARCHIVED, PostStatus.ABANDONED)
             and any(event_key == "stale_unpublished_7d" for event_key, _ in implicit_feedback)
         ):
             update_issue_status(repo, token, post.github_issue_number, PostStatus.ARCHIVED)
@@ -1103,6 +1203,17 @@ Examples:
         help="Issue repo to check backlog (default: from config.yaml)",
     )
 
+    regen_parser = subparsers.add_parser(
+        "regenerate",
+        help="Manually regenerate a rejected post from better source material",
+    )
+    regen_parser.add_argument("--repo", required=True, help="Issue repo (e.g. nadvolod/magic-social)")
+    regen_parser.add_argument("--issue", type=int, required=True, help="GitHub issue number to regenerate")
+    regen_parser.add_argument(
+        "--feedback",
+        help="Feedback to address (overrides issue feedback)",
+    )
+
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -1287,6 +1398,45 @@ Examples:
         else:
             print("\n✅ Health check passed — all systems operational.")
             sys.exit(0)
+
+    elif args.command == "regenerate":
+        from .github_storage import load_posts_from_issues as _load  # noqa: PLC0415
+
+        posts = _load(args.repo, token, state="all")
+        target = [p for p in posts if p.github_issue_number == args.issue]
+        if not target:
+            print(f"Error: Issue #{args.issue} not found or not a social-post issue.", file=sys.stderr)
+            sys.exit(1)
+
+        post = target[0]
+        feedback_text = args.feedback or "manual regeneration requested"
+        feedback = PostFeedback(
+            post_id=post.id,
+            published=False,
+            not_published_reason="needs_rewrite",
+            improvement_notes=feedback_text,
+        )
+
+        openai_client = _get_openai_client()
+        learning_state = LearningState.load(DEFAULT_LEARNING_STATE_PATH)
+        source_repos = _load_source_repos()
+
+        new_post = regenerate_from_feedback(
+            rejected_post=post,
+            feedback=feedback,
+            source_repos=source_repos,
+            issue_repo=args.repo,
+            token=token,
+            openai_client=openai_client,
+            learning_state=learning_state,
+        )
+        learning_state.save(DEFAULT_LEARNING_STATE_PATH)
+
+        if new_post:
+            print(f"\n✅ Regenerated: #{args.issue} → #{new_post.github_issue_number}")
+        else:
+            print(f"\n❌ Could not regenerate #{args.issue} — no suitable material found.")
+            sys.exit(1)
 
 
 def run_health_check(
