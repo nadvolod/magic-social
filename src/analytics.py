@@ -49,6 +49,7 @@ SHORT_NEGATIVE_REASON_MARKERS = {
     "too long": "too_long",
     "not relevant": "not_relevant",
     "weak hook": "weak_hook",
+    "useless topic": "useless_topic",
     "bad": "quality",
 }
 
@@ -291,6 +292,7 @@ def parse_feedback_from_issue_body(issue_body: str, post_id: str) -> Optional[Po
         "too long": "too_long",
         "not relevant": "not_relevant",
         "weak hook": "weak_hook",
+        "useless topic": "useless_topic",
     }
     for label, reason in checkbox_reason_map.items():
         if re.search(rf"- \[[xX]\]\s*.*{re.escape(label)}", issue_body, re.IGNORECASE):

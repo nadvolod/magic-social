@@ -89,10 +89,33 @@ def _create_label(repo: str, token: str, name: str, color: str, description: str
 def _build_issue_body(post: Post) -> str:
     """Build the GitHub Issue body for a social post.
 
-    The issue is structured so the LinkedIn post is front-and-centre and
-    easy to copy-paste.  X Thread and Instagram sections are omitted —
-    LinkedIn is the only platform we're optimising for right now.
+    Kept intentionally short so feedback is reachable without scrolling.
+    LinkedIn post + quick feedback checkboxes + reactions — nothing else.
+    Publishing checklist, analytics template, and metadata go in a
+    separate follow-up comment (see _build_details_comment).
     """
+    return f"""## 🔵 LinkedIn Post
+
+{post.linkedin_post}
+
+---
+
+## ⚡ Quick Feedback
+
+- [ ] Publish
+- [ ] Rewrite
+- [ ] Skip
+- [ ] Too long
+- [ ] Not relevant
+- [ ] Weak hook
+- [ ] Useless topic
+
+Or react: 👍 good draft · 👎 bad draft · 🚀 published
+"""
+
+
+def _build_details_comment(post: Post) -> str:
+    """Build the follow-up comment with checklist, feedback templates, and metadata."""
     commit_url = f"https://github.com/{post.repo}/commit/{post.source_commit_sha}"
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
@@ -104,90 +127,42 @@ def _build_issue_body(post: Post) -> str:
 - **Variant:** `{post.experiment_variant or 'control'}`
 """
 
-    return f"""## 🔵 LinkedIn Post
-
-<!-- Copy-paste the text below into LinkedIn -->
-
-{post.linkedin_post}
-
----
-
-## ⚡ Quick Mobile Feedback
-
-If you're on mobile, use any one of these:
-
-- [ ] Publish
-- [ ] Rewrite
-- [ ] Skip
-- [ ] Too long
-- [ ] Not relevant
-- [ ] Weak hook
-
-Or just react to this issue:
-- 👍 good draft
-- 👎 bad draft
-- 🚀 published
-
----
-
-## ✅ Publishing Checklist
+    return f"""## ✅ Publishing Checklist
 
 - [ ] Review LinkedIn post for accuracy
-- [ ] Verify no sensitive data, secrets, or proprietary code
-- [ ] Approve content
+- [ ] Verify no sensitive data
 - [ ] Publish to LinkedIn
-- [ ] Record publish date/time
 - [ ] Collect analytics after 48 hours
 
 ---
 
 ## 💬 Post Feedback
 
-Whether or not you publish this post, please add a comment with your honest feedback.
-This helps the agent learn your preferences and improve future posts.
-
-Quick mobile options (copy one or two lines):
 ```
 ## Post Feedback
-- Verdict: ✅ published
-- Verdict: ❌ skipped
-- Reason: quality
-- Rating: 4
-- Improve: add one concrete metric and stronger takeaway
-```
-
-Detailed option:
-```
-## Post Feedback — [DATE]
-
-- Published: yes / no
-- If not published, why: quality / style / not relevant / too long / too technical / other
-- What would make it better: 
-- Rating (1-5): 
+- Verdict: ✅ published / ❌ skipped
+- Rating: 1-5
+- Improve: (what would make it better)
 ```
 
 ---
 
-## 📊 Analytics Input Template
-
-After publishing, add a comment to this issue with your metrics:
+## 📊 Analytics (after 48h)
 
 ```
 ## Analytics Update — [DATE]
-
-- Impressions: 
-- Reactions: 
-- Comments: 
-- Reposts: 
-- Saves: 
-- Follower delta: 
-- Click-through: 
-- Notes: 
+- Impressions:
+- Reactions:
+- Comments:
+- Reposts:
+- Saves:
+- Follower delta:
+- Click-through:
 ```
 
 ---
 
-## 📝 Post Metadata
+## 📝 Metadata
 
 | Field | Value |
 |-------|-------|
@@ -197,16 +172,10 @@ After publishing, add a comment to this issue with your metrics:
 | **Hook Pattern** | `{post.hook_pattern}` |
 | **Tags** | {', '.join(f'`{t}`' for t in post.tags)} |
 | **Created** | {now} |
-| **Status** | `{post.status.value}` |
-
-## 💡 Lesson
-
-{post.lesson}
+| **Lesson** | {post.lesson} |
 {experiment_section}
----
-
 <details>
-<summary>🤖 Raw Post Data (JSON metadata for agent use)</summary>
+<summary>🤖 Raw Post Data (JSON)</summary>
 
 ```json
 {post.to_json()}
@@ -359,6 +328,22 @@ def create_post_issue(
 
     issue_number = resp.json()["number"]
     logger.info("Created GitHub Issue #%d for post %s", issue_number, post.id)
+
+    # Post details (checklist, feedback templates, metadata) as a separate comment
+    # so the main issue body stays short and mobile-friendly.
+    details = _build_details_comment(post)
+    comment_url = f"{GITHUB_API}/repos/{repo}/issues/{issue_number}/comments"
+    comment_resp = requests.post(
+        comment_url,
+        headers=_headers(token),
+        json={"body": details},
+        timeout=30,
+    )
+    if comment_resp.ok:
+        logger.info("Posted details comment on Issue #%d", issue_number)
+    else:
+        logger.warning("Failed to post details comment on Issue #%d: %s", issue_number, comment_resp.status_code)
+
     return issue_number
 
 
