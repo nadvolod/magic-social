@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import json
 import logging
+import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Optional
@@ -107,6 +108,7 @@ class LinkedInSnapshot:
     follower_count: int = 0
     connection_count: int = 0
     post_metrics: list[LinkedInPostMetrics] = field(default_factory=list)
+    auth_error: bool = False
 
     def to_dict(self) -> dict:
         return {
@@ -281,7 +283,23 @@ def poll_linkedin(access_token: str, max_posts: int = 10) -> LinkedInSnapshot:
         profile = fetch_profile(access_token)
         logger.info("LinkedIn profile: %s %s (%s)", profile.first_name, profile.last_name, profile.person_urn)
     except requests.HTTPError as exc:
-        logger.error("Failed to fetch LinkedIn profile: %s", exc)
+        status_code = getattr(exc.response, "status_code", None)
+        if status_code in (401, 403):
+            logger.error(
+                "LinkedIn authentication failed (HTTP %s). "
+                "Your LINKEDIN_ACCESS_TOKEN is likely expired or invalid. "
+                "Refresh it and update the GitHub secret.",
+                status_code,
+            )
+            print(
+                f"\n❌ LinkedIn API authentication failed (HTTP {status_code}).\n"
+                "Your access token is expired or invalid.\n"
+                "Refresh it via the OAuth flow and update LINKEDIN_ACCESS_TOKEN in GitHub Secrets.",
+                file=sys.stderr,
+            )
+        else:
+            logger.error("Failed to fetch LinkedIn profile: %s", exc)
+        snapshot.auth_error = True
         return snapshot
 
     # Step 2: Follower / connection count

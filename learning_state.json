@@ -11,12 +11,14 @@
   "best_performing_posts": [],
   "total_posts_analyzed": 0,
   "not_published_reasons": {
-    "historical_batch_bad_practice_pre_2026-03-03_2359_est": 37,
     "not_relevant": 6,
     "skip": 18,
     "this doesn't match what we have in the good-social-posts folder at all": 9,
     "no_feedback_72h": 16,
     "stale_unpublished_7d": 18
+  },
+  "archived_not_published_reasons": {
+    "historical_batch_bad_practice_pre_2026-03-03_2359_est": 37
   },
   "total_feedback_received": 104,
   "total_ratings_received": 67,
