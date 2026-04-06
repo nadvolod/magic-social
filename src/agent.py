@@ -525,6 +525,7 @@ def run_scan(
     stale_days: int = DEFAULT_STALE_DAYS,
     quality_threshold: float = QUALITY_GATE_DEFAULT_THRESHOLD,
     max_rewrites: int = QUALITY_GATE_DEFAULT_MAX_REWRITES,
+    variations_per_commit: int = 1,
 ) -> list[Post]:
     """
     Run a full commit scan → post generation → GitHub Issue creation cycle.
@@ -659,54 +660,88 @@ def run_scan(
             return []
     generated_posts: list[Post] = []
 
+    # Build list of hook patterns for variations
+    all_hooks = list(HOOK_PATTERNS.keys())
+    num_variations = max(1, variations_per_commit)
+
     for source in source_commits[:max_posts]:
-        # Determine hook pattern: use experiment variant if active, else best from learning
-        hook_pattern = best_hook
-        experiment_id = None
-        experiment_variant = None
+        # Determine hook patterns for this commit's variations
+        variation_hooks: list[tuple[str, Optional[str], Optional[str]]] = []
 
         if active_exp is not None:
             from .models import ExperimentVariable  # noqa: PLC0415
             if active_exp.variable == ExperimentVariable.HOOK_STYLE:
-                experiment_variant = experiments.assign_variant(active_exp)
-                hook_pattern = experiment_variant
-                experiment_id = active_exp.id
+                # During experiments, use experiment-assigned variants
+                for _ in range(num_variations):
+                    variant = experiments.assign_variant(active_exp)
+                    variation_hooks.append((variant, active_exp.id, variant))
+            else:
+                variation_hooks.append((best_hook, None, None))
+        else:
+            variation_hooks.append((best_hook, None, None))
 
-        post = generate_post_with_quality_gate(
-            source=source,
-            hook_pattern=hook_pattern,
-            experiment_id=experiment_id,
-            experiment_variant=experiment_variant,
-            openai_client=openai_client,
-            quality_threshold=quality_threshold,
-            max_rewrites=max_rewrites,
-        )
-        if post is None:
+        # Fill remaining variation slots with diverse hook patterns
+        if len(variation_hooks) < num_variations:
+            import random  # noqa: PLC0415
+            remaining_hooks = [h for h in all_hooks if h != best_hook]
+            random.shuffle(remaining_hooks)
+            for extra_hook in remaining_hooks[:num_variations - len(variation_hooks)]:
+                variation_hooks.append((extra_hook, None, None))
+
+        commit_posts: list[Post] = []
+        for var_idx, (hook_pattern, experiment_id, experiment_variant) in enumerate(variation_hooks):
+            post = generate_post_with_quality_gate(
+                source=source,
+                hook_pattern=hook_pattern,
+                experiment_id=experiment_id,
+                experiment_variant=experiment_variant,
+                openai_client=openai_client,
+                quality_threshold=quality_threshold,
+                max_rewrites=max_rewrites,
+            )
+            if post is None:
+                logger.info(
+                    "Variation %d/%d for commit %s (hook=%s) failed quality gate",
+                    var_idx + 1,
+                    len(variation_hooks),
+                    source.sha[:8],
+                    hook_pattern,
+                )
+                continue
+
+            # Tag the variation number in the post ID to avoid collisions
+            if var_idx > 0:
+                post.id = f"{post.id}-v{var_idx + 1}"
+
+            commit_posts.append(post)
+
+        if not commit_posts:
             logger.info(
-                "Skipping commit %s — generated post failed quality gate (threshold=%.1f)",
+                "Skipping commit %s — all %d variations failed quality gate",
                 source.sha[:8],
-                quality_threshold,
+                len(variation_hooks),
             )
             continue
 
-        if dry_run:
-            print("\n" + "=" * 60)
-            print(f"DRY RUN — Post for commit {source.sha[:8]}")
-            print("=" * 60)
-            print(post.linkedin_post)
-            print("\n--- X Thread ---")
-            print(post.x_thread)
-            print("\n--- IG Caption ---")
-            print(post.ig_caption)
+        for post in commit_posts:
+            if dry_run:
+                print("\n" + "=" * 60)
+                print(f"DRY RUN — Post for commit {source.sha[:8]} (hook={post.hook_pattern})")
+                print("=" * 60)
+                print(post.linkedin_post)
+                print("\n--- X Thread ---")
+                print(post.x_thread)
+                print("\n--- IG Caption ---")
+                print(post.ig_caption)
+                generated_posts.append(post)
+                continue
+
+            # Store as GitHub Issue in the issue_repo (not the source repo)
+            issue_number = create_post_issue(post, issue_repo, token)  # type: ignore[arg-type]
+            post.github_issue_number = issue_number
             generated_posts.append(post)
-            continue
 
-        # Store as GitHub Issue in the issue_repo (not the source repo)
-        issue_number = create_post_issue(post, issue_repo, token)  # type: ignore[arg-type]
-        post.github_issue_number = issue_number
-        generated_posts.append(post)
-
-        logger.info("Created post %s → Issue #%d", post.id, issue_number)
+            logger.info("Created post %s → Issue #%d (hook=%s)", post.id, issue_number, post.hook_pattern)
 
     return generated_posts
 
@@ -895,6 +930,12 @@ Examples:
         type=int,
         default=QUALITY_GATE_DEFAULT_MAX_REWRITES,
         help="Maximum rewrite attempts when quality is below threshold",
+    )
+    scan_parser.add_argument(
+        "--variations",
+        type=int,
+        default=3,
+        help="Number of post variations per commit (different hook patterns, default 3)",
     )
 
     # analytics command
@@ -1098,6 +1139,7 @@ Examples:
             stale_days=args.stale_days,
             quality_threshold=args.quality_threshold,
             max_rewrites=args.max_rewrites,
+            variations_per_commit=args.variations,
         )
         print(f"\n✅ Generated {len(posts)} post(s).")
 
@@ -1546,9 +1588,9 @@ def generate_metrics_report(
         f"| LinkedIn API | **{'CONNECTED' if linkedin_connected else 'NOT CONNECTED'}**"
         f"{' — set up LINKEDIN_ACCESS_TOKEN' if not linkedin_connected else ''} |",
         f"| Learning loop | **{'ACTIVE' if learning_active else 'WAITING'}**"
-        f"{' — needs published posts with analytics' if not learning_active else ''} |",
-        f"| A/B experiments | **{'RUNNING' if any_experiment_running else 'NOT STARTED'}**"
-        f"{' — needs 3+ published posts' if not any_experiment_running else ''} |",
+        f"{' — publish a generated post and enter analytics to activate' if not learning_active else ''} |",
+        f"| A/B experiments | **{'RUNNING' if any_experiment_running else 'QUEUED'}**"
+        f"{' — starts after 3+ generated posts are published from this system' if not any_experiment_running else ''} |",
         "",
         "---",
         "",
