@@ -174,6 +174,77 @@ def _load_linkedin_data_guidance() -> str:
         return ""
 
 
+def _load_prompt_patches_block() -> str:
+    """Load learned rules from prompt_patches.json into a prompt section."""
+    patches_path = Path(__file__).parent.parent / "prompt_patches.json"
+    if not patches_path.exists():
+        return ""
+    try:
+        import json as _json
+        with patches_path.open() as f:
+            data = _json.load(f)
+        patches = data.get("patches", [])
+        if not patches:
+            return ""
+        rules = [f"- {p['rule']}" for p in patches if "rule" in p]
+        if not rules:
+            return ""
+        return (
+            "\n\nLearned rules from feedback (MUST follow these):\n\n"
+            + "\n".join(rules[:15])
+        )
+    except Exception:  # noqa: BLE001
+        return ""
+
+
+def _load_lessons_learned_block() -> str:
+    """Load recent lessons from LESSONS_LEARNED.md into a prompt section."""
+    lessons_path = Path(__file__).parent.parent / "LESSONS_LEARNED.md"
+    if not lessons_path.exists():
+        return ""
+    try:
+        content = lessons_path.read_text(encoding="utf-8")
+        # Extract last 10 lesson entries (each starts with ###)
+        entries = content.split("\n### ")
+        recent = entries[-10:] if len(entries) > 10 else entries[1:]  # skip header
+        if not recent:
+            return ""
+        trimmed = "\n---\n".join(e[:300] for e in recent)
+        if len(trimmed) > 2000:
+            trimmed = trimmed[:2000] + "..."
+        return (
+            "\n\nRecent lessons learned (system memory — use these to avoid past mistakes):\n\n"
+            + trimmed
+        )
+    except Exception:  # noqa: BLE001
+        return ""
+
+
+def _load_niche_block() -> str:
+    """Load niche focus from config.yaml."""
+    config_path = Path(__file__).parent.parent / "config.yaml"
+    if not config_path.exists():
+        return ""
+    try:
+        import yaml
+        with config_path.open() as f:
+            config = yaml.safe_load(f) or {}
+        content = config.get("content", {})
+        niche_desc = content.get("niche_description", "")
+        niche_kw = content.get("niche_keywords", [])
+        if not niche_desc and not niche_kw:
+            return ""
+        parts = []
+        if niche_desc:
+            parts.append(f"NICHE FOCUS (mandatory): {niche_desc}")
+        if niche_kw:
+            parts.append(f"Niche keywords: {', '.join(niche_kw)}")
+        parts.append("Every post MUST relate to this niche. Reject off-topic content.")
+        return "\n\n" + "\n".join(parts)
+    except Exception:  # noqa: BLE001
+        return ""
+
+
 def _build_system_prompt() -> str:
     examples = _load_good_posts_examples()
     example_block = ""
@@ -207,6 +278,15 @@ def _build_system_prompt() -> str:
             f"{linkedin_data_guidance}"
         )
 
+    # Load prompt patches from feedback-driven learning
+    patches_block = _load_prompt_patches_block()
+
+    # Load recent lessons learned
+    lessons_learned_block = _load_lessons_learned_block()
+
+    # Load niche focus from config
+    niche_block = _load_niche_block()
+
     return textwrap.dedent(f"""
         You are an expert technical LinkedIn content creator for senior engineers and tech leads.
 
@@ -219,9 +299,8 @@ def _build_system_prompt() -> str:
         - Optimize for saves, shares, and comments — NOT likes
         - Avoid: fluff, clichés, "I'm excited to share", vague inspiration
         - Avoid: hashtag spam (0-2 max, only if highly relevant)
-        - Topics that work: AI/LLMs, distributed systems, Temporal.io, testing, engineering career
 
-        Tone: Direct. Confident. Specific. Human.{example_block}{lessons_block}{screenshot_block}{linkedin_data_block}
+        Tone: Direct. Confident. Specific. Human.{niche_block}{example_block}{lessons_block}{screenshot_block}{linkedin_data_block}{patches_block}{lessons_learned_block}
     """).strip()
 
 

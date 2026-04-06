@@ -59,6 +59,30 @@ topics:
     - performance
     - reliability
 
+content:
+  # Your niche — all posts should relate to these topics
+  niche_keywords:
+    - ai agents
+    - temporal
+    - distributed systems
+    - claude
+    - openai
+    - gemini
+    - workflow orchestration
+    - durable execution
+    - llm
+    - agentic
+  niche_description: "AI agentic systems, Temporal.io, distributed systems, LLMs (Claude, GPT, Gemini)"
+
+  # Idea bank — topics the system can generate from even without commits
+  idea_bank:
+    - topic: "Building AI agents with Temporal.io"
+      context: "Deep research agent, durable workflows, crash recovery for agents"
+    - topic: "Why most AI agent frameworks fail at production"
+      context: "Temporal solves retry, state persistence, crash recovery — frameworks don't"
+    - topic: "The hidden cost of AI agent hallucinations in production"
+      context: "Guardrails, human-in-the-loop, idempotent activities"
+
 storage:
   # Path to learning state JSON file
   learning_state_path: learning_state.json
