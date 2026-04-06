@@ -1,12 +1,14 @@
 # GitHub Commit → Social Post Agent Configuration
 
 agent:
-  # Explicit list of repos to scan for lesson-worthy commits.
-  # magic-social is excluded — its Issues are generated output, not lessons.
-  # Expand this list to add more sources in the future.
+  # Repos to scan for lesson-worthy commits.
+  # Edit this list to add or remove monitored repos.
   source_repos:
     - nadvolod/LifeNotes
     - nadvolod/temporal-learning
+    - nadvolod/ultimate-code-metrics
+    - nadvolod/ceo-mission-control
+    - nadvolod/magic-social
 
   # Repo where social-post Issues are created (separate from scan sources)
   issue_repo: nadvolod/magic-social
@@ -19,6 +21,10 @@ agent:
 
   # Maximum posts to generate per scan run
   max_posts_per_run: 10
+
+  # Number of post variations to generate per commit (different hook patterns)
+  # More variations = better chance of finding a publishable post
+  variations_per_commit: 3
 
   # Minimum commit score to qualify for post generation (0-100)
   score_threshold: 30.0
