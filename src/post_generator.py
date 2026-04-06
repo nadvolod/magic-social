@@ -495,7 +495,7 @@ def generate_post_with_quality_gate(
     experiment_id: Optional[str] = None,
     experiment_variant: Optional[str] = None,
     openai_client=None,
-    model: str = "gpt-4o",
+    model: str = "gpt-5.4-mini",
     quality_threshold: float = QUALITY_GATE_DEFAULT_THRESHOLD,
     max_rewrites: int = QUALITY_GATE_DEFAULT_MAX_REWRITES,
     min_chars: int = 800,
@@ -597,7 +597,7 @@ def generate_post(
     experiment_id: Optional[str] = None,
     experiment_variant: Optional[str] = None,
     openai_client=None,
-    model: str = "gpt-4o",
+    model: str = "gpt-5.4-mini",
 ) -> Post:
     """
     Generate a LinkedIn-first social post from a SourceCommit.

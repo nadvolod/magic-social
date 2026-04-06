@@ -30,6 +30,8 @@ LABEL_DEFINITIONS = {
     "status:approved": {"color": "0e8a16", "description": "Post approved for publishing"},
     "status:published": {"color": "006b75", "description": "Post has been published"},
     "status:archived": {"color": "cfd3d7", "description": "Post archived, not published"},
+    "status:abandoned": {"color": "6e5494", "description": "Regeneration chain explicitly killed"},
+    "regenerated": {"color": "d4c5f9", "description": "Post was regenerated from feedback"},
     "platform:linkedin": {"color": "0a66c2", "description": "LinkedIn post"},
     "platform:x": {"color": "000000", "description": "X (Twitter) thread"},
     "platform:instagram": {"color": "e1306c", "description": "Instagram caption"},
@@ -94,7 +96,17 @@ def _build_issue_body(post: Post) -> str:
     Publishing checklist, analytics template, and metadata go in a
     separate follow-up comment (see _build_details_comment).
     """
-    return f"""## 🔵 LinkedIn Post
+    lineage = ""
+    if post.parent_issue_number:
+        lineage = (
+            f"> Regenerated from #{post.parent_issue_number} "
+            f"(attempt {post.regeneration_attempt}/{3})"
+        )
+        if post.regeneration_feedback:
+            lineage += f"\n> Feedback: _{post.regeneration_feedback}_"
+        lineage += "\n\n"
+
+    return f"""{lineage}## 🔵 LinkedIn Post
 
 {post.linkedin_post}
 
@@ -109,6 +121,7 @@ def _build_issue_body(post: Post) -> str:
 - [ ] Not relevant
 - [ ] Weak hook
 - [ ] Useless topic
+- [ ] Abandon (stop regenerating this topic)
 
 Or react: 👍 good draft · 👎 bad draft · 🚀 published
 """
@@ -345,6 +358,30 @@ def create_post_issue(
         logger.warning("Failed to post details comment on Issue #%d: %s", issue_number, comment_resp.status_code)
 
     return issue_number
+
+
+def add_comment(repo: str, token: str, issue_number: int, body: str) -> None:
+    """Add a comment to a GitHub issue."""
+    url = f"{GITHUB_API}/repos/{repo}/issues/{issue_number}/comments"
+    resp = requests.post(url, headers=_headers(token), json={"body": body}, timeout=30)
+    if not resp.ok:
+        logger.warning("Failed to comment on Issue #%d: %s", issue_number, resp.status_code)
+
+
+def close_issue(repo: str, token: str, issue_number: int) -> None:
+    """Close a GitHub issue."""
+    url = f"{GITHUB_API}/repos/{repo}/issues/{issue_number}"
+    resp = requests.patch(url, headers=_headers(token), json={"state": "closed"}, timeout=30)
+    if not resp.ok:
+        logger.warning("Failed to close Issue #%d: %s", issue_number, resp.status_code)
+
+
+def close_issue_with_replacement(
+    repo: str, token: str, issue_number: int, comment: str, new_issue_number: int,
+) -> None:
+    """Close an issue and link to its replacement."""
+    add_comment(repo, token, issue_number, f"{comment}\n\nReplacement → #{new_issue_number}")
+    close_issue(repo, token, issue_number)
 
 
 def update_issue_status(

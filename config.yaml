@@ -30,7 +30,7 @@ agent:
   score_threshold: 30.0
 
   # OpenAI model to use for post generation
-  openai_model: gpt-4o
+  openai_model: gpt-5.4-mini
 
 scoring:
   # Weight multipliers for each scoring dimension
@@ -65,6 +65,13 @@ storage:
 
   # Path to experiments state JSON file
   experiments_path: experiments.json
+
+regeneration:
+  # Auto-regenerate rejected posts with better source material
+  enabled: true
+  max_attempts: 3          # Max regeneration attempts per chain
+  scan_days: 14            # Wider scan window for finding alternatives
+  score_threshold: 20.0    # Lower threshold to cast wider net
 
 privacy:
   # Always enforce — no config override available

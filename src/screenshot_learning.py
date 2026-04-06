@@ -346,7 +346,7 @@ def _parse_json_from_text(text: str) -> dict:
 def extract_metrics_and_signals_with_openai(
     openai_client,
     image_data_url: str,
-    model: str = "gpt-4o",
+    model: str = "gpt-5.4-mini",
 ) -> dict:
     """Use OpenAI vision to read screenshot metrics + content signals."""
     if openai_client is None:
@@ -399,7 +399,7 @@ def decide_top10_with_openai(
     score: float,
     percentile: float,
     distribution: dict,
-    model: str = "gpt-4o",
+    model: str = "gpt-5.4-mini",
 ) -> tuple[str, str, float]:
     """Ask OpenAI to classify top 10% vs bottom 90% from score context."""
     if openai_client is None:
