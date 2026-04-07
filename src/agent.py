@@ -2256,8 +2256,10 @@ def generate_metrics_report(
         bar_state = BarRaiserState.load()
         if bar_state.post_history:
             lines += ["", "---", "", render_agent_dashboard(bar_state), ""]
+    except (ImportError, FileNotFoundError):
+        pass  # Module or state file not available yet
     except Exception:  # noqa: BLE001
-        pass  # No bar raiser state yet — skip dashboard
+        logger.warning("Failed to render agent dashboard", exc_info=True)
 
     return "\n".join(lines)
 

@@ -387,6 +387,7 @@ def create_post_issue(
     # --- Post-generation agent comments ---
     quality_review = None
     resonance = None
+    prediction = None
 
     if openai_client is not None:
         commit_message = source_commit.message if source_commit else ""
@@ -437,7 +438,7 @@ def create_post_issue(
         except Exception:  # noqa: BLE001
             logger.warning("Predictor agent failed (non-fatal)", exc_info=True)
 
-        # Bar Raiser (always last — evaluates all other agents, enforces rising quality bar)
+        # Bar Raiser (final quality gate — evaluates all other agents)
         try:
             from .agents.bar_raiser import (  # noqa: PLC0415
                 BarRaiserState,
@@ -453,13 +454,13 @@ def create_post_issue(
                 bar_state,
             )
             verdict["post_id"] = post.id
-            add_comment(repo, token, issue_number, format_bar_raiser_comment(verdict))
-            bar_state.save()
-            # Every 10 posts: generate retrospective
+            # Every 10 posts: retrospective posted before verdict
             if len(bar_state.post_history) >= 10 and len(bar_state.post_history) % 10 == 0:
                 retro = generate_retrospective(bar_state)
                 if retro:
                     add_comment(repo, token, issue_number, retro)
+            add_comment(repo, token, issue_number, format_bar_raiser_comment(verdict))
+            bar_state.save()
         except Exception:  # noqa: BLE001
             logger.warning("Bar Raiser agent failed (non-fatal)", exc_info=True)
 

@@ -62,8 +62,9 @@ class BarRaiserState:
             if not isinstance(data, dict):
                 logger.warning("Bar Raiser state is not a dict — using defaults.")
                 return cls()
+            raw_bar = float(data.get("bar_level", 60.0))
             return cls(
-                bar_level=float(data.get("bar_level", 60.0)),
+                bar_level=max(_BAR_MIN, min(_BAR_MAX, raw_bar)),
                 post_history=list(data.get("post_history", [])),
                 retrospective_count=int(data.get("retrospective_count", 0)),
                 last_retrospective_at=str(data.get("last_retrospective_at", "")),
@@ -305,7 +306,7 @@ def format_bar_raiser_comment(result: dict) -> str:
         "## Bar Raiser",
         "",
         f"**Verdict: {verdict_upper}** {verdict_emoji} | "
-        f"**Bar: {int(previous_bar)}/100** ({bar_arrow} from last)",
+        f"**Bar: {previous_bar:.1f}/100** ({bar_arrow} from last)",
         "",
         "| Metric | This Post | Bar | Status |",
         "|--------|-----------|-----|--------|",
@@ -314,7 +315,7 @@ def format_bar_raiser_comment(result: dict) -> str:
     # Quality Score row
     qs_status = "\u2705 Above" if "Quality Score" not in failing_metrics else "\u274c Below"
     lines.append(
-        f"| Quality Score | {quality_score} | {int(previous_bar)} | {qs_status} |"
+        f"| Quality Score | {quality_score} | {previous_bar:.1f} | {qs_status} |"
     )
 
     # Dimension rows
