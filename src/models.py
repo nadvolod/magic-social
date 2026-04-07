@@ -76,6 +76,7 @@ class Post:
     experiment_id: Optional[str] = None
     experiment_variant: Optional[str] = None
     tags: list[str] = field(default_factory=list)
+    code_image_url: Optional[str] = None
     # Regeneration lineage tracking
     parent_issue_number: Optional[int] = None
     regeneration_attempt: int = 0
