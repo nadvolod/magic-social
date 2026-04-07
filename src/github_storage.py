@@ -344,6 +344,19 @@ def create_post_issue(
     issue_number = resp.json()["number"]
     logger.info("Created GitHub Issue #%d for post %s", issue_number, post.id)
 
+    # Generate code snippet image before details comment so code_image_url
+    # is set when the Post JSON is embedded in the details comment.
+    try:
+        from .code_image import generate_code_snippet_image  # noqa: PLC0415
+
+        image_bytes = generate_code_snippet_image(post.linkedin_post)
+        if image_bytes:
+            image_url = _upload_code_image(repo, token, post.id, image_bytes)
+            if image_url:
+                post.code_image_url = image_url
+    except Exception:  # noqa: BLE001
+        logger.warning("Code image generation failed (non-fatal)", exc_info=True)
+
     # Post details (checklist, feedback templates, metadata) as a separate comment
     # so the main issue body stays short and mobile-friendly.
     details = _build_details_comment(post)
@@ -359,23 +372,14 @@ def create_post_issue(
     else:
         logger.warning("Failed to post details comment on Issue #%d: %s", issue_number, comment_resp.status_code)
 
-    # Generate and attach code snippet image (if post contains code)
-    try:
-        from .code_image import generate_code_snippet_image  # noqa: PLC0415
-
-        image_bytes = generate_code_snippet_image(post.linkedin_post)
-        if image_bytes:
-            image_url = _upload_code_image(repo, token, post.id, image_bytes)
-            if image_url:
-                post.code_image_url = image_url
-                image_comment = (
-                    "## Code Snippet Image\n\n"
-                    f"![Code Snippet]({image_url})\n\n"
-                    "> Right-click and save to use in your LinkedIn post."
-                )
-                add_comment(repo, token, issue_number, image_comment)
-    except Exception:  # noqa: BLE001
-        logger.warning("Code image generation failed (non-fatal)", exc_info=True)
+    # Post code snippet image as a separate comment (if generated)
+    if post.code_image_url:
+        image_comment = (
+            "## Code Snippet Image\n\n"
+            f"![Code Snippet]({post.code_image_url})\n\n"
+            "> Right-click and save to use in your LinkedIn post."
+        )
+        add_comment(repo, token, issue_number, image_comment)
 
     return issue_number
 

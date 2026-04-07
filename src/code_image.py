@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import io
 import logging
-import math
 from dataclasses import dataclass
 from typing import Optional
 
@@ -16,7 +15,6 @@ from PIL import Image, ImageDraw, ImageFont
 from pygments import lex
 from pygments.lexers import TextLexer, get_lexer_by_name, guess_lexer
 from pygments.styles import get_style_by_name
-from pygments.token import Token
 
 logger = logging.getLogger(__name__)
 
@@ -152,7 +150,7 @@ def _load_font(size: int) -> ImageFont.FreeTypeFont:
         except OSError:
             continue
     # Fallback — Pillow default (not monospace, but functional)
-    return ImageFont.load_default(size)
+    return ImageFont.load_default()
 
 
 def render_code_image(
@@ -166,10 +164,8 @@ def render_code_image(
     """
     # Truncate long snippets
     lines = code.splitlines()
-    truncated = False
     if len(lines) > _MAX_LINES:
         lines = lines[:_MAX_LINES]
-        truncated = True
         lines.append("...")
     code_text = "\n".join(lines)
 
@@ -188,8 +184,10 @@ def render_code_image(
     char_bbox = font.getbbox("M")
     char_width = char_bbox[2] - char_bbox[0]
 
-    # Calculate dimensions
+    # Calculate dimensions (cap line width to avoid excessive memory)
+    _MAX_LINE_CHARS = 120
     max_line_len = max((len(line) for line in lines), default=0)
+    max_line_len = min(max_line_len, _MAX_LINE_CHARS)
     content_width = max_line_len * char_width
     content_height = len(lines) * _LINE_HEIGHT
 
