@@ -2250,6 +2250,17 @@ def generate_metrics_report(
         "",
     ]
 
+    # ------------------------------------------------- agent performance dashboard
+    try:
+        from .agents.bar_raiser import BarRaiserState, render_agent_dashboard  # noqa: PLC0415
+        bar_state = BarRaiserState.load()
+        if bar_state.post_history:
+            lines += ["", "---", "", render_agent_dashboard(bar_state), ""]
+    except (ImportError, FileNotFoundError):
+        pass  # Module or state file not available yet
+    except Exception:  # noqa: BLE001
+        logger.warning("Failed to render agent dashboard", exc_info=True)
+
     return "\n".join(lines)
 
 
