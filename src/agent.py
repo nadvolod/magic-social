@@ -530,7 +530,7 @@ def run_scan(
     repos: Optional[list[str]] = None,
     issue_repo: Optional[str] = None,
     threshold: float = SCORE_THRESHOLD,
-    backlog_throttle_enabled: bool = True,
+    backlog_throttle_enabled: bool = False,
     max_open_unpublished: int = DEFAULT_MAX_OPEN_UNPUBLISHED,
     max_stale_unpublished: int = DEFAULT_MAX_STALE_UNPUBLISHED,
     stale_days: int = DEFAULT_STALE_DAYS,
