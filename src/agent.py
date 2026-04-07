@@ -671,6 +671,38 @@ def run_scan(
             return []
     generated_posts: list[Post] = []
 
+    # --- Pre-generation agents ---
+    # Variety Guardian: recommend hooks, skip off-ICP or repetitive commits
+    variety_recommendations: dict[str, dict] = {}
+    if openai_client is not None and issue_repo:
+        try:
+            from .agents.variety_guardian import guard_variety  # noqa: PLC0415
+            from .github_storage import load_posts_from_issues  # noqa: PLC0415
+
+            recent_posts_raw = load_posts_from_issues(issue_repo, token, state="open")
+            recent_posts = [
+                {"hook_pattern": p.hook_pattern, "tags": p.tags, "lesson": p.lesson}
+                for p in recent_posts_raw[:10]
+            ]
+            candidates = [
+                {"sha": s.sha, "message": s.message, "repo": s.repo, "tags": s.tags if hasattr(s, "tags") else []}
+                for s in source_commits[:max_posts]
+            ]
+            recs = guard_variety(openai_client, candidates, recent_posts)
+            for rec in recs:
+                variety_recommendations[rec["sha"]] = rec
+            # Filter out skipped commits
+            before_count = len(source_commits)
+            source_commits = [
+                s for s in source_commits
+                if not variety_recommendations.get(s.sha, {}).get("skip", False)
+            ]
+            skipped = before_count - len(source_commits)
+            if skipped:
+                logger.info("Variety Guardian skipped %d commits (off-ICP or repetitive)", skipped)
+        except Exception:  # noqa: BLE001
+            logger.warning("Variety Guardian failed (non-fatal)", exc_info=True)
+
     # Build list of hook patterns for variations
     all_hooks = list(HOOK_PATTERNS.keys())
     num_variations = max(1, variations_per_commit)
@@ -678,6 +710,10 @@ def run_scan(
     for source in source_commits[:max_posts]:
         # Determine hook patterns for this commit's variations
         variation_hooks: list[tuple[str, Optional[str], Optional[str]]] = []
+
+        # Use variety guardian's recommended hook if available
+        guardian_rec = variety_recommendations.get(source.sha, {})
+        recommended_hook = guardian_rec.get("hook_pattern", best_hook)
 
         if active_exp is not None:
             from .models import ExperimentVariable  # noqa: PLC0415
@@ -687,9 +723,9 @@ def run_scan(
                     variant = experiments.assign_variant(active_exp)
                     variation_hooks.append((variant, active_exp.id, variant))
             else:
-                variation_hooks.append((best_hook, None, None))
+                variation_hooks.append((recommended_hook, None, None))
         else:
-            variation_hooks.append((best_hook, None, None))
+            variation_hooks.append((recommended_hook, None, None))
 
         # Fill remaining variation slots with diverse hook patterns
         if len(variation_hooks) < num_variations:
@@ -698,6 +734,17 @@ def run_scan(
             random.shuffle(remaining_hooks)
             for extra_hook in remaining_hooks[:num_variations - len(variation_hooks)]:
                 variation_hooks.append((extra_hook, None, None))
+
+        # Code Snippet Curator: fetch best snippet from actual diff
+        curated_snippet = None
+        if openai_client is not None:
+            try:
+                from .agents.code_curator import curate_code_snippet  # noqa: PLC0415
+                curated_snippet = curate_code_snippet(openai_client, source.sha, source.repo, token)
+                if curated_snippet:
+                    logger.info("Code curator selected snippet (%s) for %s", curated_snippet.get("language", "?"), source.sha[:8])
+            except Exception:  # noqa: BLE001
+                logger.warning("Code curator failed (non-fatal)", exc_info=True)
 
         commit_posts: list[Post] = []
         for var_idx, (hook_pattern, experiment_id, experiment_variant) in enumerate(variation_hooks):
@@ -709,6 +756,7 @@ def run_scan(
                 openai_client=openai_client,
                 quality_threshold=quality_threshold,
                 max_rewrites=max_rewrites,
+                curated_snippet=curated_snippet,
             )
             if post is None:
                 logger.info(
@@ -748,7 +796,12 @@ def run_scan(
                 continue
 
             # Store as GitHub Issue in the issue_repo (not the source repo)
-            issue_number = create_post_issue(post, issue_repo, token)  # type: ignore[arg-type]
+            issue_number = create_post_issue(
+                post, issue_repo, token,  # type: ignore[arg-type]
+                openai_client=openai_client,
+                source_commit=source,
+                learning_state=learning_state,
+            )
             post.github_issue_number = issue_number
             generated_posts.append(post)
 

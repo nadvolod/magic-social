@@ -304,8 +304,18 @@ def _build_system_prompt() -> str:
     """).strip()
 
 
-def _build_linkedin_prompt(source: SourceCommit, hook_pattern: str, experiment_variant: Optional[str] = None) -> str:
+def _build_linkedin_prompt(source: SourceCommit, hook_pattern: str, experiment_variant: Optional[str] = None, curated_snippet: Optional[dict] = None) -> str:
     variant_note = f"\n\nExperiment variant to test: {experiment_variant}" if experiment_variant else ""
+
+    snippet_block = ""
+    if curated_snippet:
+        snippet_block = (
+            f"\n\nCurated code snippet (USE THIS instead of inventing code):\n"
+            f"Language: {curated_snippet.get('language', 'text')}\n"
+            f"Why it's interesting: {curated_snippet.get('why', '')}\n"
+            f"```\n{curated_snippet.get('snippet', '')}\n```"
+        )
+
     return textwrap.dedent(f"""
         Generate a LinkedIn post based on this GitHub commit:
 
@@ -321,7 +331,7 @@ def _build_linkedin_prompt(source: SourceCommit, hook_pattern: str, experiment_v
           proof={source.score_breakdown.get('proof', 0):.0f}
 
         Use hook pattern: {hook_pattern}
-        {variant_note}
+        {variant_note}{snippet_block}
 
         Rules:
         1. Extract ONE clear lesson from this commit. Do not combine multiple ideas.
@@ -579,6 +589,7 @@ def generate_post_with_quality_gate(
     max_rewrites: int = QUALITY_GATE_DEFAULT_MAX_REWRITES,
     min_chars: int = 800,
     max_chars: int = 1500,
+    curated_snippet: Optional[dict] = None,
 ) -> Optional[Post]:
     """
     Generate a post and enforce rubric quality before returning it.
@@ -592,6 +603,7 @@ def generate_post_with_quality_gate(
         experiment_variant=experiment_variant,
         openai_client=openai_client,
         model=model,
+        curated_snippet=curated_snippet,
     )
     quality = score_linkedin_post_quality(post.linkedin_post, min_chars=min_chars, max_chars=max_chars)
     if quality.total >= quality_threshold:
@@ -677,6 +689,7 @@ def generate_post(
     experiment_variant: Optional[str] = None,
     openai_client=None,
     model: str = "gpt-5.4-mini",
+    curated_snippet: Optional[dict] = None,
 ) -> Post:
     """
     Generate a LinkedIn-first social post from a SourceCommit.
@@ -707,7 +720,7 @@ def generate_post(
             openai_client,
             model,
             _build_system_prompt(),
-            _build_linkedin_prompt(source, hook_pattern, experiment_variant),
+            _build_linkedin_prompt(source, hook_pattern, experiment_variant, curated_snippet),
         )
         x_thread = _generate_with_openai(
             openai_client,

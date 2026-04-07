@@ -80,6 +80,7 @@ def test_backlog_throttle_blocks_generation(monkeypatch):
         repo="owner/repo",
         token="token",
         dry_run=False,
+        backlog_throttle_enabled=True,
         max_open_unpublished=10,
         max_stale_unpublished=4,
     )
