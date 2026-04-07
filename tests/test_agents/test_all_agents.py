@@ -1,4 +1,4 @@
-"""Tests for all 5 AI agents — variety guardian, code curator, quality reviewer, resonance checker, predictor."""
+"""Tests for all 6 AI agents — variety guardian, code curator, quality reviewer, resonance checker, predictor, bar raiser."""
 
 from __future__ import annotations
 
@@ -9,6 +9,13 @@ from src.agents.variety_guardian import guard_variety
 from src.agents.code_curator import curate_code_snippet
 from src.agents.quality_reviewer import review_quality, format_quality_comment
 from src.agents.resonance_checker import check_resonance, format_resonance_comment
+from src.agents.bar_raiser import (
+    BarRaiserState,
+    raise_the_bar,
+    format_bar_raiser_comment,
+    generate_retrospective,
+    render_agent_dashboard,
+)
 from src.agents.predictor import (
     predict_outcome,
     format_prediction_comment,
@@ -285,3 +292,126 @@ def test_predictor_update_outcome(tmp_path):
     loaded = load_predictions_log(path=log_path)
     assert loaded[0]["actual_published"] is True
     assert loaded[0]["actual_engagement_score"] == 42.0
+
+
+# ---------------------------------------------------------------------------
+# Bar Raiser
+# ---------------------------------------------------------------------------
+
+def _make_quality_review(total=78, specificity=16, insight=14, hook=18, code=16, share=14):
+    return {
+        "total_score": total,
+        "dimensions": {
+            "specificity": {"score": specificity, "max": 20, "notes": "ok"},
+            "insight_depth": {"score": insight, "max": 20, "notes": "ok"},
+            "hook_strength": {"score": hook, "max": 20, "notes": "ok"},
+            "code_relevance": {"score": code, "max": 20, "notes": "ok"},
+            "shareability": {"score": share, "max": 20, "notes": "ok"},
+        },
+        "suggestions": "Looks good.",
+    }
+
+
+def _make_resonance(resonance="high", icp=True):
+    return {"resonance": resonance, "icp_match": icp, "reasons": ["Good"], "suggestion": "ok"}
+
+
+def _make_prediction(prob=82, tier="high"):
+    return {"publish_probability": prob, "engagement_tier": tier, "reasoning": ["Strong"]}
+
+
+def test_bar_raiser_pass():
+    state = BarRaiserState(bar_level=60.0)
+    verdict = raise_the_bar(_make_quality_review(78), _make_resonance(), _make_prediction(), state)
+    assert verdict["verdict"] == "pass"
+    assert state.bar_level > 60.0
+    assert len(state.post_history) == 1
+
+
+def test_bar_raiser_reject_low_quality():
+    state = BarRaiserState(bar_level=80.0)
+    verdict = raise_the_bar(_make_quality_review(50, hook=5, share=5), _make_resonance(icp=False), _make_prediction(prob=30), state)
+    assert verdict["verdict"] == "reject"
+    assert len(verdict["failures"]) >= 3
+    assert state.bar_level < 80.0
+
+
+def test_bar_raiser_conditional():
+    state = BarRaiserState(bar_level=75.0)
+    # Quality below bar (1 failure), but everything else fine
+    verdict = raise_the_bar(_make_quality_review(70), _make_resonance(), _make_prediction(), state)
+    assert verdict["verdict"] == "conditional"
+
+
+def test_bar_raiser_bar_floor_and_ceiling():
+    # Bar can't go below 50
+    state = BarRaiserState(bar_level=50.0)
+    raise_the_bar(_make_quality_review(30, hook=5, share=5), _make_resonance(icp=False), _make_prediction(prob=20), state)
+    assert state.bar_level >= 50.0
+
+    # Bar can't go above 90
+    state2 = BarRaiserState(bar_level=90.0)
+    raise_the_bar(_make_quality_review(95), _make_resonance(), _make_prediction(), state2)
+    assert state2.bar_level <= 90.0
+
+
+def test_bar_raiser_format_comment_pass():
+    state = BarRaiserState(bar_level=70.0)
+    verdict = raise_the_bar(_make_quality_review(78), _make_resonance(), _make_prediction(), state)
+    comment = format_bar_raiser_comment(verdict)
+    assert "## Bar Raiser" in comment
+    assert "PASS" in comment
+    assert "78" in comment
+
+
+def test_bar_raiser_format_comment_reject():
+    state = BarRaiserState(bar_level=85.0)
+    verdict = raise_the_bar(_make_quality_review(50, hook=5), _make_resonance(icp=False), _make_prediction(prob=30), state)
+    comment = format_bar_raiser_comment(verdict)
+    assert "REJECT" in comment
+    assert "Action" in comment or "action" in comment.lower()
+
+
+def test_bar_raiser_state_persistence(tmp_path):
+    path = str(tmp_path / "bar_raiser.json")
+    state = BarRaiserState(bar_level=72.5)
+    raise_the_bar(_make_quality_review(78), _make_resonance(), _make_prediction(), state)
+    state.save(path)
+
+    loaded = BarRaiserState.load(path)
+    assert loaded.bar_level == state.bar_level
+    assert len(loaded.post_history) == 1
+
+
+def test_bar_raiser_history_capped():
+    state = BarRaiserState(bar_level=60.0)
+    for i in range(55):
+        raise_the_bar(_make_quality_review(70), _make_resonance(), _make_prediction(), state)
+    assert len(state.post_history) <= 50
+
+
+def test_bar_raiser_retrospective_at_10():
+    state = BarRaiserState(bar_level=60.0)
+    for i in range(10):
+        raise_the_bar(_make_quality_review(70 + i), _make_resonance(), _make_prediction(), state)
+    retro = generate_retrospective(state)
+    assert retro is not None
+    assert "Retrospective" in retro
+    assert "Trends" in retro or "trends" in retro.lower()
+
+
+def test_bar_raiser_retrospective_not_at_7():
+    state = BarRaiserState(bar_level=60.0)
+    for i in range(7):
+        raise_the_bar(_make_quality_review(70), _make_resonance(), _make_prediction(), state)
+    retro = generate_retrospective(state)
+    assert retro is None
+
+
+def test_render_agent_dashboard():
+    state = BarRaiserState(bar_level=72.0)
+    for i in range(5):
+        raise_the_bar(_make_quality_review(70 + i), _make_resonance(), _make_prediction(), state)
+    dashboard = render_agent_dashboard(state)
+    assert "Agent Performance Dashboard" in dashboard
+    assert "Quality Bar" in dashboard or "Bar Level" in dashboard.replace("_", " ")
