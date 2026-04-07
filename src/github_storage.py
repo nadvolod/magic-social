@@ -437,32 +437,6 @@ def create_post_issue(
         except Exception:  # noqa: BLE001
             logger.warning("Predictor agent failed (non-fatal)", exc_info=True)
 
-        # Bar Raiser (always last — evaluates all other agents, enforces rising quality bar)
-        try:
-            from .agents.bar_raiser import (  # noqa: PLC0415
-                BarRaiserState,
-                format_bar_raiser_comment,
-                generate_retrospective,
-                raise_the_bar,
-            )
-            bar_state = BarRaiserState.load()
-            verdict = raise_the_bar(
-                quality_review or {},
-                resonance or {},
-                prediction or {},
-                bar_state,
-            )
-            verdict["post_id"] = post.id
-            add_comment(repo, token, issue_number, format_bar_raiser_comment(verdict))
-            bar_state.save()
-            # Every 10 posts: generate retrospective
-            if len(bar_state.post_history) >= 10 and len(bar_state.post_history) % 10 == 0:
-                retro = generate_retrospective(bar_state)
-                if retro:
-                    add_comment(repo, token, issue_number, retro)
-        except Exception:  # noqa: BLE001
-            logger.warning("Bar Raiser agent failed (non-fatal)", exc_info=True)
-
     return issue_number
 
 

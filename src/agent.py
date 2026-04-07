@@ -2250,15 +2250,6 @@ def generate_metrics_report(
         "",
     ]
 
-    # ------------------------------------------------- agent performance dashboard
-    try:
-        from .agents.bar_raiser import BarRaiserState, render_agent_dashboard  # noqa: PLC0415
-        bar_state = BarRaiserState.load()
-        if bar_state.post_history:
-            lines += ["", "---", "", render_agent_dashboard(bar_state), ""]
-    except Exception:  # noqa: BLE001
-        pass  # No bar raiser state yet — skip dashboard
-
     return "\n".join(lines)
 
 
