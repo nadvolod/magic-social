@@ -72,18 +72,20 @@ jobs:
 
           python -m src.agent scan $ARGS
 
-      - name: Persist experiment state
+      - name: Persist state files
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          if [ -f experiments.json ]; then
-            git add experiments.json
-          fi
+          for f in experiments.json bar_raiser_state.json predictions_log.json; do
+            if [ -f "$f" ]; then
+              git add "$f"
+            fi
+          done
 
           if git diff --staged --quiet; then
             echo "No changes to commit."
           else
-            git commit -m "chore: persist experiment state [skip ci]"
+            git commit -m "chore: persist agent state [skip ci]"
             git push
           fi

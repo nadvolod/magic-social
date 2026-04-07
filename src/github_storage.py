@@ -454,8 +454,8 @@ def create_post_issue(
                 bar_state,
             )
             verdict["post_id"] = post.id
-            # Every 10 posts: retrospective posted before verdict
-            if len(bar_state.post_history) >= 10 and len(bar_state.post_history) % 10 == 0:
+            # Every 10 posts: retrospective posted before verdict (use lifetime counter, not capped history)
+            if bar_state.total_posts_evaluated >= 10 and bar_state.total_posts_evaluated % 10 == 0:
                 retro = generate_retrospective(bar_state)
                 if retro:
                     add_comment(repo, token, issue_number, retro)

@@ -415,3 +415,44 @@ def test_render_agent_dashboard():
     dashboard = render_agent_dashboard(state)
     assert "Agent Performance Dashboard" in dashboard
     assert "Quality Bar" in dashboard or "Bar Level" in dashboard.replace("_", " ")
+
+
+def test_bar_raiser_works_when_prediction_is_empty():
+    """Bar Raiser handles empty prediction dict (predictor failed)."""
+    state = BarRaiserState(bar_level=60.0)
+    verdict = raise_the_bar(_make_quality_review(78), _make_resonance(), {}, state)
+    assert verdict["verdict"] in ("pass", "conditional", "reject")
+    assert len(state.post_history) == 1
+
+
+def test_bar_raiser_retrospective_not_every_post_at_cap():
+    """Retrospective should NOT fire every post once history is capped at 50."""
+    state = BarRaiserState(bar_level=60.0)
+    for _ in range(50):
+        raise_the_bar(_make_quality_review(70), _make_resonance(), _make_prediction(), state)
+    assert state.total_posts_evaluated == 50
+
+    # Post 51-59: should not trigger retro
+    for _ in range(9):
+        raise_the_bar(_make_quality_review(70), _make_resonance(), _make_prediction(), state)
+    assert state.total_posts_evaluated == 59
+    # Caller checks total_posts_evaluated % 10 — 59 % 10 != 0
+
+    # Post 60: should trigger retro
+    raise_the_bar(_make_quality_review(70), _make_resonance(), _make_prediction(), state)
+    assert state.total_posts_evaluated == 60
+    # 60 % 10 == 0 → caller triggers generate_retrospective
+    retro = generate_retrospective(state)
+    assert retro is not None
+
+
+def test_bar_raiser_total_posts_persists(tmp_path):
+    """total_posts_evaluated persists across save/load cycles."""
+    path = str(tmp_path / "bar_raiser.json")
+    state = BarRaiserState(bar_level=65.0)
+    for _ in range(25):
+        raise_the_bar(_make_quality_review(70), _make_resonance(), _make_prediction(), state)
+    state.save(path)
+
+    loaded = BarRaiserState.load(path)
+    assert loaded.total_posts_evaluated == 25

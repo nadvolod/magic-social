@@ -47,6 +47,7 @@ class BarRaiserState:
 
     bar_level: float = 60.0  # Current quality bar (50-90 range)
     post_history: list = field(default_factory=list)  # Last 50 posts with all scores
+    total_posts_evaluated: int = 0  # Lifetime counter (never reset, used for retrospective cadence)
     retrospective_count: int = 0
     last_retrospective_at: str = ""
 
@@ -66,6 +67,7 @@ class BarRaiserState:
             return cls(
                 bar_level=max(_BAR_MIN, min(_BAR_MAX, raw_bar)),
                 post_history=list(data.get("post_history", [])),
+                total_posts_evaluated=int(data.get("total_posts_evaluated", 0)),
                 retrospective_count=int(data.get("retrospective_count", 0)),
                 last_retrospective_at=str(data.get("last_retrospective_at", "")),
             )
@@ -78,6 +80,7 @@ class BarRaiserState:
         data = {
             "bar_level": self.bar_level,
             "post_history": self.post_history,
+            "total_posts_evaluated": self.total_posts_evaluated,
             "retrospective_count": self.retrospective_count,
             "last_retrospective_at": self.last_retrospective_at,
         }
@@ -236,6 +239,7 @@ def raise_the_bar(
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
     state.post_history.append(history_entry)
+    state.total_posts_evaluated += 1
     if len(state.post_history) > _HISTORY_CAP:
         state.post_history = state.post_history[-_HISTORY_CAP:]
 
@@ -357,9 +361,9 @@ def format_bar_raiser_comment(result: dict) -> str:
 def generate_retrospective(state: BarRaiserState) -> Optional[str]:
     """Generate a periodic retrospective every 10 posts.
 
-    Triggered when ``len(state.post_history) % 10 == 0`` and there are at
-    least 10 posts in history.  Compares the last 10 posts against the
-    previous 10 (if available) to surface trends.
+    Uses ``state.total_posts_evaluated`` (lifetime counter) to trigger,
+    not ``len(post_history)`` which is capped at 50.  Compares the last
+    10 posts against the previous 10 (if available) to surface trends.
 
     Parameters
     ----------
@@ -369,10 +373,10 @@ def generate_retrospective(state: BarRaiserState) -> Optional[str]:
     Returns
     -------
     A markdown-formatted retrospective string, or ``None`` if conditions
-    are not met.
+    are not met (fewer than 10 posts in history).
     """
     total = len(state.post_history)
-    if total < 10 or total % 10 != 0:
+    if total < 10:
         return None
 
     last_10 = state.post_history[-10:]
