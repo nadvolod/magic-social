@@ -486,7 +486,7 @@ def decide_commit_with_openai(openai_client, source, learning_state: LearningSta
                 {"role": "user", "content": user_prompt},
             ],
             temperature=0.0,
-            max_tokens=220,
+            max_completion_tokens=220,
         )
         content = (response.choices[0].message.content or "").strip()
     except Exception as exc:  # noqa: BLE001

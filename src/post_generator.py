@@ -752,7 +752,7 @@ def _generate_with_openai(client, model: str, system: str, user: str) -> str:
             {"role": "user", "content": user},
         ],
         temperature=0.7,
-        max_tokens=1500,
+        max_completion_tokens=1500,
     )
     return response.choices[0].message.content.strip()
 

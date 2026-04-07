@@ -371,7 +371,7 @@ def extract_metrics_and_signals_with_openai(
     response = openai_client.chat.completions.create(
         model=model,
         temperature=0.0,
-        max_tokens=500,
+        max_completion_tokens=500,
         messages=[
             {"role": "system", "content": system_prompt},
             {
@@ -422,7 +422,7 @@ def decide_top10_with_openai(
         response = openai_client.chat.completions.create(
             model=model,
             temperature=0.0,
-            max_tokens=180,
+            max_completion_tokens=180,
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
