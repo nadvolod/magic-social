@@ -313,6 +313,9 @@ def create_post_issue(
     repo: str,
     token: str,
     ensure_labels_exist: bool = True,
+    openai_client=None,
+    source_commit=None,
+    learning_state=None,
 ) -> int:
     """
     Create a GitHub Issue for the given post.
@@ -380,6 +383,59 @@ def create_post_issue(
             "> Right-click and save to use in your LinkedIn post."
         )
         add_comment(repo, token, issue_number, image_comment)
+
+    # --- Post-generation agent comments ---
+    quality_review = None
+    resonance = None
+
+    if openai_client is not None:
+        commit_message = source_commit.message if source_commit else ""
+        commit_diff = source_commit.diff_summary if source_commit else ""
+
+        # Semantic Quality Reviewer
+        try:
+            from .agents.quality_reviewer import review_quality, format_quality_comment  # noqa: PLC0415
+            quality_review = review_quality(openai_client, post.linkedin_post, commit_message, commit_diff)
+            add_comment(repo, token, issue_number, format_quality_comment(quality_review))
+        except Exception:  # noqa: BLE001
+            logger.warning("Quality reviewer agent failed (non-fatal)", exc_info=True)
+
+        # Audience Resonance Checker
+        try:
+            from .agents.resonance_checker import check_resonance, format_resonance_comment  # noqa: PLC0415
+            topic_scores = learning_state.topic_scores if learning_state else {}
+            resonance = check_resonance(openai_client, post.linkedin_post, post.tags, topic_scores)
+            add_comment(repo, token, issue_number, format_resonance_comment(resonance))
+        except Exception:  # noqa: BLE001
+            logger.warning("Resonance checker agent failed (non-fatal)", exc_info=True)
+
+        # Omniscient Predictor (always last — uses other agents' outputs)
+        try:
+            from .agents.predictor import (  # noqa: PLC0415
+                compute_accuracy_stats,
+                format_prediction_comment,
+                load_predictions_log,
+                predict_outcome,
+                save_prediction,
+            )
+            ls_dict = learning_state.to_dict() if learning_state else {}
+            predictions = load_predictions_log()
+            prediction = predict_outcome(
+                openai_client,
+                post.linkedin_post,
+                post.tags,
+                post.hook_pattern,
+                quality_review or {},
+                resonance or {},
+                ls_dict,
+                predictions[-30:],  # last 30 for calibration
+            )
+            prediction["post_id"] = post.id
+            accuracy = compute_accuracy_stats(predictions)
+            add_comment(repo, token, issue_number, format_prediction_comment(prediction, accuracy))
+            save_prediction(prediction)
+        except Exception:  # noqa: BLE001
+            logger.warning("Predictor agent failed (non-fatal)", exc_info=True)
 
     return issue_number
 
