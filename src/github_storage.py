@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import json
 import logging
 import re
@@ -343,6 +344,19 @@ def create_post_issue(
     issue_number = resp.json()["number"]
     logger.info("Created GitHub Issue #%d for post %s", issue_number, post.id)
 
+    # Generate code snippet image before details comment so code_image_url
+    # is set when the Post JSON is embedded in the details comment.
+    try:
+        from .code_image import generate_code_snippet_image  # noqa: PLC0415
+
+        image_bytes = generate_code_snippet_image(post.linkedin_post)
+        if image_bytes:
+            image_url = _upload_code_image(repo, token, post.id, image_bytes)
+            if image_url:
+                post.code_image_url = image_url
+    except Exception:  # noqa: BLE001
+        logger.warning("Code image generation failed (non-fatal)", exc_info=True)
+
     # Post details (checklist, feedback templates, metadata) as a separate comment
     # so the main issue body stays short and mobile-friendly.
     details = _build_details_comment(post)
@@ -358,7 +372,48 @@ def create_post_issue(
     else:
         logger.warning("Failed to post details comment on Issue #%d: %s", issue_number, comment_resp.status_code)
 
+    # Post code snippet image as a separate comment (if generated)
+    if post.code_image_url:
+        image_comment = (
+            "## Code Snippet Image\n\n"
+            f"![Code Snippet]({post.code_image_url})\n\n"
+            "> Right-click and save to use in your LinkedIn post."
+        )
+        add_comment(repo, token, issue_number, image_comment)
+
     return issue_number
+
+
+def _upload_code_image(repo: str, token: str, post_id: str, image_bytes: bytes) -> Optional[str]:
+    """Upload a code snippet PNG to the repo via the GitHub Contents API.
+
+    Returns the raw download URL, or None on failure.
+    """
+    path = f"generated-images/{post_id}.png"
+    url = f"{GITHUB_API}/repos/{repo}/contents/{path}"
+    encoded = base64.b64encode(image_bytes).decode("ascii")
+
+    # Check if file already exists (need its SHA to update)
+    existing_sha = None
+    check = requests.get(url, headers=_headers(token), timeout=30)
+    if check.ok:
+        existing_sha = check.json().get("sha")
+
+    payload: dict = {
+        "message": f"chore: code image for {post_id} [skip ci]",
+        "content": encoded,
+    }
+    if existing_sha:
+        payload["sha"] = existing_sha
+
+    resp = requests.put(url, headers=_headers(token), json=payload, timeout=60)
+    if not resp.ok:
+        logger.warning("Failed to upload code image for %s: %s", post_id, resp.status_code)
+        return None
+
+    download_url = resp.json().get("content", {}).get("download_url")
+    logger.info("Uploaded code image: %s", download_url)
+    return download_url
 
 
 def add_comment(repo: str, token: str, issue_number: int, body: str) -> None:
