@@ -74,7 +74,12 @@ def _matches_icp(text: str) -> bool:
 def _overused_hooks(recent_posts: list[dict]) -> set[str]:
     """Return hook patterns that appear >= _MAX_SAME_HOOK in the window."""
     window = recent_posts[-_RECENT_WINDOW:]
-    counts = Counter(p.get("hook_pattern") for p in window)
+    counts = Counter(
+        hook_pattern
+        for p in window
+        for hook_pattern in [p.get("hook_pattern")]
+        if hook_pattern
+    )
     return {h for h, c in counts.items() if c >= _MAX_SAME_HOOK}
 
 

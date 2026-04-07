@@ -180,7 +180,7 @@ def curate_code_snippet(
 
     # Enforce 5-15 line range (soft: log but still return)
     line_count = len(snippet.strip().splitlines())
-    if line_count < 3 or line_count > 25:
+    if line_count < 5 or line_count > 15:
         logger.info(
             "Snippet has %d lines (outside 5-15 ideal range) — returning anyway.", line_count,
         )

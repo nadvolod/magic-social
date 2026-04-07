@@ -59,7 +59,12 @@ def _build_user_prompt(
     """Assemble the user message that provides all context to the LLM."""
     hook_scores = learning_state.get("hook_pattern_scores", {})
     topic_scores = learning_state.get("topic_scores", {})
-    rejection_reasons = learning_state.get("not_published_reasons", [])
+    raw_reasons = learning_state.get("not_published_reasons", {})
+    # Normalize: not_published_reasons is a dict {reason: count} in LearningState
+    if isinstance(raw_reasons, dict):
+        rejection_reasons = sorted(raw_reasons.keys(), key=lambda r: raw_reasons[r], reverse=True)
+    else:
+        rejection_reasons = list(raw_reasons) if raw_reasons else []
     avg_rating = learning_state.get("average_rating", "N/A")
 
     parts = [
@@ -79,8 +84,10 @@ def _build_user_prompt(
         for dim, score in dimensions.items():
             parts.append(f"  - {dim}: {score}")
 
-    suggestions = quality_review.get("suggestions", [])
-    if suggestions:
+    suggestions = quality_review.get("suggestions", "")
+    if isinstance(suggestions, str) and suggestions:
+        parts.append("Suggestions: " + suggestions)
+    elif isinstance(suggestions, list) and suggestions:
         parts.append("Suggestions: " + "; ".join(suggestions))
 
     parts += [
