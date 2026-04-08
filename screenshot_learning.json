@@ -281,6 +281,35 @@
       },
       "summary": "A technical LinkedIn post sharing a workflow for speeding up development by storing Claude tool permissions in ~/.claude/settings.json, with a screenshot example and a question inviting others to share Claude tips.",
       "hook_excerpt": "Adding tool use permissions to .claude/settings.json has significantly sped up my development."
+    },
+    {
+      "issue_number": 204,
+      "issue_url": "https://github.com/nadvolod/magic-social/issues/204",
+      "image_url": "https://github.com/user-attachments/assets/4ba23fec-f0e3-4f8e-a2a4-9a5089abecae",
+      "recorded_at": "2026-04-08T16:12:22.619817+00:00",
+      "metrics": {
+        "impressions": 0,
+        "reactions": 2,
+        "comments": 0,
+        "reposts": 0,
+        "saves": 0
+      },
+      "engagement_score": 2.0,
+      "percentile": 0.2727272727272727,
+      "classification": "bottom_90_percent",
+      "reason": "Engagement score is far below the historical p50 and p90, and the computed percentile (0.2727) is not in the top decile.",
+      "confidence": 0.99,
+      "signals": {
+        "hook_style": "contrarian/problem-solution",
+        "tone": "practical, confident, technical",
+        "structure": "short hook, personal anecdote, problem, solution, takeaway",
+        "cta_type": "implicit takeaway",
+        "has_code": false,
+        "has_numbers": true,
+        "topic": "workflow automation and monitoring"
+      },
+      "summary": "A technical post about replacing manual monitoring with Temporal Schedules, framed as a lesson that if you must check it every morning, it isn\u2019t truly automated.",
+      "hook_excerpt": "Cron doesn\u2019t fail silently. Your monitoring does."
     }
   ],
   "version": 1
