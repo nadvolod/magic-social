@@ -252,6 +252,35 @@
       },
       "summary": "The post discusses using .claude/settings.json to streamline development by managing tool permissions.",
       "hook_excerpt": "Adding tool use permissions to .claude/settings.json has significantly sped up my development."
+    },
+    {
+      "issue_number": 203,
+      "issue_url": "https://github.com/nadvolod/magic-social/issues/203",
+      "image_url": "https://github.com/user-attachments/assets/e03cbf08-13f5-47bd-a84a-f73ade458c58",
+      "recorded_at": "2026-04-08T16:11:40.701446+00:00",
+      "metrics": {
+        "impressions": 0,
+        "reactions": 31,
+        "comments": 6,
+        "reposts": 1,
+        "saves": 0
+      },
+      "engagement_score": 52.0,
+      "percentile": 0.5,
+      "classification": "bottom_90_percent",
+      "reason": "Engagement score 52.0 is below the historical p50 of 60.0 and far below the p90 of 436.0; computed percentile is only 0.50, so it is not top 10%.",
+      "confidence": 0.97,
+      "signals": {
+        "hook_style": "problem-solution with practical tip",
+        "tone": "helpful, technical, conversational",
+        "structure": "short intro, explanatory paragraphs, closing question, image example",
+        "cta_type": "question prompt",
+        "has_code": true,
+        "has_numbers": true,
+        "topic": "Claude tool permissions / developer workflow"
+      },
+      "summary": "A technical LinkedIn post sharing a workflow for speeding up development by storing Claude tool permissions in ~/.claude/settings.json, with a screenshot example and a question inviting others to share Claude tips.",
+      "hook_excerpt": "Adding tool use permissions to .claude/settings.json has significantly sped up my development."
     }
   ],
   "version": 1
