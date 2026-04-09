@@ -280,7 +280,12 @@ def regenerate_from_feedback(
     new_post.id = f"{new_post.id}-regen{attempt}"
 
     # Create the new issue
-    new_issue = create_post_issue(new_post, issue_repo, token)
+    new_issue = create_post_issue(
+        new_post, issue_repo, token,
+        openai_client=openai_client,
+        source_commit=source,
+        learning_state=learning_state,
+    )
     new_post.github_issue_number = new_issue
 
     # Link the issues
@@ -408,7 +413,12 @@ def apply_generic_feedback(
             new_post.regeneration_feedback = directive_summary
             new_post.id = f"{new_post.id}-regen-generic"
 
-            new_issue = create_post_issue(new_post, issue_repo, token)
+            new_issue = create_post_issue(
+                new_post, issue_repo, token,
+                openai_client=openai_client,
+                source_commit=source,
+                learning_state=learning_state,
+            )
             new_post.github_issue_number = new_issue
 
             add_comment(
