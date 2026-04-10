@@ -46,6 +46,7 @@ LABEL_DEFINITIONS = {
     "career": {"color": "5319e7", "description": "Career / learning topic"},
     "engineering": {"color": "006b75", "description": "General engineering topic"},
     "experiment": {"color": "f9d0c4", "description": "Part of an A/B experiment"},
+    "needs-regeneration": {"color": "ff6600", "description": "Post rejected by agent loop, awaiting regeneration"},
 }
 
 RAW_POST_JSON_RE = re.compile(
@@ -542,6 +543,14 @@ def add_comment(repo: str, token: str, issue_number: int, body: str) -> None:
     resp = requests.post(url, headers=_headers(token), json={"body": body}, timeout=30)
     if not resp.ok:
         logger.warning("Failed to comment on Issue #%d: %s", issue_number, resp.status_code)
+
+
+def add_label_to_issue(repo: str, token: str, issue_number: int, label: str) -> None:
+    """Add a label to a GitHub issue."""
+    url = f"{GITHUB_API}/repos/{repo}/issues/{issue_number}/labels"
+    resp = requests.post(url, headers=_headers(token), json={"labels": [label]}, timeout=30)
+    if not resp.ok:
+        logger.warning("Failed to add label '%s' to Issue #%d: %s", label, issue_number, resp.status_code)
 
 
 def close_issue(repo: str, token: str, issue_number: int) -> None:

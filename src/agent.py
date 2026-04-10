@@ -792,6 +792,8 @@ def run_scan(
                             "Agent loop improved post %s after %d iteration(s)",
                             post.id, loop_result.iterations,
                         )
+                    # Track verdict for auto-regen labeling after issue creation
+                    post._loop_verdict = loop_result.bar_raiser_verdict.get("verdict", "")  # type: ignore[attr-defined]
                 except Exception:  # noqa: BLE001
                     logger.warning("Agent quality loop failed (non-fatal)", exc_info=True)
 
@@ -829,6 +831,22 @@ def run_scan(
             generated_posts.append(post)
 
             logger.info("Created post %s → Issue #%d (hook=%s)", post.id, issue_number, post.hook_pattern)
+
+            # If agent loop rejected the post after all iterations, label for auto-regeneration
+            loop_result = getattr(post, "_loop_verdict", None)
+            if loop_result == "reject" and issue_repo:
+                try:
+                    from .github_storage import add_label_to_issue, add_comment  # noqa: PLC0415
+                    add_label_to_issue(issue_repo, token, issue_number, "needs-regeneration")
+                    add_comment(
+                        issue_repo, token, issue_number,
+                        "⚠️ **Auto-regeneration queued** — this post was rejected by the agent "
+                        "quality loop after maximum rewrite attempts. It will be regenerated "
+                        "with better source material on the next scan run.",
+                    )
+                    logger.info("Labeled Issue #%d for auto-regeneration", issue_number)
+                except Exception:  # noqa: BLE001
+                    logger.warning("Failed to label for auto-regen (non-fatal)", exc_info=True)
 
     return generated_posts
 
