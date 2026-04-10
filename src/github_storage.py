@@ -347,6 +347,23 @@ def create_post_issue(
     issue_number = resp.json()["number"]
     logger.info("Created GitHub Issue #%d for post %s", issue_number, post.id)
 
+    # Push post to dashboard DB (non-fatal if DB not configured)
+    try:
+        from .db import push_post as _push_post  # noqa: PLC0415
+        from .post_generator import score_linkedin_post_quality  # noqa: PLC0415
+        rubric = score_linkedin_post_quality(post.linkedin_post)
+        _push_post(
+            post_id=post.id, sha=post.source_commit_sha, repo=post.repo,
+            lesson=post.lesson, linkedin_post=post.linkedin_post,
+            hook_pattern=post.hook_pattern, tags=post.tags,
+            status=post.status.value, rubric_score=rubric.total,
+            rubric_breakdown=rubric.breakdown, rubric_issues=rubric.issues,
+            rewrite_attempts=0, experiment_id=post.experiment_id,
+            experiment_variant=post.experiment_variant, issue_number=issue_number,
+        )
+    except Exception:  # noqa: BLE001
+        logger.debug("Dashboard DB push failed (non-fatal)", exc_info=True)
+
     # Generate code snippet image before details comment so code_image_url
     # is set when the Post JSON is embedded in the details comment.
     try:
@@ -398,6 +415,11 @@ def create_post_issue(
             from .agents.quality_reviewer import review_quality, format_quality_comment  # noqa: PLC0415
             quality_review = review_quality(openai_client, post.linkedin_post, commit_message, commit_diff)
             add_comment(repo, token, issue_number, format_quality_comment(quality_review))
+            try:
+                from .db import push_agent_score  # noqa: PLC0415
+                push_agent_score(post.id, "quality_reviewer", quality_review, details=format_quality_comment(quality_review)[:500])
+            except Exception:  # noqa: BLE001
+                pass
         except Exception:  # noqa: BLE001
             logger.warning("Quality reviewer agent failed (non-fatal)", exc_info=True)
 
@@ -407,6 +429,11 @@ def create_post_issue(
             topic_scores = learning_state.topic_scores if learning_state else {}
             resonance = check_resonance(openai_client, post.linkedin_post, post.tags, topic_scores)
             add_comment(repo, token, issue_number, format_resonance_comment(resonance))
+            try:
+                from .db import push_agent_score  # noqa: PLC0415
+                push_agent_score(post.id, "resonance_checker", resonance, details=format_resonance_comment(resonance)[:500])
+            except Exception:  # noqa: BLE001
+                pass
         except Exception:  # noqa: BLE001
             logger.warning("Resonance checker agent failed (non-fatal)", exc_info=True)
 
@@ -435,6 +462,11 @@ def create_post_issue(
             accuracy = compute_accuracy_stats(predictions)
             add_comment(repo, token, issue_number, format_prediction_comment(prediction, accuracy))
             save_prediction(prediction)
+            try:
+                from .db import push_agent_score  # noqa: PLC0415
+                push_agent_score(post.id, "predictor", prediction)
+            except Exception:  # noqa: BLE001
+                pass
         except Exception:  # noqa: BLE001
             logger.warning("Predictor agent failed (non-fatal)", exc_info=True)
 
@@ -461,6 +493,11 @@ def create_post_issue(
                     add_comment(repo, token, issue_number, retro)
             add_comment(repo, token, issue_number, format_bar_raiser_comment(verdict))
             bar_state.save()
+            try:
+                from .db import push_agent_score  # noqa: PLC0415
+                push_agent_score(post.id, "bar_raiser", verdict, verdict=verdict.get("verdict"))
+            except Exception:  # noqa: BLE001
+                pass
         except Exception:  # noqa: BLE001
             logger.warning("Bar Raiser agent failed (non-fatal)", exc_info=True)
 

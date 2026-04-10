@@ -10,19 +10,22 @@
   "topic_scores": {},
   "best_performing_posts": [],
   "total_posts_analyzed": 0,
-  "not_published_reasons": {
-    "not_relevant": 6,
-    "skip": 18,
-    "this doesn't match what we have in the good-social-posts folder at all": 9,
-    "no_feedback_72h": 16,
-    "stale_unpublished_7d": 18
-  },
+  "not_published_reasons": {},
   "archived_not_published_reasons": {
-    "historical_batch_bad_practice_pre_2026-03-03_2359_est": 37
+    "historical_batch_bad_practice_pre_2026-03-03_2359_est": 37,
+    "reset_2026-04-10": {
+      "not_relevant": 6,
+      "skip": 18,
+      "this doesn't match what we have in the good-social-posts folder at all": 9,
+      "no_feedback_72h": 16,
+      "stale_unpublished_7d": 18
+    }
   },
-  "total_feedback_received": 104,
-  "total_ratings_received": 67,
-  "average_rating": 1.5970149253731343,
+  "total_feedback_received": 0,
+  "total_ratings_received": 0,
+  "average_rating": 0.0,
+  "explicit_ratings_received": 0,
+  "explicit_average_rating": 0.0,
   "applied_feedback_fingerprints": {
     "post-8f1a85ba3a8d": "False|not_relevant||2|2026-03-13T09:15:51Z",
     "post-85b8bb070c0d": "False|skip||2|2026-04-01T14:51:03Z",
@@ -44,76 +47,25 @@
     "post-46f0d5adae48": "False|stale_unpublished_7d||1|2026-03-13T09:16:30.790963+00:00"
   },
   "implicit_feedback_events": {
-    "post-caa23c680e4f": [
-      "no_feedback_72h",
-      "stale_unpublished_7d"
-    ],
-    "post-3d799cdf0e6d": [
-      "no_feedback_72h",
-      "stale_unpublished_7d"
-    ],
-    "post-ecdfa7124b59": [
-      "no_feedback_72h",
-      "stale_unpublished_7d"
-    ],
-    "post-83e353eba525": [
-      "no_feedback_72h",
-      "stale_unpublished_7d"
-    ],
-    "post-bfc8ae3e241a": [
-      "no_feedback_72h",
-      "stale_unpublished_7d"
-    ],
-    "post-b980461a7247": [
-      "no_feedback_72h",
-      "stale_unpublished_7d"
-    ],
-    "post-06971f6623d5": [
-      "no_feedback_72h",
-      "stale_unpublished_7d"
-    ],
-    "post-adf22c90a9a4": [
-      "no_feedback_72h",
-      "stale_unpublished_7d"
-    ],
-    "post-7b0f30066ac7": [
-      "no_feedback_72h",
-      "stale_unpublished_7d"
-    ],
-    "post-22bccc5329b7": [
-      "no_feedback_72h",
-      "stale_unpublished_7d"
-    ],
-    "post-8ce52cf163ca": [
-      "no_feedback_72h",
-      "stale_unpublished_7d"
-    ],
-    "post-34d224411fba": [
-      "no_feedback_72h",
-      "stale_unpublished_7d"
-    ],
-    "post-32cb5266e537": [
-      "no_feedback_72h",
-      "stale_unpublished_7d"
-    ],
-    "post-6effcce6fbc8": [
-      "no_feedback_72h",
-      "stale_unpublished_7d"
-    ],
-    "post-c107d249b421": [
-      "no_feedback_72h",
-      "stale_unpublished_7d"
-    ],
-    "post-46f0d5adae48": [
-      "no_feedback_72h",
-      "stale_unpublished_7d"
-    ],
-    "post-8f1a85ba3a8d": [
-      "stale_unpublished_7d"
-    ],
-    "post-85b8bb070c0d": [
-      "stale_unpublished_7d"
-    ]
+    "post-caa23c680e4f": ["no_feedback_72h", "stale_unpublished_7d"],
+    "post-3d799cdf0e6d": ["no_feedback_72h", "stale_unpublished_7d"],
+    "post-ecdfa7124b59": ["no_feedback_72h", "stale_unpublished_7d"],
+    "post-83e353eba525": ["no_feedback_72h", "stale_unpublished_7d"],
+    "post-bfc8ae3e241a": ["no_feedback_72h", "stale_unpublished_7d"],
+    "post-b980461a7247": ["no_feedback_72h", "stale_unpublished_7d"],
+    "post-06971f6623d5": ["no_feedback_72h", "stale_unpublished_7d"],
+    "post-adf22c90a9a4": ["no_feedback_72h", "stale_unpublished_7d"],
+    "post-7b0f30066ac7": ["no_feedback_72h", "stale_unpublished_7d"],
+    "post-22bccc5329b7": ["no_feedback_72h", "stale_unpublished_7d"],
+    "post-8ce52cf163ca": ["no_feedback_72h", "stale_unpublished_7d"],
+    "post-34d224411fba": ["no_feedback_72h", "stale_unpublished_7d"],
+    "post-32cb5266e537": ["no_feedback_72h", "stale_unpublished_7d"],
+    "post-6effcce6fbc8": ["no_feedback_72h", "stale_unpublished_7d"],
+    "post-c107d249b421": ["no_feedback_72h", "stale_unpublished_7d"],
+    "post-46f0d5adae48": ["no_feedback_72h", "stale_unpublished_7d"],
+    "post-8f1a85ba3a8d": ["stale_unpublished_7d"],
+    "post-85b8bb070c0d": ["stale_unpublished_7d"]
   },
+  "state_reset_at": "2026-04-10",
   "version": 1
 }

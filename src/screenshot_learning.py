@@ -445,6 +445,14 @@ def _signal_bucket(example: ScreenshotExample) -> str:
     return "top" if example.classification == "top_10_percent" else "bottom"
 
 
+# Signal keys that are governed by the quality rubric and must not be
+# overridden by screenshot learning (prevents selection-bias contradictions).
+PROTECTED_SIGNAL_KEYS = {"has_code", "has_numbers"}
+
+# Minimum examples supporting a signal in either bucket before we include it.
+_MIN_SIGNAL_SUPPORT = 2
+
+
 def build_signal_balance(state: ScreenshotLearningState, top_n: int = 6) -> tuple[list[str], list[str]]:
     """
     Build positive/negative signal strings from learned screenshot examples.
@@ -457,6 +465,9 @@ def build_signal_balance(state: ScreenshotLearningState, top_n: int = 6) -> tupl
         bucket = _signal_bucket(e)
         signals = e.signals or {}
         for key, value in signals.items():
+            # Skip signals protected by the quality rubric
+            if key in PROTECTED_SIGNAL_KEYS:
+                continue
             if value in (None, "", []):
                 continue
             values: list[str]
@@ -472,6 +483,9 @@ def build_signal_balance(state: ScreenshotLearningState, top_n: int = 6) -> tupl
     positive_ranked: list[tuple[str, int]] = []
     negative_ranked: list[tuple[str, int]] = []
     for signal_key, c in counts.items():
+        # Require minimum support before including a signal
+        if max(c["top"], c["bottom"]) < _MIN_SIGNAL_SUPPORT:
+            continue
         delta = c["top"] - c["bottom"]
         if delta > 0:
             positive_ranked.append((signal_key, delta))
@@ -490,7 +504,11 @@ def build_prompt_guidance(state: ScreenshotLearningState, top_n: int = 5) -> str
     positives, negatives = build_signal_balance(state, top_n=top_n)
     if not positives and not negatives:
         return ""
-    lines = ["Screenshot-derived LinkedIn signals from observed posts:"]
+    n_examples = len(state.examples)
+    if n_examples < 20:
+        lines = [f"Low-confidence signals ({n_examples} examples) — treat as suggestions, not rules:"]
+    else:
+        lines = ["Screenshot-derived LinkedIn signals from observed posts:"]
     if positives:
         lines.append("Prefer patterns:")
         lines.extend(f"- {s}" for s in positives)
