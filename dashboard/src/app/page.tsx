@@ -19,6 +19,8 @@ import {
 } from "@/lib/queries";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 function DeltaBadge({ delta, suffix = "" }: { delta: number; suffix?: string }) {
   if (delta === 0) return <span className="text-xs text-muted-foreground">--</span>;
   const isUp = delta > 0;
