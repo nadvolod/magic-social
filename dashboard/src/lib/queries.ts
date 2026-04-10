@@ -48,9 +48,13 @@ export async function getHealthMetrics(): Promise<HealthMetrics> {
     SELECT
       COUNT(*) FILTER (WHERE verdict = 'pass') as passed,
       COUNT(*) as total
-    FROM agent_scores
-    WHERE agent_name = 'bar_raiser'
-      AND created_at > NOW() - INTERVAL '7 days'
+    FROM (
+      SELECT DISTINCT ON (post_id) post_id, verdict
+      FROM agent_scores
+      WHERE agent_name = 'bar_raiser'
+        AND created_at > NOW() - INTERVAL '7 days'
+      ORDER BY post_id, created_at DESC
+    ) latest_verdicts
   `;
 
   const [rating] = await sql`
@@ -136,7 +140,7 @@ export async function getPosts(
       SELECT
         p.id, p.hook_pattern, p.rubric_score, p.status,
         p.issue_number, p.user_rating, p.user_verdict, p.created_at,
-        (SELECT verdict FROM agent_scores WHERE post_id = p.id AND agent_name = 'bar_raiser' LIMIT 1) as bar_verdict
+        (SELECT verdict FROM agent_scores WHERE post_id = p.id AND agent_name = 'bar_raiser' ORDER BY created_at DESC LIMIT 1) as bar_verdict
       FROM posts p
       WHERE p.status = ${status}
       ORDER BY p.created_at DESC
@@ -147,7 +151,7 @@ export async function getPosts(
       SELECT
         p.id, p.hook_pattern, p.rubric_score, p.status,
         p.issue_number, p.user_rating, p.user_verdict, p.created_at,
-        (SELECT verdict FROM agent_scores WHERE post_id = p.id AND agent_name = 'bar_raiser' LIMIT 1) as bar_verdict
+        (SELECT verdict FROM agent_scores WHERE post_id = p.id AND agent_name = 'bar_raiser' ORDER BY created_at DESC LIMIT 1) as bar_verdict
       FROM posts p
       ORDER BY p.created_at DESC
       LIMIT ${limit} OFFSET ${offset}

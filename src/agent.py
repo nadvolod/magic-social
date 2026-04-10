@@ -792,8 +792,6 @@ def run_scan(
                             "Agent loop improved post %s after %d iteration(s)",
                             post.id, loop_result.iterations,
                         )
-                    # Store agent results for later use in issue comments
-                    post._agent_loop_result = loop_result  # type: ignore[attr-defined]
                 except Exception:  # noqa: BLE001
                     logger.warning("Agent quality loop failed (non-fatal)", exc_info=True)
 

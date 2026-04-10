@@ -358,7 +358,7 @@ def create_post_issue(
             hook_pattern=post.hook_pattern, tags=post.tags,
             status=post.status.value, rubric_score=rubric.total,
             rubric_breakdown=rubric.breakdown, rubric_issues=rubric.issues,
-            rewrite_attempts=0, experiment_id=post.experiment_id,
+            rewrite_attempts=post.regeneration_attempt, experiment_id=post.experiment_id,
             experiment_variant=post.experiment_variant, issue_number=issue_number,
         )
     except Exception:  # noqa: BLE001

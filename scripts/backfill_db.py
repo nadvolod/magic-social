@@ -71,6 +71,8 @@ def backfill_from_github_issues():
                 experiment_id=post.experiment_id,
                 experiment_variant=post.experiment_variant,
                 issue_number=post.github_issue_number,
+                created_at=post.created_at or None,
+                published_at=post.published_at or None,
             )
             print(f"    Pushed {post.id} (issue #{post.github_issue_number})")
 
@@ -94,6 +96,7 @@ def backfill_feedback():
                 rating=rating,
                 reason=reason or None,
                 improvement_notes=notes or None,
+                recorded_at=date_str or None,
             )
 
     print("  Done.")

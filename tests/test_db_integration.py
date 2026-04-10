@@ -16,8 +16,9 @@ import uuid
 
 import pytest
 
-# Skip entire module if no DB configured
-pytestmark = pytest.mark.skipif(
+# Tests that need a real DB are marked with skipif individually.
+# Tests in TestNoDbNoopWithoutEnv always run (no DB required).
+_requires_db = pytest.mark.skipif(
     not os.environ.get("NEON_DATABASE_URL"),
     reason="NEON_DATABASE_URL not set — skipping DB integration tests",
 )
@@ -91,6 +92,7 @@ def _fetch_feedback(post_id: str) -> list[dict]:
         conn.close()
 
 
+@_requires_db
 class TestPushPost:
     """push_post should insert/upsert a post into the dashboard DB."""
 
@@ -158,6 +160,7 @@ class TestPushPost:
             _cleanup_post(pid)
 
 
+@_requires_db
 class TestPushAgentScore:
     """push_agent_score should insert agent evaluation results."""
 
@@ -199,6 +202,7 @@ class TestPushAgentScore:
             _cleanup_post(pid)
 
 
+@_requires_db
 class TestPushFeedback:
     """push_feedback should insert feedback entries."""
 
@@ -260,8 +264,12 @@ class TestPushFeedback:
             _cleanup_post(pid)
 
 
+@pytest.mark.skipif(
+    not os.environ.get("NEON_DATABASE_URL"),
+    reason="Need NEON_DATABASE_URL to verify noop test didn't insert",
+)
 class TestNoDbGracefulDegradation:
-    """All push functions should no-op when DB is not configured."""
+    """All push functions should no-op when DB URL is empty."""
 
     def test_push_post_noop_without_db(self, monkeypatch):
         real_url = os.environ.get("NEON_DATABASE_URL", "")
@@ -285,3 +293,38 @@ class TestNoDbGracefulDegradation:
         src.db._db_url = None
         row = _fetch_post("noop-test")
         assert row is None
+
+
+class TestNoDbNoopWithoutEnv:
+    """push functions should no-op when DB URL is unset (runs without DB)."""
+
+    def test_push_post_no_raise_without_url(self, monkeypatch):
+        monkeypatch.setenv("NEON_DATABASE_URL", "")
+        import src.db
+        src.db._db_url = None
+        src.db._warned = False
+
+        # Should silently no-op, not raise
+        src.db.push_post(
+            post_id="noop-test2", sha="s", repo="r", lesson="l", linkedin_post="p",
+            hook_pattern="result", tags=[], status="draft",
+            rubric_score=75.0, rubric_breakdown=None, rubric_issues=None,
+            rewrite_attempts=0, experiment_id=None, experiment_variant=None,
+            issue_number=None,
+        )
+
+    def test_push_agent_score_no_raise_without_url(self, monkeypatch):
+        monkeypatch.setenv("NEON_DATABASE_URL", "")
+        import src.db
+        src.db._db_url = None
+        src.db._warned = False
+
+        src.db.push_agent_score("noop", "bar_raiser", {"score": 60})
+
+    def test_push_feedback_no_raise_without_url(self, monkeypatch):
+        monkeypatch.setenv("NEON_DATABASE_URL", "")
+        import src.db
+        src.db._db_url = None
+        src.db._warned = False
+
+        src.db.push_feedback("noop", "explicit", rating=3)

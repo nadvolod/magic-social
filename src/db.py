@@ -9,16 +9,14 @@ from __future__ import annotations
 import json
 import logging
 import os
-from datetime import datetime, timezone
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
-_db_url: Optional[str] = None
+_db_url: str | None = None
 _warned = False
 
 
-def _get_url() -> Optional[str]:
+def _get_url() -> str | None:
     global _db_url  # noqa: PLW0603
     if _db_url is None:
         _db_url = os.environ.get("NEON_DATABASE_URL", "") or ""
@@ -51,13 +49,15 @@ def push_post(
     hook_pattern: str,
     tags: list[str],
     status: str,
-    rubric_score: Optional[float],
-    rubric_breakdown: Optional[dict],
-    rubric_issues: Optional[list[str]],
+    rubric_score: float | None,
+    rubric_breakdown: dict | None,
+    rubric_issues: list[str] | None,
     rewrite_attempts: int,
-    experiment_id: Optional[str],
-    experiment_variant: Optional[str],
-    issue_number: Optional[int],
+    experiment_id: str | None,
+    experiment_variant: str | None,
+    issue_number: int | None,
+    created_at: str | None = None,
+    published_at: str | None = None,
 ) -> None:
     """Insert or update a post in the dashboard database."""
     conn = _get_conn()
@@ -71,14 +71,24 @@ def push_post(
                     INSERT INTO posts (
                         id, sha, repo, lesson, linkedin_post, hook_pattern, tags,
                         status, rubric_score, rubric_breakdown, rubric_issues,
-                        rewrite_attempts, experiment_id, experiment_variant, issue_number
-                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        rewrite_attempts, experiment_id, experiment_variant, issue_number,
+                        created_at, published_at
+                    ) VALUES (
+                        %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                        COALESCE(%s::timestamptz, NOW()), %s::timestamptz
+                    )
                     ON CONFLICT (id) DO UPDATE SET
+                        lesson = EXCLUDED.lesson,
+                        linkedin_post = EXCLUDED.linkedin_post,
+                        hook_pattern = EXCLUDED.hook_pattern,
+                        tags = EXCLUDED.tags,
+                        status = EXCLUDED.status,
                         rubric_score = EXCLUDED.rubric_score,
                         rubric_breakdown = EXCLUDED.rubric_breakdown,
                         rubric_issues = EXCLUDED.rubric_issues,
+                        rewrite_attempts = EXCLUDED.rewrite_attempts,
                         issue_number = EXCLUDED.issue_number,
-                        status = EXCLUDED.status
+                        published_at = EXCLUDED.published_at
                     """,
                     (
                         post_id, sha, repo, lesson, linkedin_post, hook_pattern,
@@ -87,6 +97,7 @@ def push_post(
                         json.dumps(rubric_breakdown) if rubric_breakdown else None,
                         rubric_issues,
                         rewrite_attempts, experiment_id, experiment_variant, issue_number,
+                        created_at, published_at,
                     ),
                 )
         logger.debug("Pushed post %s to dashboard DB.", post_id)
@@ -100,8 +111,8 @@ def push_agent_score(
     post_id: str,
     agent_name: str,
     scores: dict,
-    verdict: Optional[str] = None,
-    details: Optional[str] = None,
+    verdict: str | None = None,
+    details: str | None = None,
 ) -> None:
     """Insert an agent score entry for a post."""
     conn = _get_conn()
@@ -127,9 +138,10 @@ def push_agent_score(
 def push_feedback(
     post_id: str,
     source: str,
-    rating: Optional[int] = None,
-    reason: Optional[str] = None,
-    improvement_notes: Optional[str] = None,
+    rating: int | None = None,
+    reason: str | None = None,
+    improvement_notes: str | None = None,
+    recorded_at: str | None = None,
 ) -> None:
     """Insert a feedback entry for a post."""
     conn = _get_conn()
@@ -140,10 +152,10 @@ def push_feedback(
             with conn.cursor() as cur:
                 cur.execute(
                     """
-                    INSERT INTO feedback (post_id, source, rating, reason, improvement_notes)
-                    VALUES (%s, %s, %s, %s, %s)
+                    INSERT INTO feedback (post_id, source, rating, reason, improvement_notes, recorded_at)
+                    VALUES (%s, %s, %s, %s, %s, COALESCE(%s::timestamptz, NOW()))
                     """,
-                    (post_id, source, rating, reason, improvement_notes),
+                    (post_id, source, rating, reason, improvement_notes, recorded_at),
                 )
         logger.debug("Pushed feedback for %s to dashboard DB.", post_id)
     except Exception:  # noqa: BLE001
@@ -154,9 +166,9 @@ def push_feedback(
 
 def update_post_feedback(
     post_id: str,
-    user_rating: Optional[int] = None,
-    user_verdict: Optional[str] = None,
-    user_notes: Optional[str] = None,
+    user_rating: int | None = None,
+    user_verdict: str | None = None,
+    user_notes: str | None = None,
 ) -> None:
     """Update user feedback fields on a post."""
     conn = _get_conn()
@@ -204,12 +216,12 @@ def push_metrics_snapshot(snapshot: dict) -> None:
 def push_weekly_metrics(
     week_start: str,
     posts_generated: int = 0,
-    quality_gate_pass_rate: Optional[float] = None,
-    avg_rubric_score: Optional[float] = None,
-    avg_agent_score: Optional[float] = None,
-    bar_raiser_pass_rate: Optional[float] = None,
+    quality_gate_pass_rate: float | None = None,
+    avg_rubric_score: float | None = None,
+    avg_agent_score: float | None = None,
+    bar_raiser_pass_rate: float | None = None,
     explicit_ratings_count: int = 0,
-    avg_explicit_rating: Optional[float] = None,
+    avg_explicit_rating: float | None = None,
     posts_published: int = 0,
     posts_rejected: int = 0,
 ) -> None:
