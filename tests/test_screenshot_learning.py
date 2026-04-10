@@ -34,6 +34,7 @@ def test_deterministic_top_decile_label_uses_percentile():
 
 
 def test_build_signal_balance_separates_positive_and_negative():
+    # Need at least 2 examples per signal to meet minimum support threshold
     state = ScreenshotLearningState(
         examples=[
             ScreenshotExample(
@@ -45,9 +46,25 @@ def test_build_signal_balance_separates_positive_and_negative():
                 signals={"hook_style": "result", "cta_type": "question_open"},
             ),
             ScreenshotExample(
+                issue_number=3,
+                issue_url="u3",
+                image_url="i3",
+                recorded_at="2026-03-01T00:00:00Z",
+                classification="top_10_percent",
+                signals={"hook_style": "result", "cta_type": "question_open"},
+            ),
+            ScreenshotExample(
                 issue_number=2,
                 issue_url="u2",
                 image_url="i2",
+                recorded_at="2026-03-01T00:00:00Z",
+                classification="bottom_90_percent",
+                signals={"hook_style": "story", "cta_type": "no_cta"},
+            ),
+            ScreenshotExample(
+                issue_number=4,
+                issue_url="u4",
+                image_url="i4",
                 recorded_at="2026-03-01T00:00:00Z",
                 classification="bottom_90_percent",
                 signals={"hook_style": "story", "cta_type": "no_cta"},

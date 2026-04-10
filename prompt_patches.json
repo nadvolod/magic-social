@@ -1,0 +1,19 @@
+{
+  "patches": [
+    {
+      "rule": "Every post MUST include a 4-space indented code or config snippet that teaches something specific — not pseudocode, not placeholders",
+      "source": "quality_rubric",
+      "added": "2026-04-10"
+    },
+    {
+      "rule": "Posts about internal tooling changes (CI configs, linting rules, dependency bumps) are NOT valuable unless they reveal a universal engineering insight applicable to the reader's own codebase",
+      "source": "user_feedback_pattern",
+      "added": "2026-04-10"
+    },
+    {
+      "rule": "The lesson must be something the reader can apply to THEIR OWN codebase — not a description of what you did, but a transferable principle backed by proof",
+      "source": "user_feedback_pattern",
+      "added": "2026-04-10"
+    }
+  ]
+}

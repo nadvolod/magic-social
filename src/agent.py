@@ -772,6 +772,29 @@ def run_scan(
             if var_idx > 0:
                 post.id = f"{post.id}-v{var_idx + 1}"
 
+            # Pre-creation agent quality loop: run agents to improve the post
+            # before it becomes a GitHub Issue
+            if openai_client is not None:
+                try:
+                    from .agent_loop import agent_quality_loop  # noqa: PLC0415
+                    loop_result = agent_quality_loop(
+                        post_text=post.linkedin_post,
+                        commit_message=source.message,
+                        commit_diff=source.diff_summary,
+                        tags=post.tags,
+                        hook_pattern=post.hook_pattern,
+                        openai_client=openai_client,
+                        learning_state=learning_state,
+                    )
+                    if loop_result.improved:
+                        post.linkedin_post = loop_result.post_text
+                        logger.info(
+                            "Agent loop improved post %s after %d iteration(s)",
+                            post.id, loop_result.iterations,
+                        )
+                except Exception:  # noqa: BLE001
+                    logger.warning("Agent quality loop failed (non-fatal)", exc_info=True)
+
             commit_posts.append(post)
 
         if not commit_posts:
