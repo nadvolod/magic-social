@@ -245,7 +245,31 @@ def _load_niche_block() -> str:
         return ""
 
 
-def _build_system_prompt() -> str:
+def _load_rejection_avoidance_block(learning_state_path: str = "learning_state.json") -> str:
+    """Load top rejection reasons from learning state and format as AVOID instructions."""
+    ls_path = Path(learning_state_path)
+    if not ls_path.exists():
+        return ""
+    try:
+        import json as _json
+        with ls_path.open() as f:
+            data = _json.load(f)
+        reasons = data.get("not_published_reasons", {})
+        if not reasons:
+            return ""
+        # Sort by count descending, take top 3
+        sorted_reasons = sorted(reasons.items(), key=lambda x: -x[1])[:3]
+        lines = [
+            "\n\nPosts were rejected for these reasons — AVOID generating posts with these problems:",
+        ]
+        for reason, count in sorted_reasons:
+            lines.append(f"- {reason} ({count}x)")
+        return "\n".join(lines)
+    except Exception:  # noqa: BLE001
+        return ""
+
+
+def _build_system_prompt(learning_state_path: str = "learning_state.json") -> str:
     examples = _load_good_posts_examples()
     example_block = ""
     if examples:
@@ -287,6 +311,9 @@ def _build_system_prompt() -> str:
     # Load niche focus from config
     niche_block = _load_niche_block()
 
+    # Load rejection avoidance from learning state
+    rejection_block = _load_rejection_avoidance_block(learning_state_path)
+
     return textwrap.dedent(f"""
         You are an expert technical LinkedIn content creator for senior engineers and tech leads.
 
@@ -300,7 +327,7 @@ def _build_system_prompt() -> str:
         - Avoid: fluff, clichés, "I'm excited to share", vague inspiration
         - Avoid: hashtag spam (0-2 max, only if highly relevant)
 
-        Tone: Direct. Confident. Specific. Human.{niche_block}{example_block}{lessons_block}{screenshot_block}{linkedin_data_block}{patches_block}{lessons_learned_block}
+        Tone: Direct. Confident. Specific. Human.{niche_block}{example_block}{lessons_block}{screenshot_block}{linkedin_data_block}{patches_block}{lessons_learned_block}{rejection_block}
     """).strip()
 
 
