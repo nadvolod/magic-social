@@ -1,7 +1,8 @@
 {
+  "updated_at": "2026-04-12T20:07:48.000514+00:00",
   "patches": [
     {
-      "rule": "Every post MUST include a 4-space indented code or config snippet that teaches something specific — not pseudocode, not placeholders",
+      "rule": "Every post MUST include a 4-space indented code or config snippet that teaches something specific \u2014 not pseudocode, not placeholders",
       "source": "quality_rubric",
       "added": "2026-04-10"
     },
@@ -11,7 +12,7 @@
       "added": "2026-04-10"
     },
     {
-      "rule": "The lesson must be something the reader can apply to THEIR OWN codebase — not a description of what you did, but a transferable principle backed by proof",
+      "rule": "The lesson must be something the reader can apply to THEIR OWN codebase \u2014 not a description of what you did, but a transferable principle backed by proof",
       "source": "user_feedback_pattern",
       "added": "2026-04-10"
     }
