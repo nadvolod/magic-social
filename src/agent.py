@@ -78,7 +78,7 @@ DEFAULT_SCAN_DAYS = 7
 # Learning-state key used when a large historical issue batch is explicitly
 # marked as "bad practice" and should tighten future selection.
 HISTORICAL_BAD_BATCH_REASON_PREFIX = "historical_batch_bad_practice_pre_"
-DEFAULT_MAX_OPEN_UNPUBLISHED = 10
+DEFAULT_MAX_OPEN_UNPUBLISHED = 20
 DEFAULT_MAX_STALE_UNPUBLISHED = 4
 DEFAULT_STALE_DAYS = 7
 README_METRICS_START = "<!-- METRICS_DASHBOARD_START -->"
@@ -233,7 +233,7 @@ def fetch_social_post_backlog(
 
 
 # Days without feedback before auto-archiving stale drafts during scan
-AUTO_ARCHIVE_STALE_DAYS = 14
+AUTO_ARCHIVE_STALE_DAYS = 7
 
 
 def auto_archive_stale_issues(
@@ -242,84 +242,247 @@ def auto_archive_stale_issues(
     stale_days: int = AUTO_ARCHIVE_STALE_DAYS,
 ) -> int:
     """
-    Close stale unpublished draft issues that have had no feedback.
+    Close stale unpublished draft issues that have had no explicit feedback.
+
+    Safeguards:
+    - Only archives draft issues (not published, approved, or already archived).
+    - Skips issues that have explicit parsed feedback (comments, checkbox, reactions).
+    - Sets both ``status:archived`` label and closed state for consistency.
 
     Returns the number of issues archived.
     """
-    import requests as _requests  # noqa: PLC0415
+    from .analytics import fetch_issue_feedback  # noqa: PLC0415
+    from .github_storage import (  # noqa: PLC0415
+        add_comment,
+        close_issue,
+        list_social_post_issues,
+        update_issue_status,
+    )
 
-    headers = {
-        "Authorization": f"Bearer {token}",
-        "Accept": "application/vnd.github+json",
-        "X-GitHub-Api-Version": "2022-11-28",
-    }
     now = datetime.now(timezone.utc)
     cutoff = now - timedelta(days=stale_days)
     archived_count = 0
 
-    page = 1
-    while True:
-        url = f"https://api.github.com/repos/{repo}/issues"
-        resp = _requests.get(
-            url,
-            headers=headers,
-            params={"state": "open", "labels": "social-post", "per_page": 100, "page": page},
-            timeout=30,
+    issues = list_social_post_issues(repo, token, state="open")
+
+    for issue in issues:
+        if "pull_request" in issue:
+            continue
+        status = _issue_status_from_labels(issue.get("labels", [])) or "draft"
+        # Only archive drafts — never published, approved, or already-archived issues
+        if status != PostStatus.DRAFT.value:
+            continue
+        created_at = _parse_iso_datetime(issue.get("created_at", ""))
+        if created_at is None or created_at > cutoff:
+            continue
+
+        issue_number = issue["number"]
+        title = issue.get("title", "")
+
+        # Skip issues that have explicit feedback — someone engaged with them
+        try:
+            feedback = fetch_issue_feedback(repo, token, issue_number, f"issue-{issue_number}")
+            if feedback is not None:
+                logger.info(
+                    "Skipping auto-archive for Issue #%d — has explicit feedback", issue_number
+                )
+                continue
+        except Exception:  # noqa: BLE001
+            logger.warning("Failed to check feedback for Issue #%d (archiving anyway)", issue_number)
+
+        add_comment(
+            repo, token, issue_number,
+            f"Auto-archived: this draft was open for {stale_days}+ days with no "
+            "publish action or feedback. Closing to unblock new post generation. "
+            "Reopen if you'd like to revisit this draft.",
         )
-        resp.raise_for_status()
-        batch = resp.json()
-        if not batch:
-            break
-
-        for issue in batch:
-            if "pull_request" in issue:
-                continue
-            status = _issue_status_from_labels(issue.get("labels", [])) or "draft"
-            if status not in (PostStatus.DRAFT.value, PostStatus.APPROVED.value):
-                continue
-            created_at = _parse_iso_datetime(issue.get("created_at", ""))
-            if created_at is None or created_at > cutoff:
-                continue
-
-            issue_number = issue["number"]
-            title = issue.get("title", "")
-            # Close the issue and add an explanatory comment
-            comment_url = f"https://api.github.com/repos/{repo}/issues/{issue_number}/comments"
-            _requests.post(
-                comment_url,
-                headers=headers,
-                json={"body": (
-                    f"Auto-archived: this draft was open for {stale_days}+ days with no "
-                    "publish action. Closing to unblock new post generation. "
-                    "Reopen if you'd like to revisit this draft."
-                )},
-                timeout=30,
-            )
-            # Close the issue
-            close_url = f"https://api.github.com/repos/{repo}/issues/{issue_number}"
-            _requests.patch(
-                close_url,
-                headers=headers,
-                json={"state": "closed"},
-                timeout=30,
-            )
-            # Add auto-archived label
-            label_url = f"https://api.github.com/repos/{repo}/issues/{issue_number}/labels"
-            _requests.post(
-                label_url,
-                headers=headers,
-                json={"labels": ["auto-archived"]},
-                timeout=30,
-            )
-            archived_count += 1
-            logger.info("Auto-archived stale issue #%d: %s", issue_number, title)
-
-        if len(batch) < 100:
-            break
-        page += 1
+        update_issue_status(repo, token, issue_number, PostStatus.ARCHIVED)
+        close_issue(repo, token, issue_number)
+        archived_count += 1
+        logger.info("Auto-archived stale issue #%d: %s", issue_number, title)
 
     if archived_count:
         print(f"Auto-archived {archived_count} stale draft(s) older than {stale_days} days.")
+    return archived_count
+
+
+def run_cleanup_backlog(
+    repo: str,
+    token: str,
+    keep_recent: int = 10,
+    older_than_days: int = 3,
+    learning_state_path: str = DEFAULT_LEARNING_STATE_PATH,
+    snapshot_output: Optional[str] = None,
+    dry_run: bool = False,
+) -> int:
+    """
+    Clean up the social-post backlog by archiving old unpublished drafts.
+
+    Before archiving each issue:
+    - Harvests explicit and implicit feedback into learning_state.json.
+    - Adds a standardized archive comment with reason ``backlog_cleanup_unreviewed``.
+    - Updates the issue to ``status:archived`` and closes it.
+
+    Args:
+        repo:               Issue repo (owner/repo).
+        token:              GitHub token.
+        keep_recent:        Number of most-recent draft issues to keep.
+        older_than_days:    Only archive drafts older than this many days.
+        learning_state_path: Path to learning state JSON.
+        snapshot_output:    Optional path to write an audit snapshot JSON.
+        dry_run:            If True, print what would happen without making changes.
+
+    Returns:
+        Number of issues archived.
+    """
+    from .analytics import (  # noqa: PLC0415
+        LearningState,
+        fetch_issue_feedback,
+        infer_implicit_feedback,
+        should_apply_feedback,
+        _apply_qualitative_feedback,
+    )
+    from .github_storage import (  # noqa: PLC0415
+        add_comment,
+        close_issue,
+        load_posts_from_issues,
+        update_issue_status,
+    )
+    from .models import PostStatus  # noqa: PLC0415
+
+    state = LearningState.load(learning_state_path)
+    posts = load_posts_from_issues(repo, token, state="open")
+
+    now = datetime.now(timezone.utc)
+    cutoff = now - timedelta(days=older_than_days)
+
+    # Separate into candidates for archiving vs. keepers
+    # Posts are already sorted by created_at descending (most recent first)
+    unpublished = [
+        p for p in posts
+        if p.status.value in ("draft", "approved")
+    ]
+    # Keep the N most recent
+    to_keep = unpublished[:keep_recent]
+    keep_numbers = {p.github_issue_number for p in to_keep}
+
+    to_archive = []
+    for p in unpublished:
+        if p.github_issue_number in keep_numbers:
+            continue
+        created = _parse_iso_datetime(p.created_at or "")
+        if created is not None and created <= cutoff:
+            to_archive.append(p)
+
+    if not to_archive:
+        print(f"No issues to archive (keeping {len(to_keep)} recent drafts).")
+        return 0
+
+    print(f"{'[DRY RUN] ' if dry_run else ''}Archiving {len(to_archive)} issues "
+          f"(keeping {len(to_keep)} recent, older than {older_than_days}d)...")
+
+    snapshot_entries: list[dict] = []
+    archived_count = 0
+
+    for post in to_archive:
+        issue_num = post.github_issue_number
+        if issue_num is None:
+            continue
+
+        # --- Harvest feedback before archiving ---
+        explicit_feedback = None
+        has_explicit = False
+        try:
+            explicit_feedback = fetch_issue_feedback(repo, token, issue_num, post.id)
+            has_explicit = explicit_feedback is not None
+            if explicit_feedback is not None and should_apply_feedback(state, post.id, explicit_feedback):
+                _apply_qualitative_feedback(state, explicit_feedback)
+        except Exception:  # noqa: BLE001
+            logger.warning("Failed to fetch feedback for Issue #%d (non-fatal)", issue_num)
+
+        # Infer implicit signals
+        implicit_events: list[str] = []
+        try:
+            inferred = infer_implicit_feedback(
+                state=state,
+                post=post,
+                has_explicit_feedback=has_explicit,
+                now=now,
+            )
+            for event_key, feedback in inferred:
+                if should_apply_feedback(state, post.id, feedback):
+                    _apply_qualitative_feedback(state, feedback)
+                    implicit_events.append(event_key)
+        except Exception:  # noqa: BLE001
+            logger.warning("Failed to infer implicit feedback for Issue #%d (non-fatal)", issue_num)
+
+        # Build snapshot entry
+        entry = {
+            "issue_number": issue_num,
+            "post_id": post.id,
+            "source_commit_sha": post.source_commit_sha,
+            "created_at": post.created_at,
+            "labels": [f"status:{post.status.value}"] + post.tags,
+            "explicit_feedback_found": has_explicit,
+            "implicit_feedback_inferred": implicit_events,
+            "archive_reason": "backlog_cleanup_unreviewed",
+            "retained": False,
+        }
+        snapshot_entries.append(entry)
+
+        if dry_run:
+            print(f"  [DRY RUN] Would archive Issue #{issue_num}: {post.lesson[:60]}...")
+            continue
+
+        # --- Archive the issue ---
+        add_comment(
+            repo, token, issue_num,
+            "Archived during backlog cleanup to unblock generation. "
+            "Learning signals preserved in `learning_state.json` before closure.\n\n"
+            f"Archive reason: `backlog_cleanup_unreviewed`\n"
+            f"Explicit feedback found: {has_explicit}\n"
+            f"Implicit signals inferred: {', '.join(implicit_events) if implicit_events else 'none'}",
+        )
+        update_issue_status(repo, token, issue_num, PostStatus.ARCHIVED)
+        close_issue(repo, token, issue_num)
+        archived_count += 1
+        logger.info("Archived Issue #%d (%s)", issue_num, post.id)
+
+    # Add retained issues to snapshot for completeness
+    for p in to_keep:
+        snapshot_entries.append({
+            "issue_number": p.github_issue_number,
+            "post_id": p.id,
+            "source_commit_sha": p.source_commit_sha,
+            "created_at": p.created_at,
+            "archive_reason": None,
+            "retained": True,
+        })
+
+    # Persist learning state
+    if not dry_run:
+        state.save(learning_state_path)
+        logger.info("Learning state saved after cleanup")
+
+    # Write audit snapshot
+    if snapshot_output:
+        import json as _json  # noqa: PLC0415
+        snapshot = {
+            "timestamp": now.isoformat(),
+            "repo": repo,
+            "total_open_before": len(unpublished),
+            "archived_count": archived_count if not dry_run else 0,
+            "retained_count": len(to_keep),
+            "dry_run": dry_run,
+            "entries": snapshot_entries,
+        }
+        with open(snapshot_output, "w") as f:
+            _json.dump(snapshot, f, indent=2)
+        print(f"Audit snapshot written to {snapshot_output}")
+
+    action = "Would archive" if dry_run else "Archived"
+    print(f"\n{action} {len(to_archive)} issue(s). "
+          f"Retained {len(to_keep)} recent draft(s).")
     return archived_count
 
 
@@ -537,6 +700,7 @@ def run_scan(
     quality_threshold: float = QUALITY_GATE_DEFAULT_THRESHOLD,
     max_rewrites: int = QUALITY_GATE_DEFAULT_MAX_REWRITES,
     variations_per_commit: int = 1,
+    allow_duplicate_commits: bool = False,
 ) -> list[Post]:
     """
     Run a full commit scan → post generation → GitHub Issue creation cycle.
@@ -562,6 +726,9 @@ def run_scan(
         stale_days:           Age threshold (days) for stale unpublished issues.
         quality_threshold:    Minimum LinkedIn post quality score required (0-100).
         max_rewrites:         Maximum OpenAI rewrite attempts when quality is low.
+        allow_duplicate_commits:
+                              If True, skip deduplication and allow generating posts
+                              for commits that already have social-post issues.
 
     Returns:
         List of generated Post objects.
@@ -644,6 +811,34 @@ def run_scan(
     if not source_commits:
         logger.info("No lesson-worthy commits found.")
         return []
+
+    # Idempotency: skip commits that already have social-post issues
+    if not allow_duplicate_commits and issue_repo:
+        from .github_storage import load_posts_from_issues  # noqa: PLC0415
+
+        existing_posts = load_posts_from_issues(issue_repo, token, state="all")
+        processed_shas = {
+            p.source_commit_sha
+            for p in existing_posts
+            if p.source_commit_sha and p.source_commit_sha != "unknown"
+        }
+        if processed_shas:
+            before_count = len(source_commits)
+            source_commits = [
+                s for s in source_commits if s.sha not in processed_shas
+            ]
+            deduped = before_count - len(source_commits)
+            if deduped:
+                logger.info(
+                    "Deduplication: skipped %d commit(s) that already have social-post issues "
+                    "(checked %d existing issues, %d unique SHAs).",
+                    deduped,
+                    len(existing_posts),
+                    len(processed_shas),
+                )
+            if not source_commits:
+                logger.info("All commits already have social-post issues — nothing new to generate.")
+                return []
 
     # Generate posts
     openai_client = _get_openai_client()
@@ -1151,6 +1346,11 @@ Examples:
         default=3,
         help="Number of post variations per commit (different hook patterns, default 3)",
     )
+    scan_parser.add_argument(
+        "--allow-duplicate-commits",
+        action="store_true",
+        help="Skip deduplication and allow generating posts for commits that already have issues",
+    )
 
     # analytics command
     analytics_parser = subparsers.add_parser("analytics", help="Collect analytics for published posts")
@@ -1346,6 +1546,39 @@ Examples:
         help="Path to write weekly report",
     )
 
+    # cleanup-backlog command
+    cleanup_parser = subparsers.add_parser(
+        "cleanup-backlog",
+        help="Archive old unpublished drafts to unblock generation (preserves learning data)",
+    )
+    cleanup_parser.add_argument("--repo", required=True, help="Issue repo (owner/repo)")
+    cleanup_parser.add_argument(
+        "--keep-recent",
+        type=int,
+        default=10,
+        help="Number of most-recent draft issues to keep (default: 10)",
+    )
+    cleanup_parser.add_argument(
+        "--older-than-days",
+        type=int,
+        default=3,
+        help="Only archive drafts older than this many days (default: 3)",
+    )
+    cleanup_parser.add_argument(
+        "--snapshot-output",
+        help="Path to write audit snapshot JSON (e.g. backlog_cleanup_20260414.json)",
+    )
+    cleanup_parser.add_argument(
+        "--state",
+        default=DEFAULT_LEARNING_STATE_PATH,
+        help="Path to learning state JSON",
+    )
+    cleanup_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print what would happen without making changes",
+    )
+
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -1383,6 +1616,7 @@ Examples:
             quality_threshold=args.quality_threshold,
             max_rewrites=args.max_rewrites,
             variations_per_commit=args.variations,
+            allow_duplicate_commits=args.allow_duplicate_commits,
         )
         print(f"\n✅ Generated {len(posts)} post(s).")
 
@@ -1530,6 +1764,19 @@ Examples:
         else:
             print("\n✅ Health check passed — all systems operational.")
             sys.exit(0)
+
+    elif args.command == "cleanup-backlog":
+        archived = run_cleanup_backlog(
+            repo=args.repo,
+            token=token,
+            keep_recent=args.keep_recent,
+            older_than_days=args.older_than_days,
+            learning_state_path=args.state,
+            snapshot_output=args.snapshot_output,
+            dry_run=args.dry_run,
+        )
+        if not args.dry_run:
+            print(f"\n✅ Cleanup complete — archived {archived} issue(s).")
 
     elif args.command == "regenerate":
         from .github_storage import load_posts_from_issues as _load  # noqa: PLC0415
