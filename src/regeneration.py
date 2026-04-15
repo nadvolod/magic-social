@@ -26,6 +26,7 @@ from .github_storage import (
     close_issue,
     close_issue_with_replacement,
     create_post_issue,
+    load_posts_from_issues,
     update_issue_status,
 )
 from .models import Post, PostFeedback, PostStatus, SourceCommit
@@ -36,6 +37,16 @@ logger = logging.getLogger(__name__)
 
 MAX_REGENERATION_ATTEMPTS = 3
 LESSONS_LEARNED_PATH = "LESSONS_LEARNED.md"
+
+
+def _fetch_processed_shas(issue_repo: str, token: str) -> set[str]:
+    """Return the set of source commit SHAs that already have social-post issues."""
+    existing = load_posts_from_issues(issue_repo, token, state="all")
+    return {
+        p.source_commit_sha
+        for p in existing
+        if p.source_commit_sha and p.source_commit_sha != "unknown"
+    }
 
 # Words that signal generic/directive feedback (not post-specific)
 _DIRECTIVE_PHRASES = [
@@ -242,6 +253,32 @@ def regenerate_from_feedback(
             )
         return None
 
+    # Deduplication: skip commits that already have social-post issues
+    try:
+        processed_shas = _fetch_processed_shas(issue_repo, token)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(
+            "Failed to load existing issues for regeneration deduplication; "
+            "continuing without deduplication: %s",
+            exc,
+        )
+        processed_shas = set()
+    before = len(ranked)
+    ranked = [c for c in ranked if c.sha not in processed_shas]
+    if before != len(ranked):
+        logger.info(
+            "Regeneration dedup: filtered %d/%d candidates (already have issues)",
+            before - len(ranked), before,
+        )
+    if not ranked:
+        if old_issue:
+            add_comment(
+                issue_repo, token, old_issue,
+                "All candidate commits already have social-post issues. "
+                "Waiting for new commits to generate a replacement.",
+            )
+        return None
+
     # Try top candidates until one passes quality gate
     feedback_summary = _feedback_summary(feedback)
     import random  # noqa: PLC0415
@@ -381,6 +418,17 @@ def apply_generic_feedback(
     except Exception as exc:  # noqa: BLE001
         logger.warning("Failed to scan repos for generic feedback replacements: %s", exc)
         return []
+
+    # Deduplication: skip commits that already have social-post issues
+    try:
+        processed_shas = _fetch_processed_shas(issue_repo, token)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(
+            "Failed to fetch processed SHAs for generic feedback replacements: %s",
+            exc,
+        )
+        processed_shas = set()
+    candidates = [c for c in candidates if c.sha not in processed_shas]
 
     # Filter candidates to only niche-matching ones
     niche_candidates = [

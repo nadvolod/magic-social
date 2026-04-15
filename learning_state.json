@@ -10,7 +10,9 @@
   "topic_scores": {},
   "best_performing_posts": [],
   "total_posts_analyzed": 0,
-  "not_published_reasons": {},
+  "not_published_reasons": {
+    "stale_unpublished_7d": 55
+  },
   "archived_not_published_reasons": {
     "historical_batch_bad_practice_pre_2026-03-03_2359_est": 37,
     "reset_2026-04-10": {
@@ -21,11 +23,11 @@
       "stale_unpublished_7d": 18
     }
   },
-  "total_feedback_received": 0,
-  "total_ratings_received": 0,
-  "average_rating": 0.0,
-  "explicit_ratings_received": 0,
-  "explicit_average_rating": 0.0,
+  "total_feedback_received": 176,
+  "total_ratings_received": 176,
+  "average_rating": 1.323863636363636,
+  "explicit_ratings_received": 121,
+  "explicit_average_rating": 1.0165289256198347,
   "applied_feedback_fingerprints": {
     "post-8f1a85ba3a8d": "False|not_relevant||2|2026-03-13T09:15:51Z",
     "post-85b8bb070c0d": "False|skip||2|2026-04-01T14:51:03Z",
@@ -44,28 +46,367 @@
     "post-7b0f30066ac7": "False|stale_unpublished_7d||1|2026-03-13T09:16:04.654514+00:00",
     "post-32cb5266e537": "False|stale_unpublished_7d||1|2026-03-13T09:16:20.716051+00:00",
     "post-c107d249b421": "False|stale_unpublished_7d||1|2026-03-13T09:16:27.624445+00:00",
-    "post-46f0d5adae48": "False|stale_unpublished_7d||1|2026-03-13T09:16:30.790963+00:00"
+    "post-46f0d5adae48": "False|stale_unpublished_7d||1|2026-03-13T09:16:30.790963+00:00",
+    "issue-272": "None||(what would make it better)|1|2026-04-10T09:57:17Z",
+    "issue-271": "None||(what would make it better)|1|2026-04-10T09:56:50Z",
+    "issue-270": "None||(what would make it better)|1|2026-04-10T09:56:25Z",
+    "issue-269": "None||(what would make it better)|1|2026-04-10T09:55:58Z",
+    "issue-268": "None||(what would make it better)|1|2026-04-10T09:55:33Z",
+    "issue-267": "None||(what would make it better)|1|2026-04-10T09:55:07Z",
+    "issue-266": "None||(what would make it better)|1|2026-04-10T09:54:41Z",
+    "issue-265": "None||(what would make it better)|1|2026-04-10T09:54:12Z",
+    "issue-264": "None||(what would make it better)|1|2026-04-10T09:53:40Z",
+    "issue-263": "None||(what would make it better)|1|2026-04-10T09:53:36Z",
+    "issue-261": "None||(what would make it better)|1|2026-04-10T09:53:28Z",
+    "issue-260": "None||(what would make it better)|1|2026-04-10T09:53:23Z",
+    "issue-259": "None||(what would make it better)|1|2026-04-10T09:53:19Z",
+    "issue-258": "None||(what would make it better)|1|2026-04-10T09:53:15Z",
+    "issue-257": "None||(what would make it better)|1|2026-04-10T09:53:11Z",
+    "issue-256": "None||(what would make it better)|1|2026-04-10T09:53:07Z",
+    "issue-255": "None||(what would make it better)|1|2026-04-10T09:53:03Z",
+    "issue-254": "None||(what would make it better)|1|2026-04-10T09:52:37Z",
+    "issue-253": "None||(what would make it better)|1|2026-04-10T09:52:12Z",
+    "issue-252": "None||(what would make it better)|1|2026-04-10T09:51:47Z",
+    "issue-251": "None||(what would make it better)|1|2026-04-10T09:51:11Z",
+    "issue-250": "None||(what would make it better)|1|2026-04-10T09:50:46Z",
+    "issue-249": "None||(what would make it better)|1|2026-04-10T09:50:21Z",
+    "issue-248": "None||(what would make it better)|1|2026-04-10T09:49:54Z",
+    "issue-247": "None||(what would make it better)|1|2026-04-10T09:49:28Z",
+    "issue-246": "None||(what would make it better)|1|2026-04-10T09:49:02Z",
+    "issue-245": "None||(what would make it better)|1|2026-04-10T09:48:36Z",
+    "issue-244": "None||(what would make it better)|1|2026-04-10T09:48:11Z",
+    "issue-243": "None||(what would make it better)|1|2026-04-10T09:47:45Z",
+    "issue-242": "None||(what would make it better)|1|2026-04-10T09:47:19Z",
+    "issue-241": "None||(what would make it better)|1|2026-04-10T09:46:51Z",
+    "issue-240": "None||(what would make it better)|1|2026-04-10T09:46:25Z",
+    "issue-239": "None||(what would make it better)|1|2026-04-10T09:45:59Z",
+    "issue-238": "None||(what would make it better)|1|2026-04-10T09:45:33Z",
+    "issue-237": "None||(what would make it better)|1|2026-04-10T09:45:06Z",
+    "issue-236": "None||(what would make it better)|1|2026-04-10T09:44:40Z",
+    "issue-235": "None||(what would make it better)|1|2026-04-10T09:44:14Z",
+    "issue-234": "None||(what would make it better)|1|2026-04-10T09:43:49Z",
+    "issue-233": "None||(what would make it better)|1|2026-04-10T09:43:24Z",
+    "issue-232": "None||(what would make it better)|1|2026-04-10T09:42:57Z",
+    "issue-231": "None||(what would make it better)|1|2026-04-10T09:42:30Z",
+    "issue-230": "None||(what would make it better)|1|2026-04-10T09:42:05Z",
+    "issue-229": "None||(what would make it better)|1|2026-04-10T09:41:39Z",
+    "issue-228": "None||(what would make it better)|1|2026-04-10T09:41:12Z",
+    "issue-227": "None||(what would make it better)|1|2026-04-10T09:40:46Z",
+    "issue-226": "None||(what would make it better)|1|2026-04-10T09:40:20Z",
+    "issue-225": "None||(what would make it better)|1|2026-04-10T09:39:55Z",
+    "issue-224": "None||(what would make it better)|1|2026-04-10T09:39:30Z",
+    "issue-223": "None||(what would make it better)|1|2026-04-10T09:39:06Z",
+    "issue-222": "None||(what would make it better)|1|2026-04-10T09:38:40Z",
+    "issue-221": "None||(what would make it better)|1|2026-04-10T09:38:14Z",
+    "issue-220": "None||(what would make it better)|1|2026-04-10T09:37:49Z",
+    "issue-219": "None||(what would make it better)|1|2026-04-10T09:37:24Z",
+    "issue-218": "None||(what would make it better)|1|2026-04-10T09:36:57Z",
+    "issue-217": "None||(what would make it better)|1|2026-04-10T09:36:30Z",
+    "issue-216": "None||(what would make it better)|1|2026-04-10T09:36:03Z",
+    "issue-215": "None||(what would make it better)|1|2026-04-10T09:35:37Z",
+    "issue-214": "None||(what would make it better)|1|2026-04-10T09:35:10Z",
+    "issue-213": "None||(what would make it better)|1|2026-04-10T09:34:45Z",
+    "issue-212": "None||(what would make it better)|1|2026-04-10T09:34:19Z",
+    "issue-211": "None||(what would make it better)|1|2026-04-10T09:33:53Z",
+    "issue-210": "None||(what would make it better)|1|2026-04-10T09:33:24Z",
+    "issue-209": "None||(what would make it better)|1|2026-04-10T09:32:34Z",
+    "issue-208": "None||(what would make it better)|1|2026-04-10T09:32:02Z",
+    "issue-207": "None||(what would make it better)|1|2026-04-10T09:31:32Z",
+    "issue-206": "None||(what would make it better)|1|2026-04-10T09:31:00Z",
+    "issue-201": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-198": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-196": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-193": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-191": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-188": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-187": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-186": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-185": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-184": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-183": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-182": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-180": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-179": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-178": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-177": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-176": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-175": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-173": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-172": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-171": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-170": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-169": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-168": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-167": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-166": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-165": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-164": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-163": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-162": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-161": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-160": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-159": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-158": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-157": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-156": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-155": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-154": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-153": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-152": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-151": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-150": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-149": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-148": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-147": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-146": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-145": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-144": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-143": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-142": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-141": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-136": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-135": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-134": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00",
+    "issue-125": "False|stale_unpublished_7d||2|2026-04-15T10:51:32.798260+00:00"
   },
   "implicit_feedback_events": {
-    "post-caa23c680e4f": ["no_feedback_72h", "stale_unpublished_7d"],
-    "post-3d799cdf0e6d": ["no_feedback_72h", "stale_unpublished_7d"],
-    "post-ecdfa7124b59": ["no_feedback_72h", "stale_unpublished_7d"],
-    "post-83e353eba525": ["no_feedback_72h", "stale_unpublished_7d"],
-    "post-bfc8ae3e241a": ["no_feedback_72h", "stale_unpublished_7d"],
-    "post-b980461a7247": ["no_feedback_72h", "stale_unpublished_7d"],
-    "post-06971f6623d5": ["no_feedback_72h", "stale_unpublished_7d"],
-    "post-adf22c90a9a4": ["no_feedback_72h", "stale_unpublished_7d"],
-    "post-7b0f30066ac7": ["no_feedback_72h", "stale_unpublished_7d"],
-    "post-22bccc5329b7": ["no_feedback_72h", "stale_unpublished_7d"],
-    "post-8ce52cf163ca": ["no_feedback_72h", "stale_unpublished_7d"],
-    "post-34d224411fba": ["no_feedback_72h", "stale_unpublished_7d"],
-    "post-32cb5266e537": ["no_feedback_72h", "stale_unpublished_7d"],
-    "post-6effcce6fbc8": ["no_feedback_72h", "stale_unpublished_7d"],
-    "post-c107d249b421": ["no_feedback_72h", "stale_unpublished_7d"],
-    "post-46f0d5adae48": ["no_feedback_72h", "stale_unpublished_7d"],
-    "post-8f1a85ba3a8d": ["stale_unpublished_7d"],
-    "post-85b8bb070c0d": ["stale_unpublished_7d"]
+    "post-caa23c680e4f": [
+      "no_feedback_72h",
+      "stale_unpublished_7d"
+    ],
+    "post-3d799cdf0e6d": [
+      "no_feedback_72h",
+      "stale_unpublished_7d"
+    ],
+    "post-ecdfa7124b59": [
+      "no_feedback_72h",
+      "stale_unpublished_7d"
+    ],
+    "post-83e353eba525": [
+      "no_feedback_72h",
+      "stale_unpublished_7d"
+    ],
+    "post-bfc8ae3e241a": [
+      "no_feedback_72h",
+      "stale_unpublished_7d"
+    ],
+    "post-b980461a7247": [
+      "no_feedback_72h",
+      "stale_unpublished_7d"
+    ],
+    "post-06971f6623d5": [
+      "no_feedback_72h",
+      "stale_unpublished_7d"
+    ],
+    "post-adf22c90a9a4": [
+      "no_feedback_72h",
+      "stale_unpublished_7d"
+    ],
+    "post-7b0f30066ac7": [
+      "no_feedback_72h",
+      "stale_unpublished_7d"
+    ],
+    "post-22bccc5329b7": [
+      "no_feedback_72h",
+      "stale_unpublished_7d"
+    ],
+    "post-8ce52cf163ca": [
+      "no_feedback_72h",
+      "stale_unpublished_7d"
+    ],
+    "post-34d224411fba": [
+      "no_feedback_72h",
+      "stale_unpublished_7d"
+    ],
+    "post-32cb5266e537": [
+      "no_feedback_72h",
+      "stale_unpublished_7d"
+    ],
+    "post-6effcce6fbc8": [
+      "no_feedback_72h",
+      "stale_unpublished_7d"
+    ],
+    "post-c107d249b421": [
+      "no_feedback_72h",
+      "stale_unpublished_7d"
+    ],
+    "post-46f0d5adae48": [
+      "no_feedback_72h",
+      "stale_unpublished_7d"
+    ],
+    "post-8f1a85ba3a8d": [
+      "stale_unpublished_7d"
+    ],
+    "post-85b8bb070c0d": [
+      "stale_unpublished_7d"
+    ],
+    "issue-201": [
+      "stale_unpublished_7d"
+    ],
+    "issue-198": [
+      "stale_unpublished_7d"
+    ],
+    "issue-196": [
+      "stale_unpublished_7d"
+    ],
+    "issue-193": [
+      "stale_unpublished_7d"
+    ],
+    "issue-191": [
+      "stale_unpublished_7d"
+    ],
+    "issue-188": [
+      "stale_unpublished_7d"
+    ],
+    "issue-187": [
+      "stale_unpublished_7d"
+    ],
+    "issue-186": [
+      "stale_unpublished_7d"
+    ],
+    "issue-185": [
+      "stale_unpublished_7d"
+    ],
+    "issue-184": [
+      "stale_unpublished_7d"
+    ],
+    "issue-183": [
+      "stale_unpublished_7d"
+    ],
+    "issue-182": [
+      "stale_unpublished_7d"
+    ],
+    "issue-180": [
+      "stale_unpublished_7d"
+    ],
+    "issue-179": [
+      "stale_unpublished_7d"
+    ],
+    "issue-178": [
+      "stale_unpublished_7d"
+    ],
+    "issue-177": [
+      "stale_unpublished_7d"
+    ],
+    "issue-176": [
+      "stale_unpublished_7d"
+    ],
+    "issue-175": [
+      "stale_unpublished_7d"
+    ],
+    "issue-173": [
+      "stale_unpublished_7d"
+    ],
+    "issue-172": [
+      "stale_unpublished_7d"
+    ],
+    "issue-171": [
+      "stale_unpublished_7d"
+    ],
+    "issue-170": [
+      "stale_unpublished_7d"
+    ],
+    "issue-169": [
+      "stale_unpublished_7d"
+    ],
+    "issue-168": [
+      "stale_unpublished_7d"
+    ],
+    "issue-167": [
+      "stale_unpublished_7d"
+    ],
+    "issue-166": [
+      "stale_unpublished_7d"
+    ],
+    "issue-165": [
+      "stale_unpublished_7d"
+    ],
+    "issue-164": [
+      "stale_unpublished_7d"
+    ],
+    "issue-163": [
+      "stale_unpublished_7d"
+    ],
+    "issue-162": [
+      "stale_unpublished_7d"
+    ],
+    "issue-161": [
+      "stale_unpublished_7d"
+    ],
+    "issue-160": [
+      "stale_unpublished_7d"
+    ],
+    "issue-159": [
+      "stale_unpublished_7d"
+    ],
+    "issue-158": [
+      "stale_unpublished_7d"
+    ],
+    "issue-157": [
+      "stale_unpublished_7d"
+    ],
+    "issue-156": [
+      "stale_unpublished_7d"
+    ],
+    "issue-155": [
+      "stale_unpublished_7d"
+    ],
+    "issue-154": [
+      "stale_unpublished_7d"
+    ],
+    "issue-153": [
+      "stale_unpublished_7d"
+    ],
+    "issue-152": [
+      "stale_unpublished_7d"
+    ],
+    "issue-151": [
+      "stale_unpublished_7d"
+    ],
+    "issue-150": [
+      "stale_unpublished_7d"
+    ],
+    "issue-149": [
+      "stale_unpublished_7d"
+    ],
+    "issue-148": [
+      "stale_unpublished_7d"
+    ],
+    "issue-147": [
+      "stale_unpublished_7d"
+    ],
+    "issue-146": [
+      "stale_unpublished_7d"
+    ],
+    "issue-145": [
+      "stale_unpublished_7d"
+    ],
+    "issue-144": [
+      "stale_unpublished_7d"
+    ],
+    "issue-143": [
+      "stale_unpublished_7d"
+    ],
+    "issue-142": [
+      "stale_unpublished_7d"
+    ],
+    "issue-141": [
+      "stale_unpublished_7d"
+    ],
+    "issue-136": [
+      "stale_unpublished_7d"
+    ],
+    "issue-135": [
+      "stale_unpublished_7d"
+    ],
+    "issue-134": [
+      "stale_unpublished_7d"
+    ],
+    "issue-125": [
+      "stale_unpublished_7d"
+    ]
   },
-  "state_reset_at": "2026-04-10",
+  "applied_generic_feedback": {},
+  "regeneration_history": [],
   "version": 1
 }

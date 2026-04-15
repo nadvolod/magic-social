@@ -270,6 +270,7 @@ def load_posts_from_issues(repo: str, token: str, state: str = "all") -> list[Po
         issue_updated = issue.get("updated_at", issue_created)
 
         payload = _extract_post_json(issue.get("body", ""))
+        payload_has_created_at = bool(payload and payload.get("created_at"))
         if payload:
             try:
                 post = Post.from_dict(payload)
@@ -298,8 +299,10 @@ def load_posts_from_issues(repo: str, token: str, state: str = "all") -> list[Po
 
         post.github_issue_number = issue_number
         post.status = status
-        post.created_at = post.created_at or issue_created
-        if post.created_at == "":
+        # Use the issue's created_at as ground truth unless the embedded Post
+        # JSON explicitly contained one.  The Post dataclass default_factory
+        # sets created_at to NOW, which would mask the real issue age.
+        if not payload_has_created_at:
             post.created_at = issue_created
         if post.status == PostStatus.PUBLISHED and not post.published_at:
             post.published_at = issue_updated

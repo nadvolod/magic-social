@@ -20,6 +20,10 @@ on:
         type: boolean
         default: false
 
+concurrency:
+  group: scan-commits
+  cancel-in-progress: false
+
 jobs:
   scan-and-generate:
     runs-on: ubuntu-latest
@@ -50,13 +54,23 @@ jobs:
             exit 1
           fi
 
+      - name: Health check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python -m src.agent health-check --repo nadvolod/magic-social 2>&1 | tee /tmp/health.txt || true
+          if grep -q "problem(s) found" /tmp/health.txt; then
+            echo "::warning::Health check found problems — see details above"
+            cat /tmp/health.txt >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Scan commits and generate posts
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           SOCIAL_LESSONS_DOC_URL: ${{ vars.SOCIAL_LESSONS_DOC_URL }}
         run: |
-          ARGS="--repos nadvolod/LifeNotes nadvolod/temporal-learning nadvolod/ultimate-code-metrics nadvolod/ceo-mission-control nadvolod/magic-social --branch main --issue-repo nadvolod/magic-social --variations 3"
+          ARGS="--repos nadvolod/LifeNotes nadvolod/temporal-learning nadvolod/ultimate-code-metrics nadvolod/ceo-mission-control nadvolod/magic-social --branch main --issue-repo nadvolod/magic-social --variations 1"
 
           if [ -n "${{ inputs.since }}" ]; then
             ARGS="$ARGS --since ${{ inputs.since }}"

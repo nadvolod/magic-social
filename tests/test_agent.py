@@ -60,6 +60,8 @@ def _patch_run_scan_dependencies(monkeypatch, source: SourceCommit):
         lambda *args, **kwargs: agent.CommitDecision(accept=True, reason="ok", confidence=1.0),
     )
     monkeypatch.setattr(agent, "generate_post_with_quality_gate", lambda **kwargs: _make_post(source))
+    # Mock load_posts_from_issues for deduplication (no existing posts by default)
+    monkeypatch.setattr("src.github_storage.load_posts_from_issues", lambda *args, **kwargs: [])
 
 
 def test_backlog_throttle_blocks_generation(monkeypatch):
@@ -128,6 +130,110 @@ def test_backlog_throttle_can_be_disabled(monkeypatch):
     )
     assert len(posts) == 1
     assert posts[0].github_issue_number == 42
+
+
+def test_cleanup_backlog_archives_old_keeps_recent(monkeypatch, tmp_path):
+    """cleanup-backlog should archive old drafts and keep the most recent ones."""
+    now = datetime.now(timezone.utc)
+    old_date = (now - timedelta(days=5)).isoformat()
+    recent_date = (now - timedelta(days=1)).isoformat()
+
+    old_post = _make_post(_make_source())
+    old_post.id = "post-old"
+    old_post.github_issue_number = 100
+    old_post.created_at = old_date
+
+    recent_post = _make_post(_make_source())
+    recent_post.id = "post-recent"
+    recent_post.source_commit_sha = "different_sha"
+    recent_post.github_issue_number = 200
+    recent_post.created_at = recent_date
+
+    # Mock load_posts_from_issues to return both posts (recent first)
+    monkeypatch.setattr(
+        "src.github_storage.load_posts_from_issues",
+        lambda *args, **kwargs: [recent_post, old_post],
+    )
+    # Mock feedback fetching (no explicit feedback)
+    monkeypatch.setattr(
+        "src.analytics.fetch_issue_feedback",
+        lambda *args, **kwargs: None,
+    )
+    # Mock GitHub operations
+    comments_added = []
+    monkeypatch.setattr(
+        "src.github_storage.add_comment",
+        lambda repo, token, num, body: comments_added.append((num, body)),
+    )
+    monkeypatch.setattr(
+        "src.github_storage.update_issue_status",
+        lambda *args, **kwargs: None,
+    )
+    monkeypatch.setattr(
+        "src.github_storage.close_issue",
+        lambda *args, **kwargs: None,
+    )
+
+    # Write a minimal learning state file
+    state_path = str(tmp_path / "learning_state.json")
+    from src.analytics import LearningState
+    LearningState().save(state_path)
+
+    snapshot_path = str(tmp_path / "snapshot.json")
+    archived = agent.run_cleanup_backlog(
+        repo="owner/repo",
+        token="token",
+        keep_recent=1,
+        older_than_days=3,
+        learning_state_path=state_path,
+        snapshot_output=snapshot_path,
+    )
+
+    assert archived == 1, "Should archive 1 old draft"
+    assert len(comments_added) == 1, "Should add archive comment to old issue"
+    assert comments_added[0][0] == 100, "Comment should be on the old issue"
+    assert "backlog_cleanup_unreviewed" in comments_added[0][1]
+
+    import json
+    with open(snapshot_path) as f:
+        snapshot = json.load(f)
+    assert snapshot["archived_count"] == 1
+    assert snapshot["retained_count"] == 1
+    assert any(e["retained"] for e in snapshot["entries"])
+    assert any(not e["retained"] for e in snapshot["entries"])
+
+
+def test_cleanup_backlog_dry_run_makes_no_changes(monkeypatch, tmp_path):
+    """--dry-run should not archive anything."""
+    now = datetime.now(timezone.utc)
+    old_date = (now - timedelta(days=5)).isoformat()
+
+    old_post = _make_post(_make_source())
+    old_post.github_issue_number = 100
+    old_post.created_at = old_date
+
+    monkeypatch.setattr(
+        "src.github_storage.load_posts_from_issues",
+        lambda *args, **kwargs: [old_post],
+    )
+    monkeypatch.setattr(
+        "src.analytics.fetch_issue_feedback",
+        lambda *args, **kwargs: None,
+    )
+
+    state_path = str(tmp_path / "learning_state.json")
+    from src.analytics import LearningState
+    LearningState().save(state_path)
+
+    archived = agent.run_cleanup_backlog(
+        repo="owner/repo",
+        token="token",
+        keep_recent=0,
+        older_than_days=3,
+        learning_state_path=state_path,
+        dry_run=True,
+    )
+    assert archived == 0, "Dry run should not actually archive"
 
 
 def test_fetch_social_post_backlog_counts_open_and_stale(monkeypatch):
@@ -258,6 +364,71 @@ class TestCLIArgValidation:
         )
         assert result.returncode != 0
         assert "max-rewrites" in result.stderr.lower()
+
+
+def test_deduplication_skips_existing_commit_shas(monkeypatch):
+    """Commits that already have social-post issues should be skipped."""
+    source = _make_source()
+    _patch_run_scan_dependencies(monkeypatch, source)
+    monkeypatch.setattr(agent, "scan_commits", lambda *args, **kwargs: [source])
+
+    # Simulate an existing post with the same commit SHA
+    existing_post = _make_post(source)
+    monkeypatch.setattr(
+        "src.github_storage.load_posts_from_issues",
+        lambda *args, **kwargs: [existing_post],
+    )
+
+    posts = agent.run_scan(
+        repo="owner/repo",
+        token="token",
+        dry_run=True,
+    )
+    assert posts == [], "Should skip commit that already has a social-post issue"
+
+
+def test_deduplication_allows_new_commits(monkeypatch):
+    """Commits that have no existing social-post issue should proceed."""
+    source = _make_source()
+    _patch_run_scan_dependencies(monkeypatch, source)
+    monkeypatch.setattr(agent, "scan_commits", lambda *args, **kwargs: [source])
+
+    # Existing posts have different SHAs
+    other_post = _make_post(source)
+    other_post.source_commit_sha = "different_sha_999"
+    monkeypatch.setattr(
+        "src.github_storage.load_posts_from_issues",
+        lambda *args, **kwargs: [other_post],
+    )
+
+    posts = agent.run_scan(
+        repo="owner/repo",
+        token="token",
+        dry_run=True,
+    )
+    assert len(posts) == 1, "New commit should not be filtered out"
+
+
+def test_allow_duplicate_commits_bypasses_dedup(monkeypatch):
+    """--allow-duplicate-commits should skip deduplication entirely."""
+    source = _make_source()
+    _patch_run_scan_dependencies(monkeypatch, source)
+    monkeypatch.setattr(agent, "scan_commits", lambda *args, **kwargs: [source])
+
+    # Even with an existing post with the same SHA, it should proceed
+    existing_post = _make_post(source)
+    monkeypatch.setattr(
+        "src.github_storage.load_posts_from_issues",
+        lambda *args, **kwargs: [existing_post],
+    )
+
+    posts = agent.run_scan(
+        repo="owner/repo",
+        token="token",
+        dry_run=True,
+        allow_duplicate_commits=True,
+    )
+    assert len(posts) == 1, "Deduplication should be bypassed"
 
 
 def test_decide_commit_with_openai_accepts_valid_json():
