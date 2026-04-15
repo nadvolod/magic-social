@@ -43,9 +43,11 @@ class TestRejectionPatternInjection:
 
         prompt = _build_system_prompt(learning_state_path=str(ls_path))
 
-        # Should contain rejection avoidance instructions
-        assert "AVOID" in prompt or "avoid" in prompt.lower()
-        assert "skip" in prompt.lower() or "not_relevant" in prompt.lower() or "doesn't match" in prompt.lower()
+        # Should contain the injected rejection-reasons block and the expected reasons
+        assert "Posts were rejected for these reasons" in prompt
+        assert "skip" in prompt.lower()
+        assert "not_relevant" in prompt.lower()
+        assert "doesn't match" in prompt.lower()
 
     def test_no_injection_when_no_reasons(self, tmp_path):
         """When learning state has empty reasons, no AVOID block should appear."""
@@ -116,15 +118,6 @@ class TestAutoRegenOnReject:
 
     def test_adds_needs_regen_label_on_reject(self):
         """When agent loop returns reject verdict, the issue should get labeled."""
-        from src.agent_loop import AgentLoopResult
-
-        mock_result = AgentLoopResult(
-            post_text="Bad post",
-            bar_raiser_verdict={"verdict": "reject", "failures": ["Hook too weak"]},
-            iterations=2,
-            improved=False,
-        )
-
         with (
             patch("src.github_storage.requests.post") as mock_post,
             patch("src.github_storage.requests.get") as mock_get,

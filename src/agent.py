@@ -288,7 +288,8 @@ def auto_archive_stale_issues(
                 )
                 continue
         except Exception:  # noqa: BLE001
-            logger.warning("Failed to check feedback for Issue #%d (archiving anyway)", issue_number)
+            logger.warning("Failed to check feedback for Issue #%d — skipping to be safe", issue_number)
+            continue
 
         add_comment(
             repo, token, issue_number,
@@ -356,11 +357,12 @@ def run_cleanup_backlog(
     now = datetime.now(timezone.utc)
     cutoff = now - timedelta(days=older_than_days)
 
-    # Separate into candidates for archiving vs. keepers
+    # Separate draft candidates for archiving vs. keepers
     # Posts are already sorted by created_at descending (most recent first)
+    # Only target drafts — approved posts are ready to publish and should not be archived.
     unpublished = [
         p for p in posts
-        if p.status.value in ("draft", "approved")
+        if p.status == PostStatus.DRAFT
     ]
     # Keep the N most recent
     to_keep = unpublished[:keep_recent]
@@ -865,6 +867,8 @@ def run_scan(
             logger.info("No commits passed OpenAI editorial gate.")
             return []
     generated_posts: list[Post] = []
+    # Track agent loop verdicts by post ID (avoids ad-hoc attrs on Post objects)
+    loop_verdicts: dict[str, str] = {}
 
     # --- Pre-generation agents ---
     # Variety Guardian: recommend hooks, skip off-ICP or repetitive commits
@@ -988,7 +992,9 @@ def run_scan(
                             post.id, loop_result.iterations,
                         )
                     # Track verdict for auto-regen labeling after issue creation
-                    post._loop_verdict = loop_result.bar_raiser_verdict.get("verdict", "")  # type: ignore[attr-defined]
+                    verdict = loop_result.bar_raiser_verdict.get("verdict", "")
+                    if verdict:
+                        loop_verdicts[post.id] = verdict
                 except Exception:  # noqa: BLE001
                     logger.warning("Agent quality loop failed (non-fatal)", exc_info=True)
 
@@ -1028,8 +1034,7 @@ def run_scan(
             logger.info("Created post %s → Issue #%d (hook=%s)", post.id, issue_number, post.hook_pattern)
 
             # If agent loop rejected the post after all iterations, label for auto-regeneration
-            loop_result = getattr(post, "_loop_verdict", None)
-            if loop_result == "reject" and issue_repo:
+            if loop_verdicts.get(post.id) == "reject" and issue_repo:
                 try:
                     from .github_storage import add_label_to_issue, add_comment  # noqa: PLC0415
                     add_label_to_issue(issue_repo, token, issue_number, "needs-regeneration")

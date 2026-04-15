@@ -254,7 +254,15 @@ def regenerate_from_feedback(
         return None
 
     # Deduplication: skip commits that already have social-post issues
-    processed_shas = _fetch_processed_shas(issue_repo, token)
+    try:
+        processed_shas = _fetch_processed_shas(issue_repo, token)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(
+            "Failed to load existing issues for regeneration deduplication; "
+            "continuing without deduplication: %s",
+            exc,
+        )
+        processed_shas = set()
     before = len(ranked)
     ranked = [c for c in ranked if c.sha not in processed_shas]
     if before != len(ranked):
@@ -412,7 +420,14 @@ def apply_generic_feedback(
         return []
 
     # Deduplication: skip commits that already have social-post issues
-    processed_shas = _fetch_processed_shas(issue_repo, token)
+    try:
+        processed_shas = _fetch_processed_shas(issue_repo, token)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning(
+            "Failed to fetch processed SHAs for generic feedback replacements: %s",
+            exc,
+        )
+        processed_shas = set()
     candidates = [c for c in candidates if c.sha not in processed_shas]
 
     # Filter candidates to only niche-matching ones

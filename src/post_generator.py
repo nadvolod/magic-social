@@ -257,6 +257,13 @@ def _load_rejection_avoidance_block(learning_state_path: str = "learning_state.j
         reasons = data.get("not_published_reasons", {})
         if not reasons:
             return ""
+        # Filter out implicit/system-generated keys — they produce unhelpful
+        # "AVOID stale_unpublished_7d" instructions.  Only inject explicit
+        # human-provided rejection reasons.
+        _IMPLICIT_KEYS = {"no_feedback_72h", "stale_unpublished_7d", "backlog_cleanup_unreviewed"}
+        reasons = {k: v for k, v in reasons.items() if k not in _IMPLICIT_KEYS}
+        if not reasons:
+            return ""
         # Sort by count descending, take top 3
         sorted_reasons = sorted(reasons.items(), key=lambda x: -x[1])[:3]
         lines = [
