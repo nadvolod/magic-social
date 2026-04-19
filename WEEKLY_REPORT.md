@@ -1,13 +1,13 @@
 # Weekly Learning Report
 
-**Generated:** 2026-04-12 20:07 UTC
-**Period:** 2026-04-05 to 2026-04-12
+**Generated:** 2026-04-19 20:09 UTC
+**Period:** 2026-04-12 to 2026-04-19
 
 ## KPI Dashboard
 
 | Metric | Value |
 |--------|-------|
-| Publish Rate | 0.0% (0/160) |
+| Publish Rate | 0.0% (0/90) |
 | Time-to-Publish | 0.0 days |
 | Engagement Growth | +0.0% |
 | Feedback Convergence | 0 recurring reasons |
@@ -15,9 +15,9 @@
 
 ## Activity Summary
 
-- **Total posts tracked:** 228
-- **Total feedback received (all time):** 0
-- **Average rating (explicit):** 0.0/5
+- **Total posts tracked:** 318
+- **Total feedback received (all time):** 176
+- **Average rating (explicit):** 1.0/5
 - **Regeneration chains this week:** 0
 
 ## Active Prompt Patches
@@ -34,9 +34,13 @@
    _Reason:_ —
    _Added:_ 2026-04-10
 
+4. **[avoid_topic]** Posts go stale before publishing — pick more timely topics.
+   _Reason:_ Rejection reason 'stale_unpublished_7d' appeared 55 times in the last week.
+   _Added:_ 2026-04-19
+
 ## Lessons Learned This Week
 
-_No new lessons this week._
+- Prompt patch added: [avoid_topic] Posts go stale before publishing — pick more timely topics.
 
 ---
 

@@ -15,3 +15,11 @@
 ### Stale posts indicate systemic quality failure
 
 18 posts went stale (unpublished for 7+ days). This is not a feedback problem — it means the posts were not good enough to warrant any attention. When most posts go stale, the generation quality needs fundamental improvement, not more volume.
+
+### 2026-04-19 20:09 UTC — Prompt patch: avoid_topic
+
+**Category:** prompt_patch
+
+Posts go stale before publishing — pick more timely topics. — Rejection reason 'stale_unpublished_7d' appeared 55 times in the last week.
+
+---
