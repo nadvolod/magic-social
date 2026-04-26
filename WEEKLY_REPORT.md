@@ -1,13 +1,13 @@
 # Weekly Learning Report
 
-**Generated:** 2026-04-19 20:09 UTC
-**Period:** 2026-04-12 to 2026-04-19
+**Generated:** 2026-04-26 20:10 UTC
+**Period:** 2026-04-19 to 2026-04-26
 
 ## KPI Dashboard
 
 | Metric | Value |
 |--------|-------|
-| Publish Rate | 0.0% (0/90) |
+| Publish Rate | 0.0% (0/30) |
 | Time-to-Publish | 0.0 days |
 | Engagement Growth | +0.0% |
 | Feedback Convergence | 0 recurring reasons |
@@ -15,7 +15,7 @@
 
 ## Activity Summary
 
-- **Total posts tracked:** 318
+- **Total posts tracked:** 348
 - **Total feedback received (all time):** 176
 - **Average rating (explicit):** 1.0/5
 - **Regeneration chains this week:** 0
@@ -40,7 +40,7 @@
 
 ## Lessons Learned This Week
 
-- Prompt patch added: [avoid_topic] Posts go stale before publishing — pick more timely topics.
+_No new lessons this week._
 
 ---
 
