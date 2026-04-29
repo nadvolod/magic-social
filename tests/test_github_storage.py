@@ -2,7 +2,12 @@
 
 from unittest.mock import MagicMock, patch
 
-from src.github_storage import create_post_issue, load_posts_from_issues
+from src.github_storage import (
+    _build_issue_body,
+    _extract_post_json,
+    create_post_issue,
+    load_posts_from_issues,
+)
 from src.models import Post, PostStatus
 
 
@@ -53,6 +58,67 @@ def test_load_posts_from_issues_falls_back_when_json_missing(monkeypatch):
     assert len(posts) == 1
     assert posts[0].id == "issue-5"
     assert posts[0].status == PostStatus.DRAFT
+
+
+def test_build_issue_body_embeds_raw_post_json():
+    """_build_issue_body must embed the Raw Post Data JSON so load_posts_from_issues
+    can extract source_commit_sha for deduplication — the root cause of the duplicate
+    post bug (same post created on every workflow run because SHA was always 'unknown')."""
+    post = Post(
+        id="post-dedup-test",
+        source_commit_sha="deadbeef1234abcd",
+        repo="owner/repo",
+        lesson="Test lesson",
+        linkedin_post="Hook\n\nBody\n\nQuestion?",
+        x_thread="1/ Hook",
+        ig_caption="Caption",
+        hook_pattern="result",
+    )
+    body = _build_issue_body(post)
+
+    # The body must contain the JSON block matching RAW_POST_JSON_RE
+    payload = _extract_post_json(body)
+    assert payload is not None, (
+        "_extract_post_json returned None — Raw Post Data JSON not found in issue body. "
+        "This means deduplication will never work and the same post will be re-created every run."
+    )
+    assert payload["source_commit_sha"] == "deadbeef1234abcd"
+    assert payload["id"] == "post-dedup-test"
+
+
+def test_load_posts_from_issues_extracts_sha_from_body(monkeypatch):
+    """load_posts_from_issues must return the real source_commit_sha (not 'unknown')
+    so that run_scan deduplication can exclude already-processed commits."""
+    post = Post(
+        id="post-sha-test",
+        source_commit_sha="cafebabe5678",
+        repo="owner/repo",
+        lesson="SHA extraction test",
+        linkedin_post="Some post content",
+        x_thread="",
+        ig_caption="",
+        hook_pattern="result",
+    )
+    issue = {
+        "number": 77,
+        "title": "[Social Post] SHA extraction test",
+        "body": _build_issue_body(post),
+        "labels": [{"name": "status:draft"}],
+        "created_at": "2026-03-01T00:00:00Z",
+        "updated_at": "2026-03-01T00:00:00Z",
+    }
+
+    monkeypatch.setattr(
+        "src.github_storage.list_social_post_issues",
+        lambda repo, token, state="all": [issue],
+    )
+
+    loaded = load_posts_from_issues("owner/repo", "token", state="all")
+    assert len(loaded) == 1
+    assert loaded[0].source_commit_sha == "cafebabe5678", (
+        "source_commit_sha must not be 'unknown' — deduplication relies on this value"
+    )
+    assert loaded[0].id == "post-sha-test"
 
 
 def _make_post(**kwargs) -> Post:

@@ -97,6 +97,10 @@ def _build_issue_body(post: Post) -> str:
     LinkedIn post + quick feedback checkboxes + reactions — nothing else.
     Publishing checklist, analytics template, and metadata go in a
     separate follow-up comment (see _build_details_comment).
+
+    The Raw Post Data JSON is embedded in a collapsed <details> block so
+    load_posts_from_issues() can extract source_commit_sha for deduplication
+    without fetching comments.
     """
     lineage = ""
     if post.parent_issue_number:
@@ -127,6 +131,15 @@ def _build_issue_body(post: Post) -> str:
 - [ ] Abandon (stop regenerating this topic)
 
 Or react: 👍 good draft · 👎 bad draft · 🚀 published
+
+<details>
+<summary>🤖 Raw Post Data (JSON)</summary>
+
+```json
+{post.to_json()}
+```
+
+</details>
 """
 
 
