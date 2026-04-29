@@ -310,6 +310,35 @@
       },
       "summary": "A technical post about replacing manual monitoring with Temporal Schedules, framed as a lesson that if you must check it every morning, it isn\u2019t truly automated.",
       "hook_excerpt": "Cron doesn\u2019t fail silently. Your monitoring does."
+    },
+    {
+      "issue_number": 413,
+      "issue_url": "https://github.com/nadvolod/magic-social/issues/413",
+      "image_url": "https://github.com/user-attachments/assets/c6751082-e3ae-42f3-9936-47c26bcd2e3a",
+      "recorded_at": "2026-04-29T14:26:09.223098+00:00",
+      "metrics": {
+        "impressions": 890,
+        "reactions": 9,
+        "comments": 4,
+        "reposts": 0,
+        "saves": 0
+      },
+      "engagement_score": 21.0,
+      "percentile": 0.3333333333333333,
+      "classification": "bottom_90_percent",
+      "reason": "Engagement score 21.0 is well below the historical p50 of 52.0 and far below p90 of 142.0; computed percentile 0.3333 is not in the top 10%.",
+      "confidence": 0.98,
+      "signals": {
+        "hook_style": "problem-solution hook",
+        "tone": "technical, confident, promotional",
+        "structure": "short paragraphs with line breaks, bullet list, bold emphasis, link, and embedded video/image",
+        "cta_type": "webinar/promo link",
+        "has_code": true,
+        "has_numbers": true,
+        "topic": "AI-assisted code review / developer tooling"
+      },
+      "summary": "Post explains how AI sped up coding but created PR review bottlenecks, then promotes an AI PR review system and a free webinar.",
+      "hook_excerpt": "AI helped me write code faster."
     }
   ],
   "version": 1
