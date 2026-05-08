@@ -11,10 +11,10 @@
   "best_performing_posts": [],
   "total_posts_analyzed": 0,
   "not_published_reasons": {
-    "stale_unpublished_7d": 70,
-    "not_relevant": 7,
+    "stale_unpublished_7d": 85,
+    "not_relevant": 9,
     "the post is not related to temporal, ai, claude, agents, distributed systems": 2,
-    "skip": 2
+    "skip": 4
   },
   "archived_not_published_reasons": {
     "historical_batch_bad_practice_pre_2026-03-03_2359_est": 37,
@@ -26,15 +26,15 @@
       "stale_unpublished_7d": 18
     }
   },
-  "total_feedback_received": 427,
-  "total_ratings_received": 427,
-  "average_rating": 1.2037470725995312,
-  "explicit_ratings_received": 357,
-  "explicit_average_rating": 1.0476190476190468,
+  "total_feedback_received": 461,
+  "total_ratings_received": 461,
+  "average_rating": 1.2299349240780906,
+  "explicit_ratings_received": 376,
+  "explicit_average_rating": 1.0558510638297862,
   "applied_feedback_fingerprints": {
     "post-8f1a85ba3a8d": "False|not_relevant||2|2026-04-15T11:10:03Z",
-    "post-85b8bb070c0d": "False|skip||2|2026-05-01T09:41:10Z",
-    "post-22bccc5329b7": "False|not_relevant||2|2026-05-01T09:47:04Z",
+    "post-85b8bb070c0d": "False|skip||2|2026-05-06T09:57:24Z",
+    "post-22bccc5329b7": "False|not_relevant||2|2026-05-06T10:01:50Z",
     "post-8ce52cf163ca": "False|this doesn't match what we have in the good-social-posts folder at all|this post provides no value, there is nothing learned, and a user can't understand much|1|2026-03-04T19:02:06Z",
     "post-34d224411fba": "False|this doesn't match what we have in the good-social-posts folder at all|this post provides no value, there is nothing learned, and a user can't understand much|1|2026-03-04T19:02:30Z",
     "post-6effcce6fbc8": "False|this doesn't match what we have in the good-social-posts folder at all|this post provides no value, there is nothing learned, and a user can't understand much|1|2026-03-04T19:03:10Z",
@@ -173,36 +173,36 @@
     "issue-125": "None||(what would make it better)|1|2026-04-07T15:49:21Z",
     "post-788394d85536-regen1": "None||(what would make it better)|1|2026-05-01T09:41:08Z",
     "post-386c7591e97a-regen1": "None||(what would make it better)|1|2026-05-01T09:40:23Z",
-    "issue-412": "None||(what would make it better)|1|2026-04-29T10:04:20Z",
-    "issue-411": "None||(what would make it better)|1|2026-04-29T10:03:26Z",
-    "issue-410": "None||(what would make it better)|1|2026-04-29T10:02:34Z",
-    "issue-409": "None||(what would make it better)|1|2026-04-29T10:01:27Z",
-    "issue-408": "None||(what would make it better)|1|2026-04-29T10:00:36Z",
-    "issue-407": "None||(what would make it better)|1|2026-04-29T09:59:44Z",
-    "issue-406": "None||(what would make it better)|1|2026-04-29T09:58:54Z",
-    "issue-405": "None||(what would make it better)|1|2026-04-29T09:58:05Z",
-    "issue-404": "None||(what would make it better)|1|2026-04-29T09:57:16Z",
-    "issue-403": "None||(what would make it better)|1|2026-04-29T09:56:25Z",
-    "issue-402": "None||(what would make it better)|1|2026-04-29T09:55:35Z",
-    "issue-401": "None||(what would make it better)|1|2026-04-29T09:54:46Z",
-    "issue-400": "None||(what would make it better)|1|2026-04-29T09:53:54Z",
-    "issue-399": "None||(what would make it better)|1|2026-04-29T09:53:02Z",
-    "issue-398": "None||(what would make it better)|1|2026-04-29T09:52:07Z",
-    "issue-397": "False|stale_unpublished_7d||2|2026-05-06T09:50:47.680422+00:00",
-    "issue-396": "False|stale_unpublished_7d||2|2026-05-06T09:50:51.681425+00:00",
-    "issue-395": "False|stale_unpublished_7d||2|2026-05-06T09:50:55.998359+00:00",
-    "issue-394": "False|stale_unpublished_7d||2|2026-05-06T09:50:59.818638+00:00",
-    "issue-393": "False|stale_unpublished_7d||2|2026-05-06T09:51:03.529800+00:00",
-    "issue-392": "False|stale_unpublished_7d||2|2026-05-06T09:51:07.418768+00:00",
-    "issue-391": "False|stale_unpublished_7d||2|2026-05-06T09:51:11.475866+00:00",
-    "issue-390": "False|stale_unpublished_7d||2|2026-05-06T09:51:15.057615+00:00",
-    "issue-389": "False|stale_unpublished_7d||2|2026-05-06T09:51:18.998925+00:00",
-    "issue-388": "False|stale_unpublished_7d||2|2026-05-06T09:51:22.753835+00:00",
-    "issue-387": "False|stale_unpublished_7d||2|2026-05-06T09:51:26.465891+00:00",
-    "issue-386": "False|stale_unpublished_7d||2|2026-05-06T09:51:30.209887+00:00",
-    "issue-385": "False|stale_unpublished_7d||2|2026-05-06T09:51:34.123925+00:00",
-    "issue-384": "False|stale_unpublished_7d||2|2026-05-06T09:51:37.750656+00:00",
-    "issue-383": "False|stale_unpublished_7d||2|2026-05-06T09:51:41.482863+00:00",
+    "issue-412": "False|stale_unpublished_7d||2|2026-05-08T09:36:13.328062+00:00",
+    "issue-411": "False|stale_unpublished_7d||2|2026-05-08T09:36:16.290873+00:00",
+    "issue-410": "False|stale_unpublished_7d||2|2026-05-08T09:36:19.191440+00:00",
+    "issue-409": "False|stale_unpublished_7d||2|2026-05-08T09:36:22.129831+00:00",
+    "issue-408": "False|stale_unpublished_7d||2|2026-05-08T09:36:25.021147+00:00",
+    "issue-407": "False|stale_unpublished_7d||2|2026-05-08T09:36:28.054392+00:00",
+    "issue-406": "False|stale_unpublished_7d||2|2026-05-08T09:36:30.906350+00:00",
+    "issue-405": "False|stale_unpublished_7d||2|2026-05-08T09:36:33.967387+00:00",
+    "issue-404": "False|stale_unpublished_7d||2|2026-05-08T09:36:36.896434+00:00",
+    "issue-403": "False|stale_unpublished_7d||2|2026-05-08T09:36:39.625844+00:00",
+    "issue-402": "False|stale_unpublished_7d||2|2026-05-08T09:36:42.514640+00:00",
+    "issue-401": "False|stale_unpublished_7d||2|2026-05-08T09:36:45.399465+00:00",
+    "issue-400": "False|stale_unpublished_7d||2|2026-05-08T09:36:48.439392+00:00",
+    "issue-399": "False|stale_unpublished_7d||2|2026-05-08T09:36:51.392696+00:00",
+    "issue-398": "False|stale_unpublished_7d||2|2026-05-08T09:36:54.356545+00:00",
+    "issue-397": "None||(what would make it better)|1|2026-04-24T09:54:38Z",
+    "issue-396": "None||(what would make it better)|1|2026-04-24T09:53:48Z",
+    "issue-395": "None||(what would make it better)|1|2026-04-24T09:52:59Z",
+    "issue-394": "None||(what would make it better)|1|2026-04-24T09:52:00Z",
+    "issue-393": "None||(what would make it better)|1|2026-04-24T09:51:11Z",
+    "issue-392": "None||(what would make it better)|1|2026-04-24T09:50:23Z",
+    "issue-391": "None||(what would make it better)|1|2026-04-24T09:49:34Z",
+    "issue-390": "None||(what would make it better)|1|2026-04-24T09:48:47Z",
+    "issue-389": "None||(what would make it better)|1|2026-04-24T09:47:59Z",
+    "issue-388": "None||(what would make it better)|1|2026-04-24T09:47:12Z",
+    "issue-387": "None||(what would make it better)|1|2026-04-24T09:46:23Z",
+    "issue-386": "None||(what would make it better)|1|2026-04-24T09:45:35Z",
+    "issue-385": "None||(what would make it better)|1|2026-04-24T09:44:46Z",
+    "issue-384": "None||(what would make it better)|1|2026-04-24T09:43:57Z",
+    "issue-383": "None||(what would make it better)|1|2026-04-24T09:43:07Z",
     "issue-382": "None||(what would make it better)|1|2026-04-22T09:47:50Z",
     "issue-381": "None||(what would make it better)|1|2026-04-22T09:47:12Z",
     "issue-380": "None||(what would make it better)|1|2026-04-22T09:46:32Z",
@@ -627,6 +627,51 @@
       "stale_unpublished_7d"
     ],
     "issue-383": [
+      "stale_unpublished_7d"
+    ],
+    "issue-412": [
+      "stale_unpublished_7d"
+    ],
+    "issue-411": [
+      "stale_unpublished_7d"
+    ],
+    "issue-410": [
+      "stale_unpublished_7d"
+    ],
+    "issue-409": [
+      "stale_unpublished_7d"
+    ],
+    "issue-408": [
+      "stale_unpublished_7d"
+    ],
+    "issue-407": [
+      "stale_unpublished_7d"
+    ],
+    "issue-406": [
+      "stale_unpublished_7d"
+    ],
+    "issue-405": [
+      "stale_unpublished_7d"
+    ],
+    "issue-404": [
+      "stale_unpublished_7d"
+    ],
+    "issue-403": [
+      "stale_unpublished_7d"
+    ],
+    "issue-402": [
+      "stale_unpublished_7d"
+    ],
+    "issue-401": [
+      "stale_unpublished_7d"
+    ],
+    "issue-400": [
+      "stale_unpublished_7d"
+    ],
+    "issue-399": [
+      "stale_unpublished_7d"
+    ],
+    "issue-398": [
       "stale_unpublished_7d"
     ]
   },
