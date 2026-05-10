@@ -23,3 +23,11 @@
 Posts go stale before publishing — pick more timely topics. — Rejection reason 'stale_unpublished_7d' appeared 55 times in the last week.
 
 ---
+
+### 2026-05-10 20:14 UTC — Prompt patch: avoid_topic
+
+**Category:** prompt_patch
+
+Posts go stale before publishing — pick more timely topics. — Rejection reason 'stale_unpublished_7d' appeared 15 times in the last week.
+
+---
