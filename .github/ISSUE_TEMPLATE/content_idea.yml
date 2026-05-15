@@ -1,0 +1,67 @@
+name: Content Idea
+description: Capture a LinkedIn content idea — mobile or desktop. Comment `/generate` to produce drafts.
+title: "[Idea] "
+labels: ["content_idea", "needs_generation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Capture a content idea. The only required field is **Raw idea**. Everything else is optional — the agent will infer missing fields.
+
+        When you're ready for drafts, comment `/generate` on this issue.
+
+  - type: textarea
+    id: raw_idea
+    attributes:
+      label: Raw idea
+      description: What's the post about? One sentence is fine. Messy notes are fine.
+      placeholder: "e.g. Most engineers retry API calls with exponential backoff. They miss that retries without idempotency are a liability."
+    validations:
+      required: true
+
+  - type: input
+    id: audience
+    attributes:
+      label: Audience
+      description: Who is this for? Leave blank to default to the standard ICP (AI engineers, distributed systems, Temporal).
+      placeholder: "e.g. Engineers running AI agents in production"
+
+  - type: dropdown
+    id: goal
+    attributes:
+      label: Primary goal
+      description: What should this post accomplish?
+      options:
+        - Authority / credibility
+        - Engagement / comments
+        - Lead generation
+        - Audience growth
+        - Educational depth
+      default: 0
+
+  - type: dropdown
+    id: angle
+    attributes:
+      label: Preferred angle (optional)
+      description: If you have a strong preference, pick one. Otherwise the agent generates all five.
+      options:
+        - No preference — generate all five
+        - Contrarian technical authority
+        - Founder / story
+        - Tactical technical
+        - Authority positioning
+        - Short engagement
+      default: 0
+
+  - type: textarea
+    id: references
+    attributes:
+      label: References, notes, links (optional)
+      description: Paste links, screenshots, or context the agent should use. Mention any reference_posts/ subdirectory to pull from.
+      placeholder: "e.g. See reference_posts/replay_2026/ for pattern context. Link to internal RFC: ..."
+
+  - type: textarea
+    id: supporting_notes
+    attributes:
+      label: Supporting notes (optional)
+      description: Anything else — proof points, numbers you want to feature, code snippets you want included.

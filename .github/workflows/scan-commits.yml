@@ -1,11 +1,14 @@
 name: Scan Commits & Generate Posts
 
 on:
-  push:
-    branches: [main]
-  schedule:
-    # Run every day at 08:00 UTC
-    - cron: "0 8 * * *"
+  # v2 (2026-05-15): v1 commit-driven generation is dormant. The /generate Issue
+  # workflow is the primary entry point (see generate-from-issue.yml).
+  # Re-enable the schedule below if Issue-driven generation feels too slow to seed.
+  #
+  # push:
+  #   branches: [main]
+  # schedule:
+  #   - cron: "0 8 * * *"
   workflow_dispatch:
     inputs:
       since:

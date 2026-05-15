@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import json
 import logging
+from functools import lru_cache
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +28,57 @@ DIMENSIONS = [
 
 _DIMENSION_MAX = 20
 
-_SYSTEM_PROMPT = """\
+_REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+_GOOD_POSTS_DIR = _REPO_ROOT / "good-social-posts"
+
+
+@lru_cache(maxsize=1)
+def _calibration_anchors() -> str:
+    """Build a calibration block with ground-truth examples.
+
+    Anchors the LLM scorer so it doesn't drift toward the middle of the range.
+    Uses 2 of the 5 verified high-performers as 18-20 anchors. Rejected/weak
+    examples are described abstractly to avoid leaking real bad drafts.
+    """
+    anchors: list[str] = []
+    if _GOOD_POSTS_DIR.exists():
+        for md in sorted(_GOOD_POSTS_DIR.glob("*.md"))[:2]:
+            try:
+                content = md.read_text(encoding="utf-8")
+            except OSError:
+                continue
+            # Extract the body under '## Final LinkedIn Post'.
+            in_section = False
+            lines: list[str] = []
+            for line in content.splitlines():
+                if "## Final LinkedIn Post" in line:
+                    in_section = True
+                    continue
+                if in_section:
+                    if line.startswith("## ") or line.startswith("---"):
+                        if lines:
+                            break
+                    lines.append(line)
+            body = "\n".join(lines).strip()
+            if body:
+                anchors.append(body[:1200])
+
+    if not anchors:
+        return ""
+
+    examples = "\n\n---\n\n".join(anchors)
+    return (
+        "\n\nCALIBRATION — these are verified 5/5 posts the user has published successfully. "
+        "Any new post that matches their bar of specificity, code quality, and lesson clarity "
+        "should score 18-20 on the corresponding dimension. Anything weaker scores lower.\n\n"
+        f"{examples}\n\n"
+        "A post that scores ≤5 on any dimension would: (a) open with a cliché like 'I'm excited to share', "
+        "(b) include no code or only pseudocode, (c) state a generic lesson without a number or before/after, "
+        "or (d) target an audience other than senior engineers / distributed systems / AI agents / Temporal."
+    )
+
+
+_SYSTEM_PROMPT_BASE = """\
 You are a senior LinkedIn content strategist who reviews technical posts \
 written for AI engineers building distributed systems.
 
@@ -38,6 +90,10 @@ Score the post on these five dimensions (0-20 each):
 4. **Code Relevance** — Does the code snippet illustrate the core lesson (not boilerplate)?
 5. **Shareability** — Would someone repost this to look smart/helpful?
 
+Use the FULL 0-20 range. Do NOT default to 10-15 when uncertain. Posts that match the
+calibration anchors below should score 18-20. Posts that lack code, specific numbers,
+or an ICP-aligned audience should score ≤5 on the relevant dimensions.
+
 Return ONLY a JSON object with this exact schema (no markdown fences):
 {
   "specificity": {"score": <int 0-20>, "notes": "<one sentence>"},
@@ -47,6 +103,14 @@ Return ONLY a JSON object with this exact schema (no markdown fences):
   "shareability": {"score": <int 0-20>, "notes": "<one sentence>"},
   "suggestions": "<one sentence of actionable improvement advice>"
 }"""
+
+
+def _system_prompt() -> str:
+    return _SYSTEM_PROMPT_BASE + _calibration_anchors()
+
+
+# Backwards-compat alias (keep existing imports working)
+_SYSTEM_PROMPT = _SYSTEM_PROMPT_BASE
 
 # Display labels for the markdown table
 _DIMENSION_LABELS = {
@@ -129,7 +193,7 @@ def review_quality(
         response = client.chat.completions.create(
             model=model,
             messages=[
-                {"role": "system", "content": _SYSTEM_PROMPT},
+                {"role": "system", "content": _system_prompt()},
                 {"role": "user", "content": user_prompt},
             ],
             max_completion_tokens=512,

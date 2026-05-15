@@ -1,0 +1,38 @@
+name: Reference Post Analysis
+description: Upload screenshots of peer / competitor / coworker LinkedIn posts to extract reusable patterns.
+title: "[References] "
+labels: ["reference_posts", "needs_analysis"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this to analyze peer LinkedIn posts (e.g. coworkers, competitors, conference posts) and extract patterns you can reuse without copying.
+
+        1. Attach screenshots of the posts directly in this issue (or add them to `reference_posts/<event_slug>/raw/` in a PR).
+        2. Fill in the event/topic slug below.
+        3. Comment `/analyze-references` to run extraction + pattern analysis.
+
+  - type: input
+    id: event_slug
+    attributes:
+      label: Event or topic slug
+      description: Used as the folder name under `reference_posts/`. Use snake_case.
+      placeholder: "e.g. replay_conference_2026"
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What event / topic do these posts share? What are you trying to learn?
+      placeholder: "e.g. Replay Conference 2026 — coworkers posted; I want to understand which angles drove the most comments."
+    validations:
+      required: true
+
+  - type: textarea
+    id: authors
+    attributes:
+      label: Authors / sources (optional)
+      description: List who posted each screenshot if not visible. Helps the extractor.
+      placeholder: "screenshot_1.png → Coworker A (Developer Advocate)"

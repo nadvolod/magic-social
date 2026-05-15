@@ -1551,6 +1551,50 @@ Examples:
         help="Path to write weekly report",
     )
 
+    # score-fixtures command (v2: validate scorer calibration)
+    subparsers.add_parser(
+        "score-fixtures",
+        help="Score known winners (good-social-posts) and losers to validate calibration",
+    )
+
+    # analyze-references command (v2: reference-post pipeline)
+    ar_parser = subparsers.add_parser(
+        "analyze-references",
+        help="Extract patterns from reference_posts/<slug>/raw/*.png screenshots",
+    )
+    ar_parser.add_argument("--slug", required=True, help="Event/topic slug under reference_posts/")
+    ar_parser.add_argument(
+        "--extract-only",
+        action="store_true",
+        help="Only run multimodal extraction; skip pattern analysis",
+    )
+    ar_parser.add_argument(
+        "--analyze-only",
+        action="store_true",
+        help="Only run pattern analysis on already-extracted JSON",
+    )
+    ar_parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Re-extract screenshots that already have a JSON file",
+    )
+
+    # generate-from-issue command (v2: idea-driven generation)
+    gfi_parser = subparsers.add_parser(
+        "generate-from-issue",
+        help="Generate LinkedIn drafts from a GitHub Issue created with the content_idea template",
+    )
+    gfi_parser.add_argument("--repo", required=True, help="Issue repo (owner/repo)")
+    gfi_parser.add_argument("--issue", type=int, required=True, help="Issue number")
+    gfi_parser.add_argument(
+        "--variants", type=int, default=5, help="Number of draft variants to generate (default: 5)"
+    )
+    gfi_parser.add_argument(
+        "--no-comment",
+        action="store_true",
+        help="Skip posting the summary comment back to the issue (useful for local testing)",
+    )
+
     # cleanup-backlog command
     cleanup_parser = subparsers.add_parser(
         "cleanup-backlog",
@@ -1592,7 +1636,7 @@ Examples:
     )
 
     token = os.environ.get("GITHUB_TOKEN")
-    if args.command not in ("experiments", "feedback", "metrics", "linkedin-poll", "health-check") and not token:
+    if args.command not in ("experiments", "feedback", "metrics", "linkedin-poll", "health-check", "score-fixtures", "analyze-references") and not token:
         print("Error: GITHUB_TOKEN environment variable is required", file=sys.stderr)
         sys.exit(1)
 
@@ -1834,6 +1878,43 @@ Examples:
         print(f"\n✅ Weekly learning cycle complete.")
         print(f"   Report: {args.output}")
         print(f"   Patches: {args.patches}")
+
+    elif args.command == "analyze-references":
+        from .reference_posts import (  # noqa: PLC0415
+            analyze_event,
+            extract_event,
+        )
+        extracted_count: Optional[int] = None
+        if not args.analyze_only:
+            written = extract_event(args.slug, overwrite=args.overwrite)
+            extracted_count = len(written)
+            print(f"✅ Extracted {extracted_count} screenshot(s) for '{args.slug}'")
+        if not args.extract_only:
+            report_path = analyze_event(args.slug)
+            print(f"✅ Wrote pattern report → {report_path}")
+
+    elif args.command == "score-fixtures":
+        from .fixture_scorer import score_fixtures, format_report  # noqa: PLC0415
+        report = score_fixtures()
+        print(format_report(report))
+        if not report["winner_gate_pass"]:
+            print("\n⚠️  Winner gate FAILED — verified posts are scoring below 75.")
+            print("   Sharpen the calibration anchors in src/agents/quality_reviewer.py.")
+            sys.exit(1)
+
+    elif args.command == "generate-from-issue":
+        from .idea_generator import run as run_idea_generation  # noqa: PLC0415
+        result = run_idea_generation(
+            repo=args.repo,
+            token=token,
+            issue_number=args.issue,
+            variant_count=args.variants,
+            post_comment=not args.no_comment,
+        )
+        print(f"\n✅ Generated {len(result.variant_paths)} variant(s) in {result.target_dir}")
+        for path in result.variant_paths:
+            score = result.scores.get(path.stem, {}).get("rubric_total", 0)
+            print(f"   - {path.name}: rubric {score:.1f}/100")
 
 
 def run_health_check(

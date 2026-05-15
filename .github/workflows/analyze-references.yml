@@ -1,0 +1,119 @@
+name: Analyze Reference Posts
+
+on:
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: "Event slug under reference_posts/"
+        required: true
+
+concurrency:
+  group: analyze-references-${{ github.event.issue.number || github.event.inputs.slug }}
+  cancel-in-progress: false
+
+jobs:
+  analyze:
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      (
+        github.event.issue.pull_request == null &&
+        startsWith(github.event.comment.body, '/analyze-references') &&
+        (
+          github.event.comment.author_association == 'OWNER' ||
+          github.event.comment.author_association == 'MEMBER' ||
+          github.event.comment.author_association == 'COLLABORATOR'
+        )
+      )
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Resolve slug from issue body or dispatch input
+        id: slug
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          DISPATCH_SLUG: ${{ github.event.inputs.slug }}
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import os, re
+          body = os.environ.get("ISSUE_BODY", "") or ""
+          dispatch = os.environ.get("DISPATCH_SLUG", "")
+          if dispatch:
+              slug = dispatch
+          else:
+              m = re.search(r"###\s+Event or topic slug.*?\n(.+?)(?=\n###|\Z)", body, re.DOTALL | re.IGNORECASE)
+              slug = (m.group(1).strip() if m else "").splitlines()[0].strip()
+          if not slug:
+              raise SystemExit("Could not resolve event slug from issue body or dispatch input")
+          print(f"slug={slug}")
+          PY
+
+      - name: React to comment
+        if: github.event_name == 'issue_comment'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COMMENT_ID: ${{ github.event.comment.id }}
+          REPO: ${{ github.repository }}
+        run: |
+          curl -sS -X POST \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$REPO/issues/comments/$COMMENT_ID/reactions" \
+            -d '{"content":"eyes"}' || true
+
+      - name: Run analysis
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          WRITING_MODEL: ${{ vars.WRITING_MODEL || 'gpt-5.4' }}
+        run: |
+          python -m src.agent analyze-references --slug "${{ steps.slug.outputs.slug }}"
+
+      - name: Comment results back on issue
+        if: github.event_name == 'issue_comment'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          ISSUE: ${{ github.event.issue.number }}
+          SLUG: ${{ steps.slug.outputs.slug }}
+        run: |
+          REPORT_PATH="reference_posts/${SLUG}/analysis/pattern_report.md"
+          if [ -f "$REPORT_PATH" ]; then
+            BODY=$(printf 'Pattern report ready: `%s`\n\nDurable lessons (if any) have been appended to `playbook/patterns.md`.' "$REPORT_PATH")
+            curl -sS -X POST \
+              -H "Authorization: Bearer $GITHUB_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/$REPO/issues/$ISSUE/comments" \
+              -d "$(jq -n --arg body "$BODY" '{body: $body}')"
+          fi
+
+      - name: Commit results
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "magic-social-bot"
+          git config user.email "magic-social-bot@users.noreply.github.com"
+          git add reference_posts/ playbook/ || true
+          if git diff --staged --quiet; then
+            echo "No reference-post changes to commit"
+          else
+            git commit -m "chore: reference post analysis for ${{ steps.slug.outputs.slug }} [skip ci]"
+            git push
+          fi

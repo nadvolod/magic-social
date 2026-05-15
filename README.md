@@ -1,8 +1,73 @@
-# magic-social — GitHub Commit → Social Post Agent
+# magic-social — LinkedIn Content Intelligence Agent (v2)
 
-An AI agent that transforms your GitHub commits into high-quality LinkedIn posts. It generates **multiple variations** per commit, stores each as a GitHub Issue for review, and continuously learns from your feedback and your own published posts (uploaded as screenshots).
+An AI agent that turns GitHub Issues into high-quality LinkedIn drafts and learns from peer/competitor posts you upload as screenshots. v2 replaces v1's commit-driven flow (which stalled at 85 stale drafts, 0 published) with **idea-driven generation** — you open an Issue, comment `/generate`, and `gpt-5.4` produces 5 angled variants scored against your verified winners.
 
-**Starting baseline:** your real LinkedIn posts set the minimum quality bar. Generated posts must match your current style before publishing. But the goal isn't to match — it's to **surpass and grow**.
+**v1 → v2 in one sentence:** the bottleneck was draft quality, not workflow plumbing, so v2 invests in voice, ICP discipline, and reference-post pattern learning rather than another auto-pipeline.
+
+---
+
+## v2 Quickstart
+
+### 1. Generate drafts from an idea
+
+1. Open an Issue using the **Content Idea** template (mobile or desktop).
+2. Comment `/generate` on the Issue.
+3. The `generate-from-issue.yml` workflow runs Claude Sonnet against your voice playbook and writes 5 variants into `drafts/YYYY_MM_DD_<slug>/`. A summary comment lands on the Issue with the top-recommended variant and rubric scores.
+
+Locally:
+
+```bash
+GITHUB_TOKEN=... OPENAI_API_KEY=... \
+  python -m src.agent generate-from-issue --repo nadvolod/magic-social --issue 123
+```
+
+### 2. Learn patterns from peer screenshots
+
+1. Open an Issue with the **Reference Post Analysis** template.
+2. Drop screenshots of peer / coworker / competitor LinkedIn posts into `reference_posts/<event_slug>/raw/`.
+3. Comment `/analyze-references`.
+
+The pipeline (`src/reference_posts.py`) extracts structured JSON via a multimodal model, then produces `reference_posts/<slug>/analysis/pattern_report.md` and appends durable lessons to `playbook/patterns.md`.
+
+Locally:
+
+```bash
+OPENAI_API_KEY=... \
+  python -m src.agent analyze-references --slug replay_conference_2026
+```
+
+### 3. Validate scorer calibration
+
+```bash
+python -m src.agent score-fixtures
+```
+
+Scores the 5 verified `good-social-posts/` against the rubric. Average must be ≥ 75/100, otherwise the calibration anchors in `src/agents/quality_reviewer.py` need sharpening.
+
+---
+
+## v2 Architecture (delta from v1)
+
+| Layer | v1 | v2 |
+|---|---|---|
+| Trigger | Daily commit scan (`scan-commits.yml`) | **Issue `/generate` comment** (`generate-from-issue.yml`) |
+| Writing model | `gpt-5.4-mini` only | **`gpt-5.4`** (`WRITING_MODEL` env) |
+| Eval model | Same model | `gpt-5.4-mini` (cheap tier) |
+| Multimodal | Own published posts only | + **Peer post screenshots** (`reference_posts.py`) |
+| Voice asset | `good-social-posts/` few-shot | + `playbook/voice.md` distilled voice guide |
+| Patterns | `learning_state.json` only | + `playbook/patterns.md` harvested from reference posts |
+
+The v1 commit-scan workflow is dormant (schedule disabled) but the code is preserved. Re-enable `scan-commits.yml`'s `cron:` if Issue-driven generation feels too slow to seed.
+
+### v2 success gate
+
+Within 2 weeks of v2 shipping, ≥ 3 generated posts should reach LinkedIn. If not, the bottleneck isn't infrastructure — STOP and reconsider voice/ICP/prompts before adding more pipelines.
+
+---
+
+## Legacy v1 docs (commit-driven flow)
+
+**Starting baseline (v1):** your real LinkedIn posts set the minimum quality bar. Generated posts must match your current style before publishing. But the goal isn't to match — it's to **surpass and grow**.
 
 ---
 
