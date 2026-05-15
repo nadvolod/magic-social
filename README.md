@@ -1,6 +1,6 @@
 # magic-social — LinkedIn Content Intelligence Agent (v2)
 
-An AI agent that turns GitHub Issues into high-quality LinkedIn drafts and learns from peer/competitor posts you upload as screenshots. v2 replaces v1's commit-driven flow (which stalled at 85 stale drafts, 0 published) with **idea-driven generation** — you open an Issue, comment `/generate`, and `gpt-5.4` produces 5 angled variants scored against your verified winners.
+An AI agent that turns GitHub Issues into high-quality LinkedIn drafts and learns from peer/competitor posts you upload as screenshots. v2 replaces v1's commit-driven flow (which stalled at 85 stale drafts, 0 published) with **idea-driven generation** — open an Issue, and `gpt-5.4` automatically produces 5 angled variants scored against your verified winners. No magic commands.
 
 **v1 → v2 in one sentence:** the bottleneck was draft quality, not workflow plumbing, so v2 invests in voice, ICP discipline, and reference-post pattern learning rather than another auto-pipeline.
 
@@ -11,8 +11,8 @@ An AI agent that turns GitHub Issues into high-quality LinkedIn drafts and learn
 ### 1. Generate drafts from an idea
 
 1. Open an Issue using the **Content Idea** template (mobile or desktop).
-2. Comment `/generate` on the Issue.
-3. The `generate-from-issue.yml` workflow runs Claude Sonnet against your voice playbook and writes 5 variants into `drafts/YYYY_MM_DD_<slug>/`. A summary comment lands on the Issue with the top-recommended variant and rubric scores.
+2. That's it. The `needs_generation` label is auto-applied by the template, which fires `generate-from-issue.yml`. Five variants land in `drafts/YYYY_MM_DD_<slug>/` and a summary comment is posted on the Issue.
+3. Want to regenerate after editing the Issue? Remove the `needs_generation` label and re-add it.
 
 Locally:
 
@@ -23,11 +23,10 @@ GITHUB_TOKEN=... OPENAI_API_KEY=... \
 
 ### 2. Learn patterns from peer screenshots
 
-1. Open an Issue with the **Reference Post Analysis** template.
-2. Drop screenshots of peer / coworker / competitor LinkedIn posts into `reference_posts/<event_slug>/raw/`.
-3. Comment `/analyze-references`.
+1. Drop screenshots of peer / coworker / competitor LinkedIn posts into `reference_posts/<event_slug>/raw/`.
+2. Open an Issue with the **Reference Post Analysis** template — the `needs_analysis` label fires `analyze-references.yml` automatically.
 
-The pipeline (`src/reference_posts.py`) extracts structured JSON via a multimodal model, then produces `reference_posts/<slug>/analysis/pattern_report.md` and appends durable lessons to `playbook/patterns.md`.
+The pipeline (`src/reference_posts.py`) extracts structured JSON via a multimodal model, then produces `reference_posts/<slug>/analysis/pattern_report.md` and appends durable lessons to `playbook/patterns.md`. Re-run by toggling the `needs_analysis` label.
 
 Locally:
 
@@ -50,7 +49,7 @@ Scores the 5 verified `good-social-posts/` against the rubric. Average must be �
 
 | Layer | v1 | v2 |
 |---|---|---|
-| Trigger | Daily commit scan (`scan-commits.yml`) | **Issue `/generate` comment** (`generate-from-issue.yml`) |
+| Trigger | Daily commit scan (`scan-commits.yml`) | **Opening an Issue with `needs_generation` label** (`generate-from-issue.yml`) |
 | Writing model | `gpt-5.4-mini` only | **`gpt-5.4`** (`WRITING_MODEL` env) |
 | Eval model | Same model | `gpt-5.4-mini` (cheap tier) |
 | Multimodal | Own published posts only | + **Peer post screenshots** (`reference_posts.py`) |

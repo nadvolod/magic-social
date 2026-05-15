@@ -1,14 +1,14 @@
 name: Content Idea
-description: Capture a LinkedIn content idea — mobile or desktop. Comment `/generate` to produce drafts.
+description: Capture a LinkedIn content idea — mobile or desktop. Drafts are generated automatically when you submit.
 title: "[Idea] "
 labels: ["content_idea", "needs_generation"]
 body:
   - type: markdown
     attributes:
       value: |
-        Capture a content idea. The only required field is **Raw idea**. Everything else is optional — the agent will infer missing fields.
+        Capture a content idea. The only required field is **Raw idea** — everything else is optional and the agent will infer the rest.
 
-        When you're ready for drafts, comment `/generate` on this issue.
+        **Drafts are generated automatically as soon as you submit this issue.** To regenerate after editing, remove the `needs_generation` label and re-add it.
 
   - type: textarea
     id: raw_idea
