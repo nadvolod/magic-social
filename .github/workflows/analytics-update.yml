@@ -1,14 +1,9 @@
 name: Collect Analytics & Update Learning
+# ⚠️ ARCHIVED — v1 operations shut down. This workflow is kept for reference only.
+# Automatic triggers have been removed. See v1/ directory for the full v1 source.
 
 on:
   workflow_dispatch:
-    inputs:
-      posts_json:
-        description: "JSON array of Post objects (paste inline or leave empty)"
-        required: false
-  schedule:
-    # Run every Wednesday and Friday at 09:00 UTC to collect 48h+ post analytics
-    - cron: "0 9 * * 3,5"
 
 jobs:
   collect-analytics:

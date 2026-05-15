@@ -1,15 +1,9 @@
 name: Poll LinkedIn Metrics
+# ⚠️ ARCHIVED — v1 operations shut down. This workflow is kept for reference only.
+# Automatic triggers have been removed. See v1/ directory for the full v1 source.
 
 on:
   workflow_dispatch:
-    inputs:
-      max_posts:
-        description: "Maximum number of recent posts to fetch (default: 10)"
-        required: false
-        default: "10"
-  schedule:
-    # Run every day at 07:00 UTC
-    - cron: "0 7 * * *"
 
 jobs:
   linkedin-poll:

@@ -1,11 +1,8 @@
 name: Scan Commits & Generate Posts
+# ⚠️ ARCHIVED — v1 operations shut down. This workflow is kept for reference only.
+# Automatic triggers have been removed. See v1/ directory for the full v1 source.
 
 on:
-  push:
-    branches: [main]
-  schedule:
-    # Run every day at 08:00 UTC
-    - cron: "0 8 * * *"
   workflow_dispatch:
     inputs:
       since:
