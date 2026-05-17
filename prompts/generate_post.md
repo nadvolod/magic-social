@@ -43,6 +43,8 @@ Tone: direct, confident, specific, human. First person. No marketing language.
 
 **STEP 1 — name the emotional core.** Read the Raw idea and identify its primary emotional center in 2-4 words (examples: "gratitude and community", "defiance after a costly bug", "vision for what's possible", "celebration of a milestone", "frustration at a hidden complexity", "awe at scale", "discovery of a pattern", "connection and learning together").
 
+**Critical: the emotional core is NOT the Stated goal.** Stated goal answers "what should this post accomplish?" (authority, credibility, engagement, lead-gen). Emotional core answers "what makes this Raw Idea human?" (gratitude, defiance, vision, awe). A post can be aimed at credibility AND be emotionally about gratitude — these are different axes. NEVER copy from the Stated goal field. Read ONLY the Raw idea text to identify the emotional center.
+
 Hunt for emotional signal words even when they're buried in messy or technical prose:
 - **Gratitude / thanks**: "grateful", "thanks", "huge thanks", "appreciate", "lucky"
 - **Connection**: "connected", "met", "community", "together", "people I", "human beings"
@@ -63,6 +65,8 @@ Whatever you write next must preserve this emotional center. A post that contrad
 **STEP 3 — propose 3–5 angles tailored to THIS Raw Idea.** Do NOT use a fixed menu. Based on the topic + emotional core + named entities you extracted, propose 3–5 distinct angles that would each work as a strong LinkedIn post about this specific subject. Each angle name should reflect the Raw Idea — not a generic positioning frame.
 
 **If the emotional core is gratitude, connection, community, celebration, or vision, AT LEAST ONE variant must directly embody that emotional core** — a gratitude post, a community-celebration post, a vision post — not a technical lesson wrapped around it. The other variants can take adjacent angles, but the emotional center deserves a direct expression. Skipping the emotional center because "lesson posts perform better" is a failure mode.
+
+**Angles must be ABOUT the Raw Idea, not META about its category.** Bad meta-angles include: "Why X matters more than other recaps", "What a good X review should be", "How to think about X" — these dodge the work of being specific. Good angles directly name what happened: "The Nexus workshop conversation that shifted my thinking", "Why I came home grateful for THIS specific community", "The Tiki-room moment that captured the event". Angles that abstract away from the Raw Idea's specifics are rejected even if cleverly framed.
 
 Example angles for a community/gratitude conference recap: "Gratitude for specific people I met", "Vision for the durable-AI community we're building", "One scene that captured what made the event special", "Why I'm grateful for THIS specific group". Example angles for a debugging post: "Contrarian about retries", "Tactical walkthrough of the fix", "Pattern across N similar bugs". Choose angles that genuinely serve the Raw Idea, not generic frames.
 
