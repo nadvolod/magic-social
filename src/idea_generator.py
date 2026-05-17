@@ -2,8 +2,9 @@
 
 Reads a GitHub Issue (created via the `content_idea` template), generates
 5 LinkedIn draft variants with Claude Sonnet, scores them with the existing
-scoring agents, and writes them to `drafts/YYYY_MM_DD_<slug>/`. Posts a
-summary comment back to the Issue.
+scoring agents, and writes them to `drafts/YYYY_MM_DD_<slug>/`. Posts one
+comment per variant back to the Issue so the user can react/comment per
+draft, followed by a ranked summary.
 
 This is the v2 entry point. The v1 commit-driven `post_generator` is preserved
 for manual/dispatch use but no longer runs on schedule.
@@ -360,33 +361,58 @@ def _rel_to_repo(path: Path) -> Path:
         return path
 
 
+def build_variant_comment(key: str, variant: dict, score: dict) -> str:
+    """Render one draft as a self-contained Issue comment for per-draft voting."""
+    angle = variant.get("angle") or "unspecified angle"
+    post_text = (variant.get("post") or variant.get("body") or "").strip()
+    audience = variant.get("intended_audience", "")
+    why = variant.get("why_it_may_perform", "")
+    risks = variant.get("risks", "")
+    rubric_total = score.get("rubric_total", 0)
+    label = key.replace("_", " ").title()
+
+    return textwrap.dedent(f"""\
+        ## {label} — {angle}
+
+        **Rubric:** {rubric_total:.1f}/100
+
+        ---
+
+        {post_text}
+
+        ---
+
+        - **Audience:** {audience}
+        - **Why it may perform:** {why}
+        - **Risks:** {risks}
+
+        _React 👍 / 👎 to vote, or reply with edits. Highest-voted draft is the one to ship._
+    """)
+
+
 def build_summary_comment(idea: IdeaIssue, target_dir: Path, scores: dict, paths: list[Path]) -> str:
     rel_dir = _rel_to_repo(target_dir)
     top = pick_top_variant(scores)
     top_line = (
-        f"**Top recommendation:** `{top}` "
-        f"(angle: {scores.get(top, {}).get('angle', '')}, rubric: {scores.get(top, {}).get('rubric_total', 0):.1f}/100)"
+        f"**Top by rubric:** `{top}` "
+        f"({scores.get(top, {}).get('angle', '')}, {scores.get(top, {}).get('rubric_total', 0):.1f}/100)"
         if top
         else "(no variants generated)"
     )
-    file_lines = "\n".join(f"- `{_rel_to_repo(p)}`" for p in paths)
+    ranked = sorted(scores.items(), key=lambda kv: kv[1].get("rubric_total", 0), reverse=True)
     score_lines = "\n".join(
         f"- `{k}`: {v.get('rubric_total', 0):.1f}/100 — {v.get('angle', '')}"
-        for k, v in scores.items()
+        for k, v in ranked
     )
     return textwrap.dedent(f"""\
-        Generated {len(paths)} LinkedIn draft variants from this idea.
+        Generated {len(paths)} LinkedIn drafts — each posted as its own comment above so you can 👍 / 👎 per draft.
 
         {top_line}
 
-        **Files:**
-        {file_lines}
-
-        **Rubric scores:**
+        **Ranked rubric:**
         {score_lines}
 
-        **Recommended next step:**
-        Review the top variant in `{rel_dir}/`. If you want to publish, paste the final text into LinkedIn and add an `## Analytics Update` comment here after 48h.
+        Markdown copies of each draft also saved under `{rel_dir}/` for reference.
     """)
 
 
@@ -421,6 +447,11 @@ def run(
     summary = build_summary_comment(idea, target_dir, scores, paths)
 
     if post_comment:
+        for key in sorted(variants.keys()):
+            if not key.startswith("variant_"):
+                continue
+            body = build_variant_comment(key, variants[key], scores.get(key, {}))
+            github_storage.add_comment(repo, token, issue_number, body)
         github_storage.add_comment(repo, token, issue_number, summary)
         github_storage.add_label_to_issue(repo, token, issue_number, "drafts_generated")
 

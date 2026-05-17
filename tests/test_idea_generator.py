@@ -231,6 +231,20 @@ def test_build_summary_comment_includes_top_recommendation(tmp_path):
     scores = json.loads((tmp_path / "scores.json").read_text())
     summary = idea_generator.build_summary_comment(idea, tmp_path, scores, paths)
 
-    assert "Top recommendation" in summary
+    assert "Top by rubric" in summary
     assert "variant_1" in summary or "variant_5" in summary
-    assert "Rubric scores" in summary
+    assert "Ranked rubric" in summary
+
+
+def test_build_variant_comment_renders_post_and_metadata():
+    variant = SAMPLE_VARIANTS["variant_1"]
+    score = {"rubric_total": 87.3, "angle": variant["angle"]}
+    body = idea_generator.build_variant_comment("variant_1", variant, score)
+
+    assert "Variant 1" in body
+    assert variant["angle"] in body
+    assert "87.3/100" in body
+    assert "retries without idempotency" in body.lower()
+    assert variant["intended_audience"] in body
+    assert variant["risks"] in body
+    assert "React" in body  # voting affordance present
