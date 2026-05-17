@@ -1,21 +1,21 @@
 # variant_5 — short engagement
 
-**Intended audience:** Engineers who want a concise production-systems take on Temporal Replay
-**Why it may perform:** Short, sharp, and discussion-oriented; easy to read quickly while still signaling strong technical taste.
-**Risks:** Very concise and not richly grounded due to the sparse raw idea.
+**Intended audience:** Busy senior engineers and AI infra builders who respond to concise, opinionated observations.
+**Why it may perform:** Short, scannable, uses concrete event entities, and ends with a broad question likely to invite comments from practitioners.
+**Risks:** Very compressed; may feel less personal than longer variants. Raw idea was thin, so specificity comes mainly from attached visuals and referenced conference entities.
 
 ---
 
-Temporal Replay reinforced a belief I keep coming back to.
+Replay by Temporal made one thing very clear.
 
-AI agents are usually judged by output quality.
+The serious AI teams are shifting attention from prompts to failure recovery.
 
-They should be judged by failure behavior.
+At Replay, hearing names like Netflix, NVIDIA, and Datadog in the same orbit as durable execution was the real signal.
 
-For me, the real value of Temporal, durable execution, and good distributed systems design is simple:
+The REPLAY stage, the giant inflatable mascot, and the Braintrust typing contest were fun.
 
-What happens after the crash, retry, or replay?
+But the lasting takeaway was simpler:
 
-That's the line between a demo and a product.
+agentic AI gets real when replay, retries, and resumability become first-class design concerns.
 
-What was your biggest takeaway from Temporal Replay?
+Are you seeing that shift in your own stack yet?

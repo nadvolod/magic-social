@@ -1,51 +1,56 @@
 # variant_3 — tactical
 
-**Intended audience:** Practitioners who want actionable takeaways from Temporal Replay for AI and workflow architecture
-**Why it may perform:** Highly scannable, save-worthy checklist format, strong practical framing, and directly relevant to senior engineers evaluating systems for production.
-**Risks:** Without specific session references from the raw idea, the tactical value comes from synthesis rather than event-specific detail.
+**Intended audience:** Practitioners selecting orchestration and reliability patterns for AI agents, especially senior engineers and technical leads.
+**Why it may perform:** Gives readers a reusable checklist, ties it to named conference entities, and reframes AI infra evaluation around operational correctness.
+**Risks:** Because the raw idea lacked explicit notes, the tactical points are synthesized from the observed conference theme rather than direct quoted takeaways.
 
 ---
 
-My best takeaway from Temporal Replay was a simple review checklist for production systems.
+My best takeaway from Replay by Temporal was a simple filter for evaluating AI infrastructure.
 
-Temporal Replay gave me a useful way to review architecture decisions.
+I went into Replay looking for ideas I could actually use.
 
-Especially for AI engineers building on distributed systems and durable execution.
+Not just announcements.
+Not just stage energy.
 
-When I got back, I wrote down the questions I wish more teams asked before shipping:
+Something practical for building agentic systems that need to work after the demo.
 
-- Can this workflow resume after a crash?
-- Is every external side effect idempotent?
-- What state is reconstructed during replay?
-- What breaks after a deploy?
-- Can I explain the audit trail of an AI agent decision?
+The filter I left with is this:
+
+When you evaluate any AI stack, ask four questions first.
+
+- Can it replay safely?
+- Can it resume after failure?
+- Can it make progress across long-running tasks?
+- Can it give you an audit trail when something goes wrong?
 
 That sounds basic.
 
-It isn't.
+But after listening to talks and hallway discussions around Temporal, Netflix, and NVIDIA, I think most teams still evaluate the wrong layer first.
 
-Most failures in this space are not model failures.
+They compare model outputs before they compare failure behavior.
 
-They're orchestration failures.
+One concrete scene captured it for me.
 
-Temporal Replay reinforced that the hard part is not getting a workflow to run.
+In one session room, the slide on screen was a workflow diagram. The room was full, laptops out, and the discussion immediately went to orchestration boundaries, retries, and recovery.
 
-The hard part is making it correct after retries, restarts, and partial completion.
+Not prompts.
+Not vibe-based framework comparisons.
 
-I've started using this as a post-conference filter:
+That is a healthier way to reason about production AI.
 
-If a pattern improves the happy path but makes durable execution harder, I'm skeptical.
+Even walking through the event made the contrast obvious.
 
-If it improves recovery, replay safety, or observability, I pay attention.
+The REPLAY stage, the giant inflatable mascot, the Braintrust typing contest.
 
-That one shift makes conference notes far more useful.
+All memorable.
 
-Temporal Replay was valuable because it kept pulling the conversation back to operational correctness.
+But the most useful part was the repeated reminder that durable execution is an architectural choice, not a nice-to-have feature.
 
-For me, that's the real review.
+My tactical takeaway from Replay:
 
-Not "what was interesting?"
+Evaluate your agent stack like distributed systems infrastructure first, and AI product second.
 
-But "what would I trust in production?"
+The order matters.
 
-If you attended Temporal Replay, what checklist did you leave with?
+What questions do you use to evaluate whether an AI system is actually production-ready?
