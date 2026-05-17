@@ -99,6 +99,12 @@ References / notes: {references}
 
 Rules:
 - 800–1500 chars per variant by default; a "short" variant may be 300–700 chars if that's what the angle calls for
+- **LinkedIn-native formatting only** (LinkedIn's composer doesn't render markdown):
+  - Bullets are `•` (Unicode bullet), NEVER `-` or `*`
+  - Do NOT use markdown emphasis like `**bold**` or `*italic*` or `_italic_` — LinkedIn shows the asterisks/underscores as literal characters. If you must emphasize, use ALL CAPS sparingly OR a line break for impact.
+  - Do NOT use backticks `` ` `` around code or terms — LinkedIn shows them as literal backticks
+  - Do NOT use markdown headings (`# foo`) inside the post body
+  - Short paragraphs separated by a single blank line is the LinkedIn-native rhythm
 - 0–2 hashtags total, only if highly relevant to the ICP
 - Never reference raw Issue metadata (ID, labels, dates)
 - Never invent benchmarks, customer names, or specific company outcomes you cannot back up

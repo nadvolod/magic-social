@@ -54,6 +54,13 @@ Do not imitate the references. Use them as a competitive baseline.
 
 Reject meta-angles ("Why X matters more than another recap", "How to think about X") — those dodge specificity.
 
+**LinkedIn-native formatting** — LinkedIn's composer does NOT render markdown. The `post` field must be plain text that copies cleanly:
+- Bullets use `•` (Unicode bullet) — NEVER `-` or `*`
+- No `**bold**` or `*italic*` or `_italic_` — LinkedIn shows them literally
+- No backticks around code or terms
+- No `#` headings inside the post body
+- Short paragraphs separated by a single blank line
+
 **STEP 4 — for each variant, also propose images.** {image_count} photos are attached to this message and you can see them via vision. For each variant, decide:
 - Which 1-3 photos best fit the post (refer to them by your own brief description, since URLs aren't useful to the user)
 - Where in the post the image belongs: `lead` (first thing the reader sees on LinkedIn), `inline` (after the hook), `closing` (at the end), or `none` (post is stronger without)

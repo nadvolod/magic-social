@@ -189,6 +189,8 @@ def generate(
 
 
 def _format_variant_md(key: str, variant: dict) -> str:
+    from .linkedin_format import to_linkedin_format  # noqa: PLC0415
+
     images = variant.get("images") or []
     image_lines = []
     for i, img in enumerate(images, 1):
@@ -201,6 +203,7 @@ def _format_variant_md(key: str, variant: dict) -> str:
         )
     images_section = "\n".join(image_lines) if image_lines else "_no images recommended for this variant_"
 
+    post = (variant.get("post") or "").strip()
     return (
         f"# {key} — {variant.get('angle', 'unspecified angle')}\n\n"
         f"**Intended audience:** {variant.get('intended_audience', '')}\n"
@@ -208,8 +211,8 @@ def _format_variant_md(key: str, variant: dict) -> str:
         f"**Risks:** {variant.get('risks', '')}\n"
         f"**vs reference cohort:** {variant.get('what_this_brings_vs_references', '')}\n\n"
         f"## Recommended images\n\n{images_section}\n\n"
-        f"---\n\n"
-        f"{(variant.get('post') or '').strip()}\n"
+        f"## LinkedIn-ready post (copy below)\n\n"
+        f"```\n{to_linkedin_format(post)}\n```\n"
     )
 
 

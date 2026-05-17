@@ -601,13 +601,16 @@ def write_drafts(idea: IdeaIssue, variants: dict, target_dir: Path) -> list[Path
 
 
 def _format_variant_md(key: str, variant: dict) -> str:
+    from .linkedin_format import to_linkedin_format  # noqa: PLC0415
+
+    post = (variant.get("post") or variant.get("body") or "").strip()
     return (
         f"# {key} — {variant.get('angle', 'unspecified angle')}\n\n"
         f"**Intended audience:** {variant.get('intended_audience', '')}\n"
         f"**Why it may perform:** {variant.get('why_it_may_perform', '')}\n"
         f"**Risks:** {variant.get('risks', '')}\n\n"
-        f"---\n\n"
-        f"{variant.get('post') or variant.get('body') or ''}\n"
+        f"## LinkedIn-ready post (copy below)\n\n"
+        f"```\n{to_linkedin_format(post)}\n```\n"
     )
 
 
@@ -628,9 +631,19 @@ def _rel_to_repo(path: Path) -> Path:
 
 
 def build_variant_comment(key: str, variant: dict, score: dict) -> str:
-    """Render one draft as a self-contained Issue comment for per-draft voting."""
+    """Render one draft as a self-contained Issue comment for per-draft voting.
+
+    The post body is run through `linkedin_format.to_linkedin_format` so any
+    markdown the model emits is converted to LinkedIn-native equivalents
+    (Unicode bold/italic, `•` bullets, no backticks). The body is wrapped in
+    a fenced code block so the reader can copy it verbatim — what they see
+    is what LinkedIn will see.
+    """
+    from .linkedin_format import to_linkedin_format  # noqa: PLC0415  (avoid cycle)
+
     angle = variant.get("angle") or "unspecified angle"
-    post_text = (variant.get("post") or variant.get("body") or "").strip()
+    post_text_raw = (variant.get("post") or variant.get("body") or "").strip()
+    post_text = to_linkedin_format(post_text_raw)
     audience = variant.get("intended_audience", "")
     why = variant.get("why_it_may_perform", "")
     risks = variant.get("risks", "")
@@ -643,11 +656,11 @@ def build_variant_comment(key: str, variant: dict, score: dict) -> str:
         "",
         f"**Rubric:** {rubric_total:.1f}/100",
         "",
-        "---",
+        "**📋 Copy below — already formatted for LinkedIn (paste straight into the composer):**",
         "",
+        "```",
         post_text,
-        "",
-        "---",
+        "```",
         "",
         f"- **Audience:** {audience}",
         f"- **Why it may perform:** {why}",
