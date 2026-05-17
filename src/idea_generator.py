@@ -82,6 +82,8 @@ class IdeaIssue:
     url: str = ""
     image_urls: list[str] = field(default_factory=list)
     entity_candidates: list[str] = field(default_factory=list)
+    reference_image_urls: list[str] = field(default_factory=list)
+    supporting_image_urls: list[str] = field(default_factory=list)
 
 
 _TAIL_CONNECTOR_STOPWORDS = {
@@ -159,6 +161,45 @@ def _extract_image_urls(body: str, limit: int = MAX_IMAGES_PER_ISSUE) -> list[st
     return urls
 
 
+_H3_SPLIT_RE = re.compile(r"<h3[^>]*>(.*?)</h3>(.*?)(?=<h3|\Z)", re.DOTALL | re.IGNORECASE)
+
+
+def _extract_images_by_section(body_html: str) -> dict[str, list[str]]:
+    """Split body_html by <h3> and return {section_heading_lower: [image_urls]}.
+
+    GitHub renders `### Heading` as `<h3>Heading</h3>`. We use this to attribute
+    each `<img src>` to the section it appears under, so callers can distinguish
+    reference-post screenshots (under "References, notes, links") from event
+    photos (under "Supporting notes").
+    """
+    if not body_html:
+        return {}
+    sections: dict[str, list[str]] = {}
+    for match in _H3_SPLIT_RE.finditer(body_html):
+        heading = re.sub(r"<[^>]+>", "", match.group(1)).strip().lower()
+        if not heading:
+            continue
+        content = match.group(2) or ""
+        urls: list[str] = []
+        seen: set[str] = set()
+        for img_match in _IMG_TAG_RE.finditer(content):
+            url = img_match.group(1).strip()
+            if url and url not in seen:
+                seen.add(url)
+                urls.append(url)
+        sections[heading] = urls
+    return sections
+
+
+def _section_images(sections: dict[str, list[str]], *heading_prefixes: str) -> list[str]:
+    """Return the image list for the first section whose lowercased heading starts with any of the given prefixes."""
+    for heading, urls in sections.items():
+        for prefix in heading_prefixes:
+            if heading.startswith(prefix.lower()):
+                return urls
+    return []
+
+
 def fetch_issue(repo: str, token: str, issue_number: int) -> IdeaIssue:
     """Fetch and parse an Issue created from the content_idea template.
 
@@ -207,6 +248,14 @@ def parse_issue_payload(payload: dict) -> IdeaIssue:
         url=payload.get("html_url", ""),
         image_urls=_extract_image_urls(payload.get("body_html") or body),
         entity_candidates=_extract_entity_candidates(_extract_section(body, "Raw idea") or body.strip()),
+        reference_image_urls=_section_images(
+            _extract_images_by_section(payload.get("body_html") or ""),
+            "references",  # matches "References, notes, links (optional)"
+        ),
+        supporting_image_urls=_section_images(
+            _extract_images_by_section(payload.get("body_html") or ""),
+            "supporting notes",
+        ),
     )
 
 
@@ -303,8 +352,18 @@ def _split_prompt_template(template: str) -> tuple[str, str]:
     return system_text, user_text
 
 
-def build_prompts(idea: IdeaIssue, *, variant_count: int = DEFAULT_VARIANT_COUNT) -> tuple[str, str]:
-    """Return (system_prompt, user_prompt) for an idea, fully substituted."""
+def build_prompts(
+    idea: IdeaIssue,
+    *,
+    variant_count: int = DEFAULT_VARIANT_COUNT,
+    per_issue_reference_block: str = "",
+) -> tuple[str, str]:
+    """Return (system_prompt, user_prompt) for an idea, fully substituted.
+
+    `per_issue_reference_block` (optional) is the Markdown produced by
+    `issue_reference_analyzer` for the Issue's uploaded reference screenshots.
+    When present, it takes precedence over the global retrospective.
+    """
     template = _load_text(PROMPT_PATH)
     if not template:
         raise FileNotFoundError(f"Prompt template missing: {PROMPT_PATH}")
@@ -317,9 +376,20 @@ def build_prompts(idea: IdeaIssue, *, variant_count: int = DEFAULT_VARIANT_COUNT
     examples = _good_examples_block()
     rejection = _rejection_block()
 
+    per_issue_block_text = (
+        "PER-ISSUE REFERENCE ANALYSIS — distilled from the screenshots the user "
+        "uploaded to THIS Issue. These directives are higher-priority than the "
+        "global retrospective below; they reflect what the user's specific "
+        "reference cohort did and where this post should differentiate.\n\n"
+        + per_issue_reference_block
+        if per_issue_reference_block.strip()
+        else "(no per-Issue references uploaded — falling back to global retrospective only)"
+    )
+
     system_prompt = system_template.format(
         voice_block=voice or "(no voice playbook loaded)",
         patterns_block=patterns or "(no patterns harvested yet)",
+        per_issue_reference_block=per_issue_block_text,
         retrospective_block=retrospective or "(no retrospective yet — publish posts or upload screenshots so analytics-update can populate playbook/retrospective.md)",
         good_examples_block=examples or "(no verified examples loaded)",
         rejection_avoidance_block=rejection or "(no external lessons loaded)",
@@ -369,6 +439,7 @@ def generate_variants(
     *,
     client=None,
     variant_count: int = DEFAULT_VARIANT_COUNT,
+    per_issue_reference_block: str = "",
 ) -> dict:
     """Return a dict of variant_N → variant_payload.
 
@@ -382,7 +453,11 @@ def generate_variants(
             "OpenAI writing client unavailable. Set OPENAI_API_KEY and install openai."
         )
 
-    system_prompt, user_prompt = build_prompts(idea, variant_count=variant_count)
+    system_prompt, user_prompt = build_prompts(
+        idea,
+        variant_count=variant_count,
+        per_issue_reference_block=per_issue_reference_block,
+    )
     image_payload = _prepare_image_payload(idea.image_urls)
     raw = writing_client.generate_text(
         client,
@@ -650,24 +725,57 @@ def run(
     variant_count: int = DEFAULT_VARIANT_COUNT,
     post_comment: bool = True,
 ) -> GenerationResult:
-    """End-to-end: fetch Issue → generate → write → comment."""
-    from . import retrospective as retrospective_mod  # noqa: PLC0415  (avoid cycle)
+    """End-to-end: fetch Issue → analyze references → generate → write → comment."""
+    from . import issue_reference_analyzer  # noqa: PLC0415  (avoid cycle)
+    from . import retrospective as retrospective_mod  # noqa: PLC0415
 
     idea = fetch_issue(repo, token, issue_number)
-    variants = generate_variants(idea, client=client, variant_count=variant_count)
+
+    # Per-Issue reference analysis — if the user uploaded reference screenshots
+    # under "References, notes, links", analyze them BEFORE generating so the
+    # directives shape the draft prompt. Returns None when no refs are attached.
+    per_issue_report = None
+    per_issue_block = ""
+    if idea.reference_image_urls:
+        try:
+            per_issue_report = issue_reference_analyzer.analyze(idea, client=client)
+            if per_issue_report:
+                per_issue_block = issue_reference_analyzer.cohort_summary_for_prompt(
+                    per_issue_report
+                )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Per-Issue reference analysis failed: %s", exc)
+
+    variants = generate_variants(
+        idea,
+        client=client,
+        variant_count=variant_count,
+        per_issue_reference_block=per_issue_block,
+    )
     target_dir = draft_dir_for(idea)
     paths = write_drafts(idea, variants, target_dir)
     scores = json.loads((target_dir / "scores.json").read_text(encoding="utf-8"))
     summary = build_summary_comment(idea, target_dir, scores, paths)
 
-    # Freeze the retrospective that shaped these drafts. Returns None if
-    # playbook/retrospective.md hasn't been generated yet — that's fine.
+    # Persist the per-Issue analysis alongside the drafts.
+    if per_issue_report:
+        issue_reference_analyzer.write_to_drafts_dir(per_issue_report, target_dir)
+
+    # Freeze the global retrospective that also informed these drafts.
     retrospective_md = ""
     if RETROSPECTIVE_PATH.exists():
         retrospective_mod.snapshot_for_issue(target_dir, retrospective_path=RETROSPECTIVE_PATH)
         retrospective_md = RETROSPECTIVE_PATH.read_text(encoding="utf-8")
 
     if post_comment:
+        # Per-Issue analysis comment goes FIRST — it's the primary signal for this Issue.
+        if per_issue_report:
+            github_storage.add_comment(
+                repo,
+                token,
+                issue_number,
+                issue_reference_analyzer.build_issue_comment(per_issue_report),
+            )
         if retrospective_md:
             github_storage.add_comment(
                 repo,

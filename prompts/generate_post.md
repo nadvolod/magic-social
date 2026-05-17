@@ -14,6 +14,8 @@ The runtime fills in placeholders before sending to Claude. Placeholders use `{d
 
 {patterns_block}
 
+{per_issue_reference_block}
+
 {retrospective_block}
 
 {good_examples_block}

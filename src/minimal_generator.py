@@ -105,7 +105,12 @@ def _good_examples_block_text() -> str:
     return "\n\n---\n\n".join(examples)
 
 
-def build_prompts(idea: IdeaIssue, *, variant_count: int = DEFAULT_VARIANT_CAP) -> tuple[str, str]:
+def build_prompts(
+    idea: IdeaIssue,
+    *,
+    variant_count: int = DEFAULT_VARIANT_CAP,
+    per_issue_reference_block: str = "",
+) -> tuple[str, str]:
     if not PROMPT_PATH.exists():
         raise FileNotFoundError(f"Prompt template missing: {PROMPT_PATH}")
     template = PROMPT_PATH.read_text(encoding="utf-8")
@@ -115,9 +120,14 @@ def build_prompts(idea: IdeaIssue, *, variant_count: int = DEFAULT_VARIANT_CAP) 
     examples = _good_examples_block_text()
     top_block, bottom_block = gather_raw_references()
 
+    per_issue_text = per_issue_reference_block.strip() if per_issue_reference_block else (
+        "(no reference screenshots uploaded to this Issue — use the raw reference cohort below)"
+    )
+
     system_prompt = system_template.format(
         voice_block=voice,
         good_examples_block=examples,
+        per_issue_reference_block=per_issue_text,
     )
 
     entity_list = (
@@ -159,13 +169,18 @@ def generate(
     *,
     client=None,
     variant_count: int = DEFAULT_VARIANT_CAP,
+    per_issue_reference_block: str = "",
 ) -> dict:
     if client is None:
         client = writing_client.get_client()
     if client is None:
         raise RuntimeError("OpenAI writing client unavailable. Set OPENAI_API_KEY.")
 
-    system_prompt, user_prompt = build_prompts(idea, variant_count=variant_count)
+    system_prompt, user_prompt = build_prompts(
+        idea,
+        variant_count=variant_count,
+        per_issue_reference_block=per_issue_reference_block,
+    )
     image_payload = _prepare_image_payload(idea.image_urls)
     raw = writing_client.generate_text(
         client, system_prompt, user_prompt, image_urls=image_payload
@@ -250,8 +265,31 @@ def run(
     client=None,
     variant_count: int = DEFAULT_VARIANT_CAP,
 ) -> MinimalResult:
-    """End-to-end: fetch → generate → write. No Issue comments."""
+    """End-to-end: fetch → analyze references → generate → write. No Issue comments."""
+    from . import issue_reference_analyzer  # noqa: PLC0415
+
     idea = fetch_issue(repo, token, issue_number)
-    response = generate(idea, client=client, variant_count=variant_count)
+
+    per_issue_block = ""
+    per_issue_report = None
+    if idea.reference_image_urls:
+        try:
+            per_issue_report = issue_reference_analyzer.analyze(idea, client=client)
+            if per_issue_report:
+                per_issue_block = issue_reference_analyzer.cohort_summary_for_prompt(
+                    per_issue_report
+                )
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Per-Issue reference analysis failed: %s", exc)
+
+    response = generate(
+        idea,
+        client=client,
+        variant_count=variant_count,
+        per_issue_reference_block=per_issue_block,
+    )
     parent_dir = draft_dir_for(idea)
-    return write_outputs(idea, response, parent_dir)
+    result = write_outputs(idea, response, parent_dir)
+    if per_issue_report:
+        issue_reference_analyzer.write_to_drafts_dir(per_issue_report, result.target_dir)
+    return result
