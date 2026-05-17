@@ -1,39 +1,47 @@
-# variant_2 — story
+# variant_2 — Conference recap through the production questions that actually matter
 
-**Intended audience:** Engineers and architects working on AI workflows, orchestration, and resilient distributed systems
-**Why it may perform:** Uses a concrete scene from the conference, keeps the lesson tight, and turns an event recap into a production engineering insight instead of generic conference praise.
-**Risks:** Less specific about individual speakers or sessions because the raw idea did not provide them directly.
+**Intended audience:** Engineers and technical leads evaluating how to run long-lived workflows and AI systems reliably in production.
+**Why it may perform:** It is highly scannable, grounded in the conference, and reframes the event around practical engineering questions that senior readers care about.
+**Risks:** Because there are no raw-idea specifics beyond the title, it cannot include richer named scenes or people that would make it feel more vivid.
 
 ---
 
-The most useful moment at Replay by Temporal happened in a room full of laptops, not on the main stage.
+I went into Temporal Replay expecting talks.
 
-I went to Replay by Temporal expecting good talks.
+I came away thinking about incident prevention.
 
-I left thinking much harder about what production-grade AI actually requires.
+That was the value of Temporal Replay for me.
 
-One moment captured it for me.
+The best part of the conference was not any single flashy idea.
+It was hearing the same production questions come up again and again in different forms.
 
-I was sitting in a packed session at Temporal Replay. Rows of engineers had their laptops open. On the screen was a workflow diagram, not a flashy product screenshot. The speaker was walking through execution paths and failure boundaries while people around me were taking photos of the slide.
+Questions like:
 
-That scene said a lot.
+• How do you recover cleanly after partial progress?
+• How do you make replay safe?
+• How do you debug a workflow months later?
+• How do you keep long-running execution correct across code changes?
 
-The room was not reacting to novelty.
+Those are not niche concerns.
+They show up anywhere durable execution meets real business logic.
 
-It was reacting to correctness.
+That is also why Temporal keeps showing up in serious AI systems.
+Once an agent runs longer than a single request, touches external APIs, or needs human approval, the hard part stops being model quality.
 
-Later, walking through the venue under the big Replay by Temporal signage, and then past giant Ziggy floating over the hall, I kept thinking about the same thing: the interesting part of agentic AI is no longer just model behavior.
+The hard part becomes correctness over time.
 
-It's recovery.
+Temporal Replay was a good reminder that production engineering is mostly about handling the moments where reality refuses to follow the happy path.
 
-It's replay.
+Retries.
+Timeouts.
+Replays.
+Versioning.
+Auditability.
 
-It's what happens after timeout, crash, deploy, duplicate event, or partial completion.
+Boring words.
+Very expensive when ignored.
 
-That was the real value of being there in person. Temporal Technologies brought together a crowd that cares about the unglamorous parts of systems design, and those are exactly the parts that decide whether an AI workflow survives production.
+I like conferences that leave me with sharper questions, not just more notes.
+Temporal Replay did that.
 
-My biggest lesson from the conference:
-
-The future of AI agents will be shaped less by clever prompts and more by durable execution.
-
-What was your strongest signal from Replay by Temporal this year?
+If you were at Temporal Replay too, what topic stuck with you most after the conference ended?

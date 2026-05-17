@@ -1,44 +1,43 @@
-# variant_3 — tactical
+# variant_3 — Why an event about replay matters beyond Temporal users
 
-**Intended audience:** Practitioners evaluating AI agent architectures, orchestration systems, and workflow reliability
-**Why it may perform:** Highly saveable format with a concrete checklist, grounded in the conference context and aligned with the ICP's operational concerns.
-**Risks:** Because this is an EXPERIENCE topic, it avoids code and uses tactical questions instead; some readers may expect more explicit references to individual talks.
+**Intended audience:** Architects, staff engineers, and AI infrastructure engineers thinking about determinism, idempotency, and long-running execution.
+**Why it may perform:** It takes a conference name and broadens it into a durable systems thesis, which can attract readers beyond attendees while still signaling expertise.
+**Risks:** This is the most conceptual of the variants and may feel less personal than a stronger event recap with concrete people or moments.
 
 ---
 
-I came back from Replay by Temporal with a simpler filter for evaluating AI systems.
+Temporal Replay was nominally about Temporal.
 
-Conferences can overload you with ideas.
+But the bigger lesson was about software architecture.
 
-Replay by Temporal gave me a better checklist.
-
-If a team says they are building agentic AI, I now want four answers immediately:
-
-• What is the unit of durable progress?
-• What gets retried automatically?
-• What is replay-safe versus side-effecting?
-• How do you recover after a worker crash or deploy?
-
-That sounds basic.
-
+Replay sounds like an implementation detail.
 It isn't.
 
-At Temporal Replay, the strongest signal was that more teams are finally treating AI systems like long-running distributed systems instead of chat wrappers.
+It is one of those concepts that forces you to separate code that is merely convenient from code that is actually correct.
 
-You could see it in the rooms.
+At Temporal Replay, that was the thread I kept coming back to.
 
-Packed sessions. Architecture diagrams on screen. Engineers with laptops open, not just phones out. Long hallway conversations in the lounge areas. Even the giant Ziggy and the huge Replay by Temporal stage branding felt secondary to what people were actually discussing.
+If your workflow logic depends on non-deterministic behavior, replay exposes it.
+If your side effects are in the wrong place, replay exposes it.
+If your recovery story is vague, replay exposes it.
 
-The practical takeaway for me is this:
+That is why I think conferences like Temporal Replay matter even for engineers who are not deep in the Temporal ecosystem yet.
 
-If your AI workflow cannot answer those four questions, it is still a demo.
+They push the conversation away from framework preference and toward more important questions:
 
-That is the standard I am bringing back from Temporal Technologies this year.
+What state is durable?
+What can be retried safely?
+What must be idempotent?
+What can be reconstructed from history?
 
-Not because it sounds rigorous.
+Those questions apply just as much to AI agents as they do to payments, fulfillment, or approvals.
 
-Because these are exactly the questions that show up once real traffic, retries, and partial failures hit.
+The industry still spends too much time on the intelligence layer and not enough on the execution layer.
 
-My post-conference checklist got shorter, but stricter.
+Temporal Replay was a useful correction.
 
-What questions are on your own production-readiness checklist for AI agents after Replay by Temporal?
+For me, the strongest takeaway from Temporal Replay was simple:
+if a system has to survive time, crashes, deploys, and humans, replay is not trivia.
+It is design pressure.
+
+Would love to hear whether other people see replay as a Temporal-specific concern or a broader architecture mindset.
