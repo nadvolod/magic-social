@@ -14,7 +14,6 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 DEFAULT_WRITING_MODEL = "gpt-5.4"
-DEFAULT_MAX_TOKENS = 8000
 DEFAULT_TEMPERATURE = 0.7
 
 
@@ -43,21 +42,25 @@ def generate_text(
     user: str,
     *,
     model: Optional[str] = None,
-    max_tokens: int = DEFAULT_MAX_TOKENS,
+    max_tokens: Optional[int] = None,
     temperature: float = DEFAULT_TEMPERATURE,
 ) -> str:
     """Call OpenAI chat completion and return the response text.
 
-    Raises any underlying SDK exception — callers decide whether to retry or fall back.
+    By default no output cap is sent — callers that need one can pass `max_tokens`
+    explicitly. Raises any underlying SDK exception — callers decide whether to
+    retry or fall back.
     """
     chosen_model = model or resolve_writing_model()
-    response = client.chat.completions.create(
-        model=chosen_model,
-        messages=[
+    kwargs = {
+        "model": chosen_model,
+        "messages": [
             {"role": "system", "content": system},
             {"role": "user", "content": user},
         ],
-        temperature=temperature,
-        max_completion_tokens=max_tokens,
-    )
+        "temperature": temperature,
+    }
+    if max_tokens is not None:
+        kwargs["max_completion_tokens"] = max_tokens
+    response = client.chat.completions.create(**kwargs)
     return (response.choices[0].message.content or "").strip()

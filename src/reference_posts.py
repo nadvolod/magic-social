@@ -252,7 +252,7 @@ def analyze_event(
         raise RuntimeError("OpenAI writing client unavailable. Set OPENAI_API_KEY.")
 
     report = writing_client.generate_text(
-        writing_cli, system_prompt, user_prompt, max_tokens=2500
+        writing_cli, system_prompt, user_prompt
     )
 
     paths = EventPaths.for_slug(slug)
