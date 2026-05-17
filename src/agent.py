@@ -1373,6 +1373,20 @@ Examples:
         help="Print the synthesized voice guide to stdout without writing playbook/voice.md",
     )
 
+    # generate-minimal command (experiment)
+    minimal_parser = subparsers.add_parser(
+        "generate-minimal",
+        help="EXPERIMENT: generate drafts using raw references (no Do/Avoid rules)",
+    )
+    minimal_parser.add_argument("--repo", required=True, help="owner/repo")
+    minimal_parser.add_argument("--issue", type=int, required=True, help="Issue number")
+    minimal_parser.add_argument(
+        "--variants",
+        type=int,
+        default=5,
+        help="Cap on number of variants (default: 5). Model may produce fewer.",
+    )
+
     # judge-variants command
     judge_parser = subparsers.add_parser(
         "judge-variants",
@@ -1384,6 +1398,11 @@ Examples:
         "--model",
         default=None,
         help="Override the evaluation model (default: gpt-5.4-mini or $JUDGE_MODEL)",
+    )
+    judge_parser.add_argument(
+        "--drafts-dir",
+        default=None,
+        help="Explicit drafts directory to judge (default: latest for the Issue under drafts/).",
     )
 
     # retrospective command
@@ -1747,13 +1766,28 @@ Examples:
                 f"({sources.source_counts()})"
             )
 
+    elif args.command == "generate-minimal":
+        from .minimal_generator import run as run_minimal  # noqa: PLC0415
+        result = run_minimal(
+            repo=args.repo,
+            token=token,
+            issue_number=args.issue,
+            variant_count=args.variants,
+        )
+        print(f"✅ Wrote minimal-prompt drafts: {result.target_dir}")
+        print(f"   Variants generated: {len(result.variant_paths)}")
+        print(f"   Emotional core: {result.raw_response.get('emotional_core', '')}")
+
     elif args.command == "judge-variants":
+        from pathlib import Path as _Path  # noqa: PLC0415
         from .variant_judge import run_judge  # noqa: PLC0415
+        explicit_dir = _Path(args.drafts_dir) if args.drafts_dir else None
         report_path, verdict = run_judge(
             issue_number=args.issue,
             repo=args.repo,
             token=token,
             model=args.model,
+            drafts_dir=explicit_dir,
         )
         print(f"📊 Judge report: {report_path}")
         if verdict.passed:

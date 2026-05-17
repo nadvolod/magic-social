@@ -1,0 +1,66 @@
+{
+  "variant_1": {
+    "angle": "Replay 2026 convinced me durable AI orchestration is becoming infrastructure, not a niche",
+    "rubric_total": 65.0,
+    "rubric_breakdown": {
+      "hook": 16.0,
+      "structure": 4.0,
+      "proof": 5.0,
+      "cta": 20.0,
+      "clarity": 20.0
+    },
+    "rubric_issues": [
+      "Include an indented code/config snippet for concrete teaching value.",
+      "Post length is far from target (1762 chars; target 800-1500).",
+      "Add measurable proof (numbers, before/after, or concrete outcomes)."
+    ]
+  },
+  "variant_2": {
+    "angle": "The best part of Replay 2026 was the people behind the systems",
+    "rubric_total": 72.0,
+    "rubric_breakdown": {
+      "hook": 20.0,
+      "structure": 7.0,
+      "proof": 5.0,
+      "cta": 20.0,
+      "clarity": 20.0
+    },
+    "rubric_issues": [
+      "Include an indented code/config snippet for concrete teaching value.",
+      "Post length is slightly off target (1603 chars).",
+      "Add measurable proof (numbers, before/after, or concrete outcomes)."
+    ]
+  },
+  "variant_3": {
+    "angle": "What I learned TAing the Nexus and AI workshops at Replay 2026",
+    "rubric_total": 68.0,
+    "rubric_breakdown": {
+      "hook": 16.0,
+      "structure": 7.0,
+      "proof": 5.0,
+      "cta": 20.0,
+      "clarity": 20.0
+    },
+    "rubric_issues": [
+      "Include an indented code/config snippet for concrete teaching value.",
+      "Post length is slightly off target (1629 chars).",
+      "Add measurable proof (numbers, before/after, or concrete outcomes)."
+    ]
+  },
+  "variant_4": {
+    "angle": "Replay 2026 was a rare conference that got both the systems thinking and the atmosphere right",
+    "rubric_total": 68.0,
+    "rubric_breakdown": {
+      "hook": 16.0,
+      "structure": 7.0,
+      "proof": 5.0,
+      "cta": 20.0,
+      "clarity": 20.0
+    },
+    "rubric_issues": [
+      "Include an indented code/config snippet for concrete teaching value.",
+      "Post length is slightly off target (1548 chars).",
+      "Add measurable proof (numbers, before/after, or concrete outcomes)."
+    ]
+  }
+}
