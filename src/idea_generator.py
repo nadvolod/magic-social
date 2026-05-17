@@ -93,11 +93,17 @@ def _extract_image_urls(body: str, limit: int = MAX_IMAGES_PER_ISSUE) -> list[st
 
 
 def fetch_issue(repo: str, token: str, issue_number: int) -> IdeaIssue:
-    """Fetch and parse an Issue created from the content_idea template."""
+    """Fetch and parse an Issue created from the content_idea template.
+
+    Requests `application/vnd.github.html+json` so the payload includes
+    `body_html` — that's where GitHub rewrites user-attachment image URLs
+    into JWT-signed `private-user-images.githubusercontent.com` URLs that
+    can actually be downloaded by automation.
+    """
     url = f"{GITHUB_API}/repos/{repo}/issues/{issue_number}"
     headers = {
         "Authorization": f"Bearer {token}",
-        "Accept": "application/vnd.github+json",
+        "Accept": "application/vnd.github.html+json",
         "X-GitHub-Api-Version": "2022-11-28",
     }
     resp = requests.get(url, headers=headers, timeout=30)
@@ -126,7 +132,7 @@ def parse_issue_payload(payload: dict) -> IdeaIssue:
         supporting_notes=_extract_section(body, "Supporting notes"),
         labels=labels,
         url=payload.get("html_url", ""),
-        image_urls=_extract_image_urls(body),
+        image_urls=_extract_image_urls(payload.get("body_html") or body),
     )
 
 
