@@ -18,7 +18,6 @@ import json
 import logging
 import os
 import re
-import textwrap
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
@@ -395,47 +394,31 @@ def write_drafts(idea: IdeaIssue, variants: dict, target_dir: Path) -> list[Path
     }
     (target_dir / "metadata.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
 
-    source_snapshot = textwrap.dedent(f"""\
-        # Source Issue snapshot — #{idea.number}
-
-        **Title:** {idea.title}
-        **URL:** {idea.url}
-
-        ## Raw idea
-        {idea.raw_idea}
-
-        ## Audience
-        {idea.audience}
-
-        ## Goal
-        {idea.goal}
-
-        ## Angle
-        {idea.angle}
-
-        ## References
-        {idea.references}
-
-        ## Supporting notes
-        {idea.supporting_notes}
-    """)
+    source_snapshot = (
+        f"# Source Issue snapshot — #{idea.number}\n\n"
+        f"**Title:** {idea.title}\n"
+        f"**URL:** {idea.url}\n\n"
+        f"## Raw idea\n{idea.raw_idea}\n\n"
+        f"## Audience\n{idea.audience}\n\n"
+        f"## Goal\n{idea.goal}\n\n"
+        f"## Angle\n{idea.angle}\n\n"
+        f"## References\n{idea.references}\n\n"
+        f"## Supporting notes\n{idea.supporting_notes}\n"
+    )
     (target_dir / "source_issue.md").write_text(source_snapshot, encoding="utf-8")
 
     return paths
 
 
 def _format_variant_md(key: str, variant: dict) -> str:
-    return textwrap.dedent(f"""\
-        # {key} — {variant.get('angle', 'unspecified angle')}
-
-        **Intended audience:** {variant.get('intended_audience', '')}
-        **Why it may perform:** {variant.get('why_it_may_perform', '')}
-        **Risks:** {variant.get('risks', '')}
-
-        ---
-
-        {variant.get('post') or variant.get('body') or ''}
-    """)
+    return (
+        f"# {key} — {variant.get('angle', 'unspecified angle')}\n\n"
+        f"**Intended audience:** {variant.get('intended_audience', '')}\n"
+        f"**Why it may perform:** {variant.get('why_it_may_perform', '')}\n"
+        f"**Risks:** {variant.get('risks', '')}\n\n"
+        f"---\n\n"
+        f"{variant.get('post') or variant.get('body') or ''}\n"
+    )
 
 
 def pick_top_variant(scores: dict) -> Optional[str]:
@@ -464,23 +447,17 @@ def build_variant_comment(key: str, variant: dict, score: dict) -> str:
     rubric_total = score.get("rubric_total", 0)
     label = key.replace("_", " ").title()
 
-    return textwrap.dedent(f"""\
-        ## {label} — {angle}
-
-        **Rubric:** {rubric_total:.1f}/100
-
-        ---
-
-        {post_text}
-
-        ---
-
-        - **Audience:** {audience}
-        - **Why it may perform:** {why}
-        - **Risks:** {risks}
-
-        _React 👍 / 👎 to vote, or reply with edits. Highest-voted draft is the one to ship._
-    """)
+    return (
+        f"## {label} — {angle}\n\n"
+        f"**Rubric:** {rubric_total:.1f}/100\n\n"
+        f"---\n\n"
+        f"{post_text}\n\n"
+        f"---\n\n"
+        f"- **Audience:** {audience}\n"
+        f"- **Why it may perform:** {why}\n"
+        f"- **Risks:** {risks}\n\n"
+        f"_React 👍 / 👎 to vote, or reply with edits. Highest-voted draft is the one to ship._\n"
+    )
 
 
 def build_summary_comment(idea: IdeaIssue, target_dir: Path, scores: dict, paths: list[Path]) -> str:
@@ -497,16 +474,13 @@ def build_summary_comment(idea: IdeaIssue, target_dir: Path, scores: dict, paths
         f"- `{k}`: {v.get('rubric_total', 0):.1f}/100 — {v.get('angle', '')}"
         for k, v in ranked
     )
-    return textwrap.dedent(f"""\
-        Generated {len(paths)} LinkedIn drafts — each posted as its own comment above so you can 👍 / 👎 per draft.
-
-        {top_line}
-
-        **Ranked rubric:**
-        {score_lines}
-
-        Markdown copies of each draft also saved under `{rel_dir}/` for reference.
-    """)
+    return (
+        f"Generated {len(paths)} LinkedIn drafts — each posted as its own comment above so you can 👍 / 👎 per draft.\n\n"
+        f"{top_line}\n\n"
+        f"**Ranked rubric:**\n"
+        f"{score_lines}\n\n"
+        f"Markdown copies of each draft also saved under `{rel_dir}/` for reference.\n"
+    )
 
 
 # ---------------------------------------------------------------------------
