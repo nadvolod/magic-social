@@ -1,49 +1,51 @@
 # variant_1 — contrarian
 
-**Intended audience:** Senior engineers building AI agents, distributed systems practitioners, and Temporal users evaluating production architecture
-**Why it may perform:** It uses a contrarian hook, reframes a conference recap into a production systems lesson, and speaks directly to operational pain senior engineers recognize.
-**Risks:** The raw idea is vague, so this draft uses a cautious assumption. It stays credible, but it is less specific than a post grounded in named talks or visible scenes.
+**Intended audience:** Senior engineers building AI agents, distributed systems, and Temporal-based workflows
+**Why it may perform:** Strong contrarian hook, tightly aligned to the ICP, and reframes a conference review into a production-systems lesson that invites comments from experienced practitioners.
+**Risks:** The raw idea lacks concrete scenes or named sessions, so this stays high-level and may feel less vivid than a stronger experience-led post.
 
 ---
 
-Most conference takeaways are useless by Monday.
+Most engineers treat conference reviews as networking content. They're wrong.
 
-Assuming the raw idea is a review of Temporal Replay.
+Temporal Replay was more useful to me as an architectural filter than as an event.
 
-I read a lot of conference recaps that summarize talks.
+I went in expecting the usual conference pattern: good talks, hallway chats, a few notes I'll never revisit.
 
-That's usually the wrong artifact.
+What I actually got from Temporal Replay was a sharper way to evaluate AI agents, distributed systems, and durable execution.
 
-For engineers building production systems, the useful question is simpler:
+The useful question wasn't "what was announced?"
 
-What changed in how you design software after the event?
+It was:
 
-My takeaway from Temporal Replay wasn't a feature list.
+"Which ideas here survive contact with retries, replays, and partial failure?"
 
-It was a sharper reminder that durable execution is not an "agent framework" idea.
-It's an operational correctness idea.
+That's the bar I care about.
 
-The talks and hallway conversations all kept pulling toward the same failure modes:
+Especially for AI engineers building long-running workflows.
 
-• work that gets retried without idempotency
-• long-running processes that die on deploy
-• orchestration logic mixed with side effects
-• systems that look fine in demos and break under replay
+A lot of agent demos still ignore the boring parts:
 
-That's the part I think many teams still miss.
+- crash recovery
+- replay safety
+- idempotency
+- resumability after deploys
+- auditability when a model makes a bad call
 
-A lot of AI engineers are trying to make agents smarter.
+Temporal Replay reinforced something I've learned the hard way:
 
-The more urgent problem is making them survivable.
+If a system can't survive replay, it probably isn't production-ready.
 
-If a 20-minute workflow crashes at minute 19, I care less about prompt quality than whether the system resumes correctly.
+That's true whether you're building with Temporal, wiring up durable execution, or trying to make AI agents do real work over hours instead of minutes.
 
-That was the strongest signal I took away from Replay.
+My main takeaway from Temporal Replay wasn't a feature.
 
-The lesson:
+It was a standard.
 
-Production AI is converging with distributed systems.
+Demo-quality systems optimize for a clean first run.
 
-The teams that treat agents like durable workflows will outlast the teams treating them like chat sessions.
+Production systems optimize for the second run, the restart, and the weird failure at 2 a.m.
 
-If you were at Temporal Replay too, what idea actually changed your architecture?
+That's the review I keep coming back to after Temporal Replay.
+
+When you review conference ideas now, are you looking for novelty or survivability?

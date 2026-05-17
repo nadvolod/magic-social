@@ -1,20 +1,21 @@
 # variant_5 — short engagement
 
-**Intended audience:** Busy senior engineers and AI infra builders who respond to concise, high-signal claims
-**Why it may perform:** It is short, sharp, and comment-friendly, with a clear contrast between demo and production concerns.
-**Risks:** It is intentionally compressed, so it has less concrete scene-setting than the longer variants.
+**Intended audience:** Engineers who want a concise production-systems take on Temporal Replay
+**Why it may perform:** Short, sharp, and discussion-oriented; easy to read quickly while still signaling strong technical taste.
+**Risks:** Very concise and not richly grounded due to the sparse raw idea.
 
 ---
 
-Temporal Replay reinforced something I already suspected.
+Temporal Replay reinforced a belief I keep coming back to.
 
-The hard part of production AI isn't getting an agent to do step 1.
+AI agents are usually judged by output quality.
 
-It's getting step 17 to resume correctly after a crash, retry safely, and leave an audit trail.
+They should be judged by failure behavior.
 
-That's why durable execution keeps showing up in serious engineering conversations.
+For me, the real value of Temporal, durable execution, and good distributed systems design is simple:
 
-Demos optimize for capability.
-Production optimizes for recovery.
+What happens after the crash, retry, or replay?
 
-What production failure mode do you think AI teams still underestimate most?
+That's the line between a demo and a product.
+
+What was your biggest takeaway from Temporal Replay?

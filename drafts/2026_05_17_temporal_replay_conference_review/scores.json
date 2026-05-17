@@ -1,9 +1,9 @@
 {
   "variant_1": {
     "angle": "contrarian",
-    "rubric_total": 71.0,
+    "rubric_total": 75.0,
     "rubric_breakdown": {
-      "hook": 16.0,
+      "hook": 20.0,
       "structure": 10.0,
       "proof": 5.0,
       "cta": 20.0,
@@ -71,7 +71,7 @@
     },
     "rubric_issues": [
       "Include an indented code/config snippet for concrete teaching value.",
-      "Post length is far from target (453 chars; target 800-1500).",
+      "Post length is far from target (404 chars; target 800-1500).",
       "Add measurable proof (numbers, before/after, or concrete outcomes)."
     ]
   }

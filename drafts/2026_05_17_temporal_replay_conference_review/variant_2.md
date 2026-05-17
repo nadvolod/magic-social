@@ -1,47 +1,53 @@
 # variant_2 — story
 
-**Intended audience:** Engineers who attend systems conferences, AI infrastructure builders, and practitioners dealing with long-running workflows
-**Why it may perform:** It uses a first-person conference scene, stays grounded in recognizable engineer conversations, and turns the event into a practical production lesson.
-**Risks:** Because no concrete photos or session details were provided, the story uses generalized but plausible scenes instead of named speakers or exact moments.
+**Intended audience:** Engineers who attend infrastructure conferences and care about turning event takeaways into production decisions
+**Why it may perform:** Uses a first-person conference story frame, keeps the lesson concrete for the ICP, and ends with a relevant discussion question likely to draw practitioner responses.
+**Risks:** Because the raw idea contains no named people, sessions, or scenes, the story is more reflective than cinematic.
 
 ---
 
-The most useful part of Temporal Replay probably wasn't on stage.
+I went to Temporal Replay expecting conference notes and left with a stricter standard for AI systems.
 
-Assuming the raw idea is a conference review.
+At Temporal Replay, I wasn't looking for inspiration.
 
-The part that stuck with me wasn't a polished demo.
+I was looking for signal.
 
-It was the repeated pattern in side conversations between engineers.
+I'm spending most of my time thinking about AI engineers, distributed systems, and durable execution.
 
-Different teams.
-Different products.
-Same class of bugs.
+So while listening and taking notes, I kept translating everything back to one practical question:
 
-Someone describes a workflow that restarts in the wrong place.
-Someone else mentions retries that looked safe until duplicate side effects showed up.
-Another engineer talks about long-running AI work that behaved in staging and fell apart after deploys.
+What actually survives production?
 
-That's why I liked Replay.
+That changed how I experienced the event.
 
-It didn't feel like a conference about abstract orchestration.
+Instead of asking whether an idea was clever, I kept asking whether it would hold up under replay, retries, and restarts.
 
-It felt like a conference about all the boring failure modes that decide whether a system survives production.
+That's the moment that stuck with me from Temporal Replay.
 
-That matters to me because a lot of AI discussion still lives at the prompt layer.
+Not a flashy demo.
 
-But once your system runs for minutes, spans services, and touches real state, the problems get very old-fashioned:
+Not a big launch.
 
-timeouts
-retries
-replay
-idempotency
-recovery
+Just the repeated reminder that durable execution changes what "done" means.
 
-The lesson I left with was simple.
+For toy systems, success is getting the workflow to run once.
 
-Durable execution is easiest to appreciate after you've already been burned.
+For real systems, success is recovering cleanly when something fails halfway through.
 
-The teams leaning into it early will waste fewer months rediscovering the same failure modes.
+That matters even more for AI agents.
 
-For people who were there, what conversation or talk kept replaying in your head afterward?
+A research agent that runs for 20 minutes, calls multiple tools, and writes state along the way is not a prompt problem.
+
+It's a distributed systems problem.
+
+Temporal Replay sharpened that for me.
+
+The review, in one line:
+
+If your architecture depends on nothing weird happening, it isn't ready.
+
+That's why I found Temporal Replay valuable.
+
+It pulled the conversation back toward durable execution and away from demo theater.
+
+What was your biggest production-grade takeaway from Temporal Replay?
