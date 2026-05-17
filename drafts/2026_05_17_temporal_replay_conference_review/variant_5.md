@@ -1,23 +1,23 @@
 # variant_5 — short engagement
 
-**Intended audience:** Engineers interested in production reliability, workflow orchestration, and durable execution
-**Why it may perform:** Short, clear, and comment-friendly. Easy for engineers to respond with their own conference lessons.
-**Risks:** Very concise and not highly differentiated without more specific conference details.
+**Intended audience:** Engineers working on AI agents, workflow orchestration, and durable execution
+**Why it may perform:** Short, sharp, and comment-friendly with a clear claim tied to an observed conference signal
+**Risks:** Less event-specific detail than the longer variants, so it may feel more like an insight post than a conference review
 
 ---
 
-Temporal Replay reinforced a belief I keep coming back to.
+Replay confirmed something I have been seeing all year.
 
-The best engineering conferences are not about features.
+Serious AI engineering is moving down the stack.
 
-They're about failure modes.
+The interesting conversations are no longer just about models.
 
-What happens after the timeout.
-After the crash.
-After the deploy lands mid-workflow.
+They are about retries, replay, resumability, and what happens after step 4 fails.
 
-That's the part that decides whether a system is real.
+At Replay, the packed rooms and best hallway chats kept coming back to the same thing:
 
-Replay felt strongest when the conversation stayed there.
+boring infrastructure wins.
 
-What's the most useful production lesson you've ever taken home from a conference?
+The lesson: production AI gets decided by recovery semantics, not demo quality.
+
+What infrastructure question are more teams finally starting to ask?

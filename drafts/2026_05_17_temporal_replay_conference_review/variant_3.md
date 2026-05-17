@@ -1,45 +1,45 @@
 # variant_3 — tactical
 
-**Intended audience:** Staff/principal engineers choosing workflow, agent, or durable execution infrastructure
-**Why it may perform:** Highly saveable format, practical checklist, and directly relevant to framework evaluation decisions.
-**Risks:** Less emotionally engaging than a more scene-based conference recap. Also depends on the audience caring about tool selection.
+**Intended audience:** Staff and principal engineers evaluating agent architectures and orchestration frameworks
+**Why it may perform:** List structure is easy to scan, highly actionable, and tied directly to production concerns the ICP values
+**Risks:** Because this is an EXPERIENCE topic, it avoids code; readers expecting a deeper Temporal implementation detail may want a follow-up post
 
 ---
 
-My biggest takeaway from Temporal Replay: evaluate orchestration tools with 5 failure questions.
+Replay reinforced a simple checklist I now use for every AI agent architecture.
 
-Assuming this was a conference review built around practical takeaways.
+If a system cannot survive interruption, I do not consider it production-ready.
 
-Replay reinforced something I keep seeing in production.
+That was the recurring theme I heard across sessions and hallway conversations.
 
-Teams compare workflow and agent tooling on developer experience first.
+Not model quality.
 
-I think that's backwards.
+Not prompt tricks.
 
-The better filter is failure handling.
+Recovery.
 
-The 5 questions I'd now ask after this event:
+Watching packed rooms dig into workflow diagrams and long-running execution made the pattern hard to miss.
 
-1. What happens if a worker crashes mid-step?
-2. What happens if the process restarts during a deploy?
-3. Can the system resume without redoing completed work?
-4. Where is retry behavior defined and audited?
-5. What prevents non-deterministic orchestration logic?
+So here is the practical filter I would apply before shipping any agent:
 
-If a tool answers those clearly, I'm interested.
+1. Can each step be retried safely?
+2. Can the process resume after a worker crash?
+3. Can you inspect state mid-run?
+4. Can you change code without corrupting in-flight work?
+5. Can you explain what happened after the fact?
 
-If it mostly shows happy-path demos, I'm skeptical.
+If I get a "no" on any of those, I know where the incident will come from.
 
-That's what made Replay useful for me.
+A lot of agent stacks still look great in a demo and weak under interruption.
 
-It kept bringing the conversation back to operational mechanics instead of abstractions.
+That is exactly why durable execution keeps coming up.
 
-Especially for AI agents, that matters.
+The strongest signal at Replay was not branding.
 
-A 20-minute task is not impressive if a timeout forces you to restart from zero.
+It was seeing rooms full of engineers spend their time on the boring questions that decide whether a system survives contact with production.
 
-A multi-step workflow is not reliable if retries duplicate side effects.
+The lesson:
 
-The lesson: evaluate orchestration systems by recovery behavior, not demo quality.
+For AI agents, the architecture review should start with recovery semantics, not model choice.
 
-What failure question do you ask first when you're evaluating workflow or agent infrastructure?
+What is the first question on your production-readiness checklist for agent systems?

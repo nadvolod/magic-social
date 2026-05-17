@@ -1,45 +1,49 @@
 # variant_4 — authority
 
-**Intended audience:** Senior and principal engineers connecting Temporal, workflow orchestration, and AI agent reliability
-**Why it may perform:** Builds authority through pattern recognition and ties conference observations to a broader industry shift around AI in production.
-**Risks:** Could read as too broad if the audience expected a more literal conference recap with named talks or people.
+**Intended audience:** Senior technical decision-makers tracking where AI agent infrastructure is heading
+**Why it may perform:** Builds authority through observed pattern recognition, uses concrete conference scenes, and frames a broader industry shift relevant to the ICP
+**Risks:** The authority claim is qualitative rather than numeric, so it relies on credibility of observation
 
 ---
 
-After enough distributed systems events, the useful ones all share one trait.
+After enough distributed systems conferences, a pattern becomes obvious.
 
-They spend less time on features and more time on failure modes.
+The talks people remember are rarely the ones about features.
 
-That's why Temporal Replay landed well for me.
+They are the ones that explain where systems break.
 
-Assuming this summary matches the event: the strongest signal wasn't any single announcement.
+Replay felt like a strong example of that.
 
-It was the consistency of the underlying theme.
+I saw packed sessions, long Q&A lines, and workshop rooms where nearly every seat had an open laptop.
 
-The serious conversations were about things like:
-- durable state
-- replay-safe orchestration
-- retries with side effects
-- long-running execution across crashes and deploys
+The visual details were fun too.
 
-I've noticed this pattern across good engineering events.
+A giant REPLAY stage.
+A huge floating mascot in the venue.
+A retro game band on stage.
 
-The talks I remember six months later are rarely the most polished ones.
+But those are not why engineers flew in.
 
-They're the ones that explain what broke in production, why the first design failed, and what changed afterward.
+The real draw was practical depth.
 
-Replay felt aligned with that.
+You could hear it in the conversations.
 
-And that matters even more now because AI systems are starting to inherit all the old distributed systems problems.
+Engineers comparing notes on long-running workflows.
+People asking about versioning and replay.
+Teams trying to make AI agents recover cleanly instead of restarting from scratch.
 
-Only now they're wrapped in slower, more expensive, less predictable components.
+That matters.
 
-So the old questions matter again:
-Can you resume?
-Can you audit?
-Can you retry safely?
-Can you recover without corruption?
+Because it signals where the market is maturing.
 
-The lesson: durable execution is becoming less of a niche workflow concern and more of a default production requirement.
+A year ago, many AI conversations centered on model choice.
 
-Have you started treating AI orchestration as a distributed systems problem yet, or are most teams still in demo mode?
+Now more of the serious ones center on orchestration, durability, and operational failure modes.
+
+That shift is exactly what I hoped to see.
+
+The lesson:
+
+When a technical community starts obsessing over recovery instead of novelty, the category is growing up.
+
+What topic do you think is replacing pure model talk in serious AI engineering teams?
