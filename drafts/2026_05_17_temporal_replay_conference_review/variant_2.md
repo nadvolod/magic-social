@@ -1,50 +1,43 @@
-# variant_2 — The room that convinced me durable AI is becoming real
+# variant_2 — Why Replay made the future of AI orchestration feel real
 
-**Intended audience:** Engineers building production AI systems, workflow platform users, and technical leaders thinking about orchestration and reliability
-**Why it may perform:** It gives a sharper point of view than a standard event recap and ties the conference directly to a meaningful industry shift from model-centric thinking to infrastructure-centric thinking.
-**Risks:** It makes a broader industry claim, so some readers may want more explicit examples or disagree with the framing.
+**Intended audience:** Senior engineers and architects building AI systems who are wrestling with orchestration, reliability, and production readiness.
+**Why it may perform:** It turns the event into a broader systems insight, names concrete entities, and gives readers a clear production-level takeaway to discuss.
+**Risks:** If readers want a pure conference recap, the forward-looking framing may feel more interpretive than descriptive.
 
 ---
 
-The most interesting part of Replay 2026 wasn't the branding.
+Replay 2026 made one thing feel very clear: durable execution is becoming core AI infrastructure.
 
-It was the room.
+I was at the conference as a teaching assistant for two workshops, and the signal was hard to miss.
 
-I sat in a workshop at Temporal Replay with rows of engineers on laptops, a Replay sign near the stage, and slide after slide on how these systems actually work.
+Across the Nexus workshop with Mason, the AI workshop with Melissa, and the broader conversations in the halls, the same theme kept showing up:
 
-Not AI as theater.
+AI systems are easy to demo.
+They are much harder to run reliably.
 
-AI as infrastructure.
+That is why this event mattered.
 
-That distinction matters more than most people think.
+This was not a conference about vague AI optimism.
+It was 2,000+ engineers trying to understand orchestration, recovery, long-running workflows, and how to build distributed systems that keep working when models, networks, and services do not.
 
-Outside the conference, a lot of the conversation is still about models.
+Hearing companies like Netflix and OpenAI talk about using Temporal to scale AI operations made that shift feel concrete.
 
-Inside Replay by Temporal, the center of gravity felt different:
+We are moving past the phase where the hard part is calling a model.
+The hard part is everything around it:
+retries,
+timeouts,
+state,
+human-in-the-loop steps,
+and surviving failure without losing work.
 
-- orchestration
-- recovery
-- long-running execution
-- state
-- failure handling
-- what happens after deploy day
+That is also why I enjoyed supporting the workshops so much.
+You could see people connecting the ideas to production realities in real time.
 
-That's the layer I'm increasingly convinced matters most.
+And honestly, the secret Tiki room helped too.
+Live music, sonic gameplay, glow-in-the-dark cotton candy.
+A reminder that the best technical communities are built by humans, not just architectures.
 
-The flashy part of agentic AI is easy to demo.
+Huge thanks to Temporal for hosting Replay.
+I left with a lot to apply, and even more conviction about where AI systems are heading.
 
-The hard part is making it resumable, observable, and correct when a task runs for minutes, hours, or days.
-
-That's why the workshop room stood out to me.
-
-It wasn't just full.
-
-It was focused.
-
-People were following architecture diagrams, testing ideas, asking implementation questions, and treating durable execution like a real engineering discipline, not a buzzword.
-
-Even the rest of the event reinforced that feeling: the packed halls, the conversations with Vickie Ma and others from the Temporal community, the giant Ziggy somehow watching over all of it.
-
-I came back from Replay more convinced that the infrastructure layer around AI is where a lot of the real work still is.
-
-Are you seeing the same shift in your own teams, from model fascination to systems design?
+What part of AI orchestration still feels underbuilt to you in production today?

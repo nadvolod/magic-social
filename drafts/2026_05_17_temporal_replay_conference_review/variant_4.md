@@ -1,54 +1,38 @@
-# variant_4 — Grateful for the people behind the durable execution community
+# variant_4 — One scene that captured what made Replay special
 
-**Intended audience:** The Temporal ecosystem, senior engineers, conference participants, and builders who value technical community
-**Why it may perform:** It directly expresses gratitude, which fits the emotional core, while still grounding that gratitude in concrete conference scenes and engineering substance.
-**Risks:** It is less optimized for debate or tactical saves, and may attract more warm agreement than deep discussion.
+**Intended audience:** Engineers who value both technical depth and the communities shaping production AI infrastructure.
+**Why it may perform:** It centers on a vivid scene, making the post more memorable and shareable than a generic event summary while still grounding it in technical relevance.
+**Risks:** This is the most reflective variant, so it may attract fewer saves from readers looking for a tactical takeaway.
 
 ---
 
-The best part of Replay 2026 was the people behind it.
+The secret Tiki room at Replay 2026 explained the whole conference better than any slogan could.
 
-Conferences are easy to judge by keynote slides, logos, or attendance.
+A few hours earlier, I was helping at the Nexus workshop led by Mason and the AI workshop led by Melissa.
+The conversations were about durable orchestration, distributed systems, and what it takes to make AI useful in production.
 
-But the part I value most is harder to measure.
+Then later:
+live music,
+sonic gameplay,
+and glow-in-the-dark cotton candy.
 
-It's the people who make the whole thing feel alive.
+That contrast was perfect.
 
-At Temporal Replay, that showed up everywhere.
+Replay was full of serious technical depth.
+You could feel it in the sessions, in the questions, and in the talks from companies like Netflix and OpenAI on scaling AI operations with Temporal.
 
-In the workshop rooms full of engineers actually building.
+But what made it memorable was that it never felt sterile.
+It felt human.
 
-In the conversations between sessions.
+2,000+ engineers showed up to learn how to build better systems.
+What I did not expect was how much I’d also leave appreciating the community around that work.
 
-In the photos with Vickie Ma and others from the Temporal community.
+I’m grateful I got to support the workshops.
+I’m grateful to Temporal for hosting it.
+And I’m grateful for the people I met there.
 
-In the lounge spaces where people kept talking long after the official schedule moved on.
+The future of AI infrastructure will be built with boring things like orchestration, recovery, and state management.
 
-And yes, even under giant Ziggy floating over the venue.
+But it will also be built by communities that know how to learn together.
 
-What I appreciated most was how little of it felt performative.
-
-The strongest conversations were about real systems problems:
-
-- how to recover long-running work
-- how to make AI agents resumable
-- how to think about orchestration boundaries
-- how to build for failure instead of demos
-
-That made Replay by Temporal feel different from a lot of tech events.
-
-It felt like a conference for builders.
-
-Not just people watching the trend.
-
-People carrying the operational burden of making it work.
-
-I'm grateful to everyone who organized it, spoke, taught, or just took time to talk.
-
-Communities like this don't happen by accident.
-
-They happen because a lot of people quietly do the work.
-
-And you could feel that all through Replay 2026.
-
-Thank you to the Temporal community for building something this thoughtful.
+That is what I’ll remember most from Replay.

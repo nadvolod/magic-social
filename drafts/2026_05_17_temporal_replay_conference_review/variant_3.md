@@ -1,47 +1,44 @@
-# variant_3 — One conference, three scenes I keep thinking about
+# variant_3 — The workshop view of what engineers actually need from AI infrastructure
 
-**Intended audience:** Distributed systems engineers, conference-going builders, and people active in the Temporal and AI infra ecosystem
-**Why it may perform:** It is highly scannable, emotionally grounded, and built around memorable scenes that make the post feel lived-in rather than generic.
-**Risks:** It is more reflective than authoritative, so readers looking for a hard technical lesson may skip it.
+**Intended audience:** Engineers building AI systems in production who want grounded signals from what peers are actually struggling with.
+**Why it may perform:** It uses the workshop vantage point as a credible, first-person lens and mixes practical production concerns with memorable event details.
+**Risks:** Because it avoids hard technical specifics, some readers may want more concrete implementation lessons.
 
 ---
 
-I usually forget conference details fast.
+Helping in workshops at Replay 2026 was a better signal than any keynote.
 
-I'm still thinking about three scenes from Replay 2026.
+I was lucky enough to support two sessions as a teaching assistant:
+the Nexus workshop led by Mason and the AI workshop led by Melissa.
 
-First: the workshop room.
+That gave me a close-up view of what engineers are actually trying to solve.
 
-Rows of people with laptops open, watching architecture diagrams, asking real implementation questions, and treating durable execution as something to build with, not just admire.
+Not “how do I call an LLM?”
 
-Second: the stage.
+More like:
+How do I orchestrate long-running work?
+How do I recover state after failure?
+How do I make AI systems durable enough for production?
 
-Replay by Temporal had the kind of production value you notice immediately, but what I remember more is the contrast between the big visuals and the very practical conversations they led into.
+That was the real value of Replay for me.
 
-Third: the in-between moments.
+The conference brought together 2,000+ engineers, but the workshops made the trend tangible.
+You could see where the friction is.
+And you could see that durable distributed systems are becoming the real foundation for useful AI applications.
 
-Dinner, hallway chats, quick photo conversations, and the kind of small interactions that turn internet names into actual people.
+The talks from Netflix and OpenAI reinforced that point.
+When companies at that scale are using Temporal for AI operations, it says a lot about where the ecosystem is going.
 
-That part is easy to underestimate.
+But some of my favorite moments were outside the formal sessions too.
+The secret Tiki room, the live music, the sonic gameplay, even the glow-in-the-dark cotton candy.
 
-A lot of this field can feel abstract online.
+Those details sound small.
+They are not.
 
-Then you get into a room with the Temporal community, see Vickie Ma in person, meet other builders, and suddenly the whole space feels more real and more collaborative.
+They are what turn a technical event into a real community.
 
-Even giant Ziggy somehow added to that feeling.
+Huge thanks to Temporal for putting together a conference that felt strong on both fronts: serious systems thinking and real human connection.
 
-A ridiculous inflatable creature hanging over a serious engineering conference should not work.
+I left with new ideas, new respect for the builders in this space, and a long list of things I want to apply.
 
-And yet it did.
-
-Because Replay 2026 didn't feel stiff.
-
-It felt technical, ambitious, and unusually human at the same time.
-
-That's rare.
-
-I came back with new ideas, but also with more appreciation for the people building this ecosystem.
-
-Grateful for the conversations, the generosity, and the reminder that hard systems problems are a lot more fun when you're solving them with a real community.
-
-What moment from a conference has stayed with you longer than the actual talks?
+If you’re building AI in production, what reliability problem are you spending the most time on right now?

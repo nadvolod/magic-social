@@ -1,44 +1,43 @@
-# variant_1 — Why Replay felt bigger than a conference
+# variant_1 — Gratitude for the people and moments that made Replay memorable
 
-**Intended audience:** Senior engineers, AI infra builders, Temporal users, and people working on durable execution systems
-**Why it may perform:** It leads with a human reflection instead of a generic recap, uses concrete scenes from Replay 2026, and connects community energy to production engineering concerns senior builders care about.
-**Risks:** Less tactical than a lesson post, so it depends on readers resonating with the community angle rather than expecting a technical takeaway.
+**Intended audience:** Engineers building AI in production who care about durable systems, community, and the people behind the work.
+**Why it may perform:** It leads with genuine gratitude, uses concrete named scenes and people, and balances technical credibility with human specificity.
+**Risks:** Less tactical than a lesson post, so some readers may see it as a recap rather than a save-worthy technical post.
 
 ---
 
-Replay 2026 reminded me that infrastructure is built by people first.
+Replay 2026 left me feeling deeply grateful for this community.
 
-I went to Temporal Replay expecting strong talks on durable execution and agentic AI.
+I spent the conference surrounded by 2,000+ engineers thinking seriously about durable systems, orchestration, and what AI looks like in production.
 
-I left thinking more about the people than the slides.
+What stayed with me most was not a single slide.
+It was the people.
 
-There were packed rooms, workshop laptops open, hallway conversations that kept running long after the session ended, and that giant Ziggy floating over the venue like a very strange mascot for distributed systems.
+I got to support two workshops as a teaching assistant.
 
-What stayed with me most was the mix.
+The Nexus workshop led by Mason was one of those sessions where you could feel people connecting architecture ideas to real systems they actually have to run.
 
-You could go from a deeply technical session to a casual conversation in the lounge, then end up talking shop again over dinner with people who care about the same hard problems: retries, recovery, orchestration, long-running workflows, and what production AI systems actually need.
+And the AI workshop led by Melissa had that same energy.
+Not demo energy.
+Builders trying to understand what survives contact with production.
 
-That part matters.
+Then there was the secret Tiki room.
+Live music.
+Sonic gameplay.
+Glow-in-the-dark cotton candy.
 
-A lot of AI discourse still lives at the demo layer.
+That combination somehow captured the whole event for me.
+Serious engineering during the day.
+Real human connection at night.
 
-Replay by Temporal felt different.
+I also loved hearing how companies like Netflix and OpenAI are using Temporal to scale AI operations.
+Not as a toy.
+As infrastructure.
 
-It felt like a room full of engineers trying to make real systems survive contact with production.
+Huge thanks to Temporal for hosting something that felt both technically sharp and genuinely human.
 
-The photos capture that better than I can:
+I learned a lot.
+I met people I’m excited to keep learning from.
+And I came home even more convinced that durable execution is going to matter a lot in the next wave of AI systems.
 
-- the full workshop room with everyone on laptops
-- the Replay stage and lighting
-- the group shots with Vickie Ma and the Temporal team
-- the giant Ziggy hanging above everything
-
-Good conferences give you information.
-
-Great ones give you energy, new friends, and a clearer sense of where the field is going.
-
-Replay did that for me.
-
-Grateful to the Temporal community, to everyone I met in the sessions and between them, and to the people building the kind of infrastructure this next wave of AI systems will actually need.
-
-What conference recently sent you home with more conviction than when you arrived?
+Grateful for Mason, Melissa, the Temporal team, and all the human beings I got to connect with at Replay.
