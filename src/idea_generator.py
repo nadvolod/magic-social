@@ -81,56 +81,62 @@ class IdeaIssue:
     labels: list[str] = field(default_factory=list)
     url: str = ""
     image_urls: list[str] = field(default_factory=list)
+    entity_candidates: list[str] = field(default_factory=list)
 
 
-def _extract_entity_candidates(raw_idea: str, *, limit: int = 25) -> list[str]:
-    """Pull likely named entities (proper nouns + capitalized phrases) from the Raw Idea.
+_TAIL_CONNECTOR_STOPWORDS = {
+    "to", "of", "for", "with", "by", "on", "in", "at", "as", "from", "into",
+    "and", "or", "but", "the", "a", "an", "is", "was", "are", "were", "be",
+    "been", "i", "we", "you", "they", "it", "this", "that", "thanks",
+}
+
+
+def _extract_entity_candidates(raw_idea: str, *, limit: int = 15) -> list[str]:
+    """Pull likely named entities (proper nouns + key phrases) from the Raw Idea.
 
     Heuristic — meant to surface the concrete details the post should anchor in,
-    even when the Raw Idea is dictation-style or typo-heavy. Captures multi-word
-    capitalized sequences (e.g. 'Nexus workshop', 'Tiki room') and standalone
-    capitalized names. Drops common words. Order is preserved (first occurrence).
+    even when the Raw Idea is dictation-style or typo-heavy. Captures:
+      • standalone capitalized words (Nexus, Mason, Melissa, Netflix, Temporal)
+      • "Capital + lowercase noun" phrases when the lowercase tail looks like a
+        real noun (Tiki room, Nexus workshop) — filtered against stopwords like
+        "to", "and", "thanks"
+    Drops trailing function words and limits to `limit` items.
     """
     if not raw_idea:
         return []
-    # Match sequences of capitalized words (each starting with uppercase letter),
-    # allowing lower-case connectors like "of", "the" in the middle.
-    pattern = re.compile(
-        r"\b[A-Z][a-zA-Z0-9]+(?:\s+(?:of|the|and|de|du|la|le)\s+[A-Z][a-zA-Z0-9]+|\s+[A-Z][a-zA-Z0-9]+)*\b"
-    )
-    # Also capture lowercase-after-capital tail words like "Tiki room" — match
-    # "Capital word + lowercase word" pairs separately.
-    tail_pattern = re.compile(r"\b([A-Z][a-zA-Z0-9]+)\s+([a-z][a-zA-Z0-9]+)\b")
 
     candidates: list[str] = []
     seen: set[str] = set()
 
     def _add(item: str) -> None:
-        item = item.strip()
-        if not item or item.lower() in _ENTITY_STOPWORDS:
+        item = item.strip().rstrip(".,;:!?")
+        if not item or len(item) < 2:
             return
         key = item.lower()
-        if key in seen:
+        if key in seen or key in _ENTITY_STOPWORDS:
             return
         seen.add(key)
         candidates.append(item)
 
-    # Strip the very first word of each sentence to avoid catching pure sentence-starters
-    # as "entities" — but only when followed by a lowercase word.
+    # Strip first-word-of-sentence to avoid catching sentence starters like "I", "We", "We".
     sentences = re.split(r"(?<=[.!?])\s+", raw_idea)
     body = " ".join(
-        re.sub(r"^[A-Z][a-zA-Z0-9]*\s+(?=[a-z])", "", s) for s in sentences
+        re.sub(r"^[A-Z][a-zA-Z0-9']*\s+", "", s) for s in sentences
     )
 
-    for match in pattern.finditer(body):
-        _add(match.group(0))
-    for match in tail_pattern.finditer(body):
-        phrase = f"{match.group(1)} {match.group(2)}"
-        _add(phrase)
+    # 1) Standalone capitalized words (proper nouns) — single-word entities.
+    for match in re.finditer(r"\b([A-Z][a-zA-Z0-9]+)\b", body):
+        _add(match.group(1))
 
-    # Filter out items that are pure stopwords (caught by the initial capitalize-anything)
-    filtered = [c for c in candidates if c.lower() not in _ENTITY_STOPWORDS and len(c) > 1]
-    return filtered[:limit]
+    # 2) Capital + lowercase phrases (e.g. "Tiki room", "Nexus workshop").
+    for match in re.finditer(r"\b([A-Z][a-zA-Z0-9]+)\s+([a-z][a-zA-Z0-9]+)\b", body):
+        head = match.group(1)
+        tail = match.group(2).lower()
+        if tail in _TAIL_CONNECTOR_STOPWORDS:
+            continue
+        _add(f"{head} {tail}")
+
+    return candidates[:limit]
 
 
 def _extract_image_urls(body: str, limit: int = MAX_IMAGES_PER_ISSUE) -> list[str]:
@@ -194,6 +200,7 @@ def parse_issue_payload(payload: dict) -> IdeaIssue:
         labels=labels,
         url=payload.get("html_url", ""),
         image_urls=_extract_image_urls(payload.get("body_html") or body),
+        entity_candidates=_extract_entity_candidates(_extract_section(body, "Raw idea") or body.strip()),
     )
 
 
@@ -312,6 +319,12 @@ def build_prompts(idea: IdeaIssue, *, variant_count: int = DEFAULT_VARIANT_COUNT
         rejection_avoidance_block=rejection or "(no external lessons loaded)",
     )
 
+    entity_list = (
+        "\n".join(f"- {e}" for e in idea.entity_candidates)
+        if idea.entity_candidates
+        else "(no obvious named entities found — work from whatever specifics are in the Raw idea)"
+    )
+
     user_prompt = user_template.format(
         variant_count=variant_count,
         issue_title=idea.title or "(no title)",
@@ -320,6 +333,7 @@ def build_prompts(idea: IdeaIssue, *, variant_count: int = DEFAULT_VARIANT_COUNT
         goal=idea.goal or "Authority / credibility",
         angle=idea.angle or "No preference — generate all five",
         references=idea.references or "(none provided)",
+        raw_idea_entities=entity_list,
     )
     return system_prompt, user_prompt
 

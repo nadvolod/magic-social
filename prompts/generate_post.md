@@ -61,6 +61,9 @@ Title: {issue_title}
 Raw idea:
 {raw_idea}
 
+Named entities extracted from the Raw idea (heuristic — use at least 3 of these in every variant; treat as authoritative, ignore noisy ones):
+{raw_idea_entities}
+
 Target audience: {audience}
 Stated goal: {goal}
 Stated angle: {angle}
