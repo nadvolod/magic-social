@@ -57,6 +57,16 @@ MAX_IMAGES_PER_ISSUE = 20
 _IMG_TAG_RE = re.compile(r"""<img\b[^>]*\bsrc=["']([^"']+)["']""", re.IGNORECASE)
 _MD_IMG_RE = re.compile(r"!\[[^\]]*\]\((https?://[^)\s]+)\)")
 
+# Words to drop from raw-idea entity extraction — common sentence starters or
+# words too generic to count as "named entities" for citation purposes.
+_ENTITY_STOPWORDS = {
+    "the", "a", "an", "i", "and", "or", "but", "we", "you", "they", "it",
+    "this", "that", "these", "those", "is", "was", "are", "were", "be", "been",
+    "to", "of", "in", "on", "at", "for", "from", "with", "by", "as", "if",
+    "ai", "i'm", "i've", "we're", "they're", "it's", "that's", "there", "here",
+    "huge",
+}
+
 
 @dataclass
 class IdeaIssue:
@@ -71,6 +81,56 @@ class IdeaIssue:
     labels: list[str] = field(default_factory=list)
     url: str = ""
     image_urls: list[str] = field(default_factory=list)
+
+
+def _extract_entity_candidates(raw_idea: str, *, limit: int = 25) -> list[str]:
+    """Pull likely named entities (proper nouns + capitalized phrases) from the Raw Idea.
+
+    Heuristic — meant to surface the concrete details the post should anchor in,
+    even when the Raw Idea is dictation-style or typo-heavy. Captures multi-word
+    capitalized sequences (e.g. 'Nexus workshop', 'Tiki room') and standalone
+    capitalized names. Drops common words. Order is preserved (first occurrence).
+    """
+    if not raw_idea:
+        return []
+    # Match sequences of capitalized words (each starting with uppercase letter),
+    # allowing lower-case connectors like "of", "the" in the middle.
+    pattern = re.compile(
+        r"\b[A-Z][a-zA-Z0-9]+(?:\s+(?:of|the|and|de|du|la|le)\s+[A-Z][a-zA-Z0-9]+|\s+[A-Z][a-zA-Z0-9]+)*\b"
+    )
+    # Also capture lowercase-after-capital tail words like "Tiki room" — match
+    # "Capital word + lowercase word" pairs separately.
+    tail_pattern = re.compile(r"\b([A-Z][a-zA-Z0-9]+)\s+([a-z][a-zA-Z0-9]+)\b")
+
+    candidates: list[str] = []
+    seen: set[str] = set()
+
+    def _add(item: str) -> None:
+        item = item.strip()
+        if not item or item.lower() in _ENTITY_STOPWORDS:
+            return
+        key = item.lower()
+        if key in seen:
+            return
+        seen.add(key)
+        candidates.append(item)
+
+    # Strip the very first word of each sentence to avoid catching pure sentence-starters
+    # as "entities" — but only when followed by a lowercase word.
+    sentences = re.split(r"(?<=[.!?])\s+", raw_idea)
+    body = " ".join(
+        re.sub(r"^[A-Z][a-zA-Z0-9]*\s+(?=[a-z])", "", s) for s in sentences
+    )
+
+    for match in pattern.finditer(body):
+        _add(match.group(0))
+    for match in tail_pattern.finditer(body):
+        phrase = f"{match.group(1)} {match.group(2)}"
+        _add(phrase)
+
+    # Filter out items that are pure stopwords (caught by the initial capitalize-anything)
+    filtered = [c for c in candidates if c.lower() not in _ENTITY_STOPWORDS and len(c) > 1]
+    return filtered[:limit]
 
 
 def _extract_image_urls(body: str, limit: int = MAX_IMAGES_PER_ISSUE) -> list[str]:

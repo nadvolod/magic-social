@@ -40,7 +40,9 @@ Tone: direct, confident, specific, human. First person. No marketing language.
 
 Generate {variant_count} distinct LinkedIn post variants from this idea.
 
-First, read the Raw idea carefully and classify the topic:
+**STEP 0 — extract named entities from the Raw idea.** Before doing anything else, mentally scan the Raw idea and list every proper noun, person name, place name, product name, session/workshop name, sensory detail, or specific scene it contains — even if the Raw idea is typo-heavy, dictation-style, or messy. Treat lowercase words like "open AI" as still naming "OpenAI". The Raw idea is the ground truth for what the post is about; missing its specifics is the most common failure mode. You must use at least 3 of the entities you extracted in every variant verbatim or near-verbatim. If you cannot extract 3 entities, the Raw idea is genuinely thin — note that in `risks` and use what's there, but still anchor in whatever specifics you can find.
+
+Then read the Raw idea carefully and classify the topic:
 - TECHNICAL — code, debugging, architecture, infra, bugs, patterns, performance. Variants must include code/config snippets.
 - EXPERIENCE — conference recap, event, trip, milestone, meeting, talk you gave or attended. Variants must include named people/sessions/scenes — NOT invented code.
 - INSIGHT — opinion, framework, mental model, lesson learned over time. Variants may include code OR a named example, whichever fits.
