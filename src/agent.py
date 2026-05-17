@@ -1362,6 +1362,23 @@ Examples:
     analytics_parser.add_argument("--repo", required=True)
     analytics_parser.add_argument("--posts", help="JSON file containing list of Post objects")
 
+    # retrospective command
+    retro_parser = subparsers.add_parser(
+        "retrospective",
+        help="Distill top-vs-bottom performers into playbook/retrospective.md",
+    )
+    retro_parser.add_argument(
+        "--lookback-days",
+        type=int,
+        default=60,
+        help="Window for the published-post cohort (default: 60). Use 0 for all time.",
+    )
+    retro_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print the retrospective to stdout without writing playbook/retrospective.md",
+    )
+
     # experiments command
     subparsers.add_parser("experiments", help="Show experiment summary")
 
@@ -1636,7 +1653,7 @@ Examples:
     )
 
     token = os.environ.get("GITHUB_TOKEN")
-    if args.command not in ("experiments", "feedback", "metrics", "linkedin-poll", "health-check", "score-fixtures", "analyze-references") and not token:
+    if args.command not in ("experiments", "feedback", "metrics", "linkedin-poll", "health-check", "score-fixtures", "analyze-references", "retrospective") and not token:
         print("Error: GITHUB_TOKEN environment variable is required", file=sys.stderr)
         sys.exit(1)
 
@@ -1681,6 +1698,18 @@ Examples:
             posts = load_posts_from_issues(args.repo, token, state="all")
             logger.info("Loaded %d posts from GitHub issues for analytics", len(posts))
         run_analytics_collection(repo=args.repo, token=token, posts=posts)
+
+    elif args.command == "retrospective":
+        from .retrospective import run_refresh  # noqa: PLC0415
+        lookback = args.lookback_days if args.lookback_days and args.lookback_days > 0 else None
+        report = run_refresh(lookback_days=lookback, dry_run=args.dry_run)
+        if args.dry_run:
+            sys.stdout.write(report.markdown)
+        else:
+            print(
+                f"✅ Wrote retrospective: playbook/retrospective.md "
+                f"(own posts: {report.published.total}, reference: {report.reference.total})"
+            )
 
     elif args.command == "experiments":
         manager = ExperimentManager()

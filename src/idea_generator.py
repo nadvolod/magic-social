@@ -190,6 +190,23 @@ def _rejection_block() -> str:
     return "\n\n".join(parts)
 
 
+RETROSPECTIVE_PATH = REPO_ROOT / "playbook" / "retrospective.md"
+
+
+def _load_retrospective_block() -> str:
+    """Load the data-driven retrospective if it exists.
+
+    Produced by `src/retrospective.py` from the user's own published-post
+    analytics + uploaded reference-post signals. Refreshed on each
+    analytics-update cycle. Falls back to empty string when the file
+    isn't there yet (fresh repos / before the first refresh).
+    """
+    text = _load_text(RETROSPECTIVE_PATH).strip()
+    if not text:
+        return ""
+    return "DATA-DRIVEN RETROSPECTIVE — apply these lessons in every variant:\n\n" + text
+
+
 def _split_prompt_template(template: str) -> tuple[str, str]:
     """Split prompts/generate_post.md into (system, user) sections.
 
@@ -215,12 +232,14 @@ def build_prompts(idea: IdeaIssue, *, variant_count: int = DEFAULT_VARIANT_COUNT
 
     voice = _load_text(VOICE_PATH).strip()
     patterns = _load_text(PATTERNS_PATH).strip()
+    retrospective = _load_retrospective_block()
     examples = _good_examples_block()
     rejection = _rejection_block()
 
     system_prompt = system_template.format(
         voice_block=voice or "(no voice playbook loaded)",
         patterns_block=patterns or "(no patterns harvested yet)",
+        retrospective_block=retrospective or "(no retrospective yet — publish posts or upload screenshots so analytics-update can populate playbook/retrospective.md)",
         good_examples_block=examples or "(no verified examples loaded)",
         rejection_avoidance_block=rejection or "(no external lessons loaded)",
     )
@@ -506,6 +525,8 @@ def run(
     post_comment: bool = True,
 ) -> GenerationResult:
     """End-to-end: fetch Issue → generate → write → comment."""
+    from . import retrospective as retrospective_mod  # noqa: PLC0415  (avoid cycle)
+
     idea = fetch_issue(repo, token, issue_number)
     variants = generate_variants(idea, client=client, variant_count=variant_count)
     target_dir = draft_dir_for(idea)
@@ -513,7 +534,21 @@ def run(
     scores = json.loads((target_dir / "scores.json").read_text(encoding="utf-8"))
     summary = build_summary_comment(idea, target_dir, scores, paths)
 
+    # Freeze the retrospective that shaped these drafts. Returns None if
+    # playbook/retrospective.md hasn't been generated yet — that's fine.
+    retrospective_md = ""
+    if RETROSPECTIVE_PATH.exists():
+        retrospective_mod.snapshot_for_issue(target_dir, retrospective_path=RETROSPECTIVE_PATH)
+        retrospective_md = RETROSPECTIVE_PATH.read_text(encoding="utf-8")
+
     if post_comment:
+        if retrospective_md:
+            github_storage.add_comment(
+                repo,
+                token,
+                issue_number,
+                retrospective_mod.build_issue_comment(retrospective_md),
+            )
         for key in sorted(variants.keys()):
             if not key.startswith("variant_"):
                 continue

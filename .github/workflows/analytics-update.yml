@@ -52,12 +52,18 @@ jobs:
       - name: Show experiment summary
         run: python -m src.agent experiments
 
-      - name: Commit updated learning state + metrics
+      - name: Refresh data-driven retrospective
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          WRITING_MODEL: ${{ vars.WRITING_MODEL || 'gpt-5.4' }}
+        run: python -m src.agent retrospective --lookback-days 60
+
+      - name: Commit updated learning state + metrics + retrospective
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          for f in learning_state.json experiments.json METRICS.md README.md; do
+          for f in learning_state.json experiments.json METRICS.md README.md playbook/retrospective.md; do
             if [ -f "$f" ]; then
               git add "$f"
             fi
@@ -66,6 +72,6 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to commit."
           else
-            git commit -m "chore: update learning state and dashboard [skip ci]"
+            git commit -m "chore: update learning state, dashboard, retrospective [skip ci]"
             git push
           fi

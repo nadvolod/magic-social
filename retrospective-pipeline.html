@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Retrospective Agent — Pipeline Visualization</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #181c24;
+    --panel-2: #21262e;
+    --line: #2a313b;
+    --text: #e7ecf3;
+    --muted: #8a93a1;
+    --accent: #60a5fa;
+    --accent-2: #34d399;
+    --new: #34d399;
+    --existing: #8a93a1;
+    --gap: #f87171;
+    --llm: #fbbf24;
+    --shadow: 0 8px 24px rgba(0,0,0,.4);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, "SF Pro Text", Segoe UI, Inter, sans-serif; }
+  header { padding: 22px 32px 14px; border-bottom: 1px solid var(--line); display: flex; align-items: baseline; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 20px; letter-spacing: -0.01em; }
+  header .sub { color: var(--muted); font-size: 13px; max-width: 720px; }
+  .toggle { display: inline-flex; background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 4px; gap: 4px; }
+  .toggle button { background: transparent; border: 0; color: var(--muted); padding: 6px 12px; border-radius: 999px; cursor: pointer; font: inherit; }
+  .toggle button.active { background: var(--accent); color: #06121f; font-weight: 600; }
+  main { display: grid; grid-template-columns: 1fr 380px; min-height: calc(100vh - 80px); }
+  #canvas { position: relative; padding: 24px 32px 80px; overflow: auto; }
+  aside { background: var(--panel); border-left: 1px solid var(--line); padding: 22px 24px; position: sticky; top: 0; height: calc(100vh - 80px); overflow: auto; }
+  aside h2 { font-size: 15px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  aside .tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 10px; margin-right: 6px; vertical-align: middle; }
+  aside .tag.new { background: rgba(52,211,153,.15); color: var(--new); }
+  aside .tag.existing { background: rgba(138,147,161,.15); color: var(--existing); }
+  aside .tag.gap { background: rgba(248,113,113,.15); color: var(--gap); }
+  aside .tag.llm { background: rgba(251,191,36,.15); color: var(--llm); }
+  aside p { color: var(--muted); margin: 10px 0; }
+  aside code, aside .path { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; background: var(--panel-2); padding: 2px 6px; border-radius: 4px; color: #d5dcec; }
+  aside .path { display: inline-block; word-break: break-all; }
+  aside ul { padding-left: 18px; color: var(--muted); }
+  aside li { margin: 4px 0; }
+  aside .empty { color: var(--muted); font-style: italic; }
+  .legend { display: flex; gap: 18px; flex-wrap: wrap; padding: 6px 0 18px; color: var(--muted); font-size: 12px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+  .row { display: flex; gap: 18px; margin-bottom: 22px; flex-wrap: wrap; }
+  .row > .col { flex: 1 1 0; min-width: 220px; display: flex; flex-direction: column; gap: 10px; }
+  .stage-label { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  .node { background: var(--panel); border: 1px solid var(--line); border-left-width: 3px; border-radius: 8px; padding: 12px 14px; cursor: pointer; transition: transform .12s ease, border-color .12s ease, box-shadow .12s ease; position: relative; }
+  .node:hover { transform: translateY(-1px); border-color: var(--accent); box-shadow: var(--shadow); }
+  .node.selected { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(96,165,250,.3), var(--shadow); }
+  .node.existing { border-left-color: var(--existing); }
+  .node.new { border-left-color: var(--new); }
+  .node.gap { border-left-color: var(--gap); }
+  .node.llm { border-left-color: var(--llm); }
+  .node .title { font-weight: 600; letter-spacing: -0.005em; }
+  .node .meta { font-size: 11px; color: var(--muted); margin-top: 3px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .node .badge { position: absolute; top: 10px; right: 10px; font-size: 10px; padding: 2px 6px; border-radius: 10px; }
+  .node.existing .badge { background: rgba(138,147,161,.15); color: var(--existing); }
+  .node.new .badge { background: rgba(52,211,153,.15); color: var(--new); }
+  .node.gap .badge { background: rgba(248,113,113,.15); color: var(--gap); }
+  .node.llm .badge { background: rgba(251,191,36,.15); color: var(--llm); }
+  .group { background: rgba(255,255,255,0.015); border: 1px dashed var(--line); border-radius: 14px; padding: 14px 16px 18px; margin-bottom: 22px; }
+  .group .group-title { font-size: 12px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+  .arrow-row { display: flex; justify-content: center; padding: 4px 0 8px; color: var(--muted); font-size: 18px; }
+  .arrow-row.loop { color: var(--accent-2); font-size: 13px; padding: 12px 0; gap: 10px; align-items: center; }
+  .loop-line { height: 1px; background: var(--accent-2); flex: 1; opacity: 0.4; }
+  .hidden { display: none !important; }
+  .crossed { position: relative; opacity: 0.55; }
+  .crossed::after { content: ""; position: absolute; inset: 0; background: repeating-linear-gradient(45deg, transparent 0 6px, rgba(248,113,113,.25) 6px 7px); border-radius: 8px; pointer-events: none; }
+  footer { text-align: center; color: var(--muted); font-size: 12px; padding: 24px 0 12px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Retrospective Agent — Data-Driven LinkedIn Draft Pipeline</h1>
+    <div class="sub">Click any node to see details. Toggle between today's broken state and the proposed pipeline.</div>
+  </div>
+  <div class="toggle" role="tablist">
+    <button id="tab-today" class="active">Today (broken)</button>
+    <button id="tab-proposed">With retrospective agent</button>
+  </div>
+</header>
+
+<main>
+  <section id="canvas">
+
+    <div class="legend">
+      <span><span class="swatch" style="background:var(--existing)"></span> Existing infrastructure</span>
+      <span><span class="swatch" style="background:var(--new)"></span> New in this plan</span>
+      <span><span class="swatch" style="background:var(--llm)"></span> LLM call</span>
+      <span><span class="swatch" style="background:var(--gap)"></span> Current gap</span>
+    </div>
+
+    <!-- STAGE 1: INGEST -->
+    <div class="group">
+      <div class="group-title">① Ingest — what enters the system</div>
+      <div class="row">
+        <div class="col">
+          <div class="stage-label">Your published posts</div>
+          <div class="node existing" data-id="published-issues"><div class="title">Published-post GitHub Issues</div><div class="meta">label: status:published</div><span class="badge">existing</span></div>
+        </div>
+        <div class="col">
+          <div class="stage-label">Uploaded references</div>
+          <div class="node existing" data-id="reference-screenshots"><div class="title">Reference-post screenshots</div><div class="meta">reference_posts/&lt;slug&gt;/</div><span class="badge">existing</span></div>
+          <div class="node existing" data-id="social-screenshots"><div class="title">Individual social screenshots</div><div class="meta">label: social-screenshot</div><span class="badge">existing</span></div>
+        </div>
+        <div class="col">
+          <div class="stage-label">Idea you just filed</div>
+          <div class="node existing" data-id="content-idea"><div class="title">Content-idea Issue</div><div class="meta">label: needs_generation</div><span class="badge">existing</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-row">↓</div>
+
+    <!-- STAGE 2: COLLECT -->
+    <div class="group">
+      <div class="group-title">② Collect — periodic workflows pull metrics</div>
+      <div class="row">
+        <div class="col">
+          <div class="node existing" data-id="linkedin-poll"><div class="title">linkedin-poll.yml</div><div class="meta">daily 07 UTC</div><span class="badge">existing</span></div>
+          <div class="node existing" data-id="analytics-update"><div class="title">analytics-update.yml</div><div class="meta">Wed/Fri 09 UTC</div><span class="badge">existing</span></div>
+        </div>
+        <div class="col">
+          <div class="node existing" data-id="screenshot-learning-wf"><div class="title">screenshot-learning.yml</div><div class="meta">daily 06:30 UTC + on label</div><span class="badge">existing</span></div>
+          <div class="node existing" data-id="analyze-references-wf"><div class="title">analyze-references.yml</div><div class="meta">on label: needs_analysis</div><span class="badge">existing</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-row">↓</div>
+
+    <!-- STAGE 3: STORE -->
+    <div class="group">
+      <div class="group-title">③ Store — append-only / rolling sources of truth</div>
+      <div class="row">
+        <div class="col">
+          <div class="node existing" data-id="learning-state"><div class="title">learning_state.json</div><div class="meta">rolling top 20 + rubrics</div><span class="badge">existing</span></div>
+          <div class="node existing" data-id="linkedin-metrics"><div class="title">linkedin_metrics.json</div><div class="meta">daily snapshots, append</div><span class="badge">existing</span></div>
+        </div>
+        <div class="col">
+          <div class="node existing" data-id="screenshot-learning"><div class="title">screenshot_learning.json</div><div class="meta">top10% vs bottom90%</div><span class="badge">existing</span></div>
+          <div class="node existing" data-id="reference-patterns"><div class="title">reference_posts/&lt;slug&gt;/analysis/<br/>pattern_report.md</div><div class="meta">per-event distillation</div><span class="badge">existing</span></div>
+        </div>
+        <div class="col">
+          <div class="node existing" data-id="playbook-patterns"><div class="title">playbook/patterns.md</div><div class="meta">harvested durable lessons</div><span class="badge">existing</span></div>
+          <div class="node existing" data-id="playbook-voice"><div class="title">playbook/voice.md</div><div class="meta">tone &amp; style</div><span class="badge">existing</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-row">↓</div>
+
+    <!-- STAGE 4: THE NEW AGENT -->
+    <div class="group" id="retro-group">
+      <div class="group-title">④ Retrospective agent <span style="margin-left:6px; color: var(--new); letter-spacing:.04em;">— NEW</span></div>
+      <div class="row">
+        <div class="col">
+          <div class="node new" data-id="gather-published"><div class="title">gather_published_cohort()</div><div class="meta">src/retrospective.py</div><span class="badge">new</span></div>
+          <div class="node new" data-id="gather-reference"><div class="title">gather_reference_cohort()</div><div class="meta">src/retrospective.py</div><span class="badge">new</span></div>
+        </div>
+        <div class="col">
+          <div class="node llm" data-id="distill"><div class="title">generate_retrospective()</div><div class="meta">prompts/retrospective.md + OpenAI</div><span class="badge">LLM</span></div>
+        </div>
+        <div class="col">
+          <div class="node new" data-id="write-retro"><div class="title">write_retrospective()</div><div class="meta">→ playbook/retrospective.md</div><span class="badge">new</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-row">↓</div>
+
+    <!-- STAGE 5: DERIVED ARTIFACT -->
+    <div class="group">
+      <div class="group-title">⑤ Derived artifact — versioned via git</div>
+      <div class="row">
+        <div class="col">
+          <div class="node new" data-id="retro-md"><div class="title">playbook/retrospective.md</div><div class="meta">overwritten each refresh • git log = history</div><span class="badge">new</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-row">↓</div>
+
+    <!-- STAGE 6: CONSUMERS -->
+    <div class="group">
+      <div class="group-title">⑥ Where it goes — three consumers</div>
+      <div class="row">
+        <div class="col">
+          <div class="stage-label">Active shaping</div>
+          <div class="node new" data-id="prompt-inject"><div class="title">build_prompts() injection</div><div class="meta">{retrospective_block} in generate_post.md</div><span class="badge">new</span></div>
+        </div>
+        <div class="col">
+          <div class="stage-label">Visibility</div>
+          <div class="node new" data-id="issue-comment"><div class="title">Issue comment</div><div class="meta">### Retrospective driving these drafts</div><span class="badge">new</span></div>
+        </div>
+        <div class="col">
+          <div class="stage-label">Per-Issue evidence</div>
+          <div class="node new" data-id="snapshot"><div class="title">drafts/&lt;date&gt;_&lt;slug&gt;/<br/>retrospective_snapshot.md</div><div class="meta">frozen alongside the variants</div><span class="badge">new</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-row">↓</div>
+
+    <!-- STAGE 7: GENERATE -->
+    <div class="group">
+      <div class="group-title">⑦ Generate — the actual drafts</div>
+      <div class="row">
+        <div class="col">
+          <div class="node existing" data-id="generate-from-issue"><div class="title">generate-from-issue.yml</div><div class="meta">triggered by needs_generation label</div><span class="badge">existing</span></div>
+        </div>
+        <div class="col">
+          <div class="node existing" data-id="idea-generator"><div class="title">idea_generator.run()</div><div class="meta">5 variants + per-draft Issue comments</div><span class="badge">existing</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow-row loop">
+      <span class="loop-line"></span>
+      <span>↻ Loop back: published variant → analytics → next retrospective</span>
+      <span class="loop-line"></span>
+    </div>
+
+    <!-- THE GAP — shown only in today view -->
+    <div class="group" id="gap-block">
+      <div class="group-title" style="color: var(--gap);">⚠ Today's gap</div>
+      <div class="row">
+        <div class="col">
+          <div class="node gap" data-id="gap-no-comparison"><div class="title">No top-vs-bottom comparison</div><div class="meta">No function distills lessons from the cohort</div><span class="badge">gap</span></div>
+        </div>
+        <div class="col">
+          <div class="node gap" data-id="gap-not-injected"><div class="title">Signals never reach the prompt</div><div class="meta">v2 idea_generator doesn't load learning state</div><span class="badge">gap</span></div>
+        </div>
+        <div class="col">
+          <div class="node gap" data-id="gap-no-visibility"><div class="title">No visibility per Issue</div><div class="meta">User can't see what data shaped a draft</div><span class="badge">gap</span></div>
+        </div>
+      </div>
+    </div>
+
+    <footer>Click any node for details · Toggle the view to see what changes</footer>
+
+  </section>
+
+  <aside id="panel">
+    <h2 id="panel-title">Click a node</h2>
+    <div id="panel-tags"></div>
+    <p id="panel-desc" class="empty">Pick any box in the diagram. Each node shows its file path, what it does, and how it connects to the rest of the pipeline.</p>
+    <div id="panel-extra"></div>
+  </aside>
+</main>
+
+<script>
+  const DATA = {
+    "published-issues": {
+      title: "Published-post GitHub Issues",
+      tag: "existing",
+      desc: "Every draft you ship becomes (or is linked to) a GitHub Issue carrying its full post text, a status:published label, and an Analytics Update comment thread.",
+      paths: ["Issues with label: status:published", "labels: ai, distributed-systems, …", "comments: ## Analytics Update"],
+      note: "This is the canonical record of what you've actually posted."
+    },
+    "reference-screenshots": {
+      title: "Reference-post screenshots",
+      tag: "existing",
+      desc: "Cohorts of screenshots from external events (e.g. Replay 2026 talks, top-performing posts you've collected) are stored under reference_posts/<slug>/ and processed by analyze-references.yml.",
+      paths: ["reference_posts/<slug>/extracted/*.json", "reference_posts/<slug>/analysis/pattern_report.md"]
+    },
+    "social-screenshots": {
+      title: "Individual social screenshots",
+      tag: "existing",
+      desc: "Single LinkedIn post screenshots uploaded via Issues with the social-screenshot label. The screenshot-learning workflow classifies each as top-10% or bottom-90% based on the visible engagement numbers.",
+      paths: ["Issue label: social-screenshot", "→ screenshot_learning.json"]
+    },
+    "content-idea": {
+      title: "Content-idea Issue",
+      tag: "existing",
+      desc: "The Issue you file when you want drafts. The content_idea.yml template applies the needs_generation label, which triggers draft generation.",
+      paths: [".github/ISSUE_TEMPLATE/content_idea.yml", "label: needs_generation"]
+    },
+    "linkedin-poll": {
+      title: "linkedin-poll.yml",
+      tag: "existing",
+      desc: "Scheduled workflow that polls LinkedIn for fresh metrics on published posts and writes daily snapshots.",
+      paths: [".github/workflows/linkedin-poll.yml", "07:00 UTC daily"]
+    },
+    "analytics-update": {
+      title: "analytics-update.yml",
+      tag: "existing",
+      desc: "Twice-weekly workflow that ingests Analytics Update comments, updates learning_state.json, and (after this plan ships) refreshes playbook/retrospective.md.",
+      paths: [".github/workflows/analytics-update.yml", "Wed & Fri 09:00 UTC"],
+      note: "This is where the retrospective refresh step gets added."
+    },
+    "screenshot-learning-wf": {
+      title: "screenshot-learning.yml",
+      tag: "existing",
+      desc: "Triggers on social-screenshot label or runs daily. Extracts engagement numbers from each screenshot, classifies into top-10% / bottom-90%, and updates screenshot_learning.json.",
+      paths: [".github/workflows/screenshot-learning.yml"]
+    },
+    "analyze-references-wf": {
+      title: "analyze-references.yml",
+      tag: "existing",
+      desc: "Triggered when you open an Issue with the needs_analysis label, pointing at a reference_posts/<slug>/ cohort. Runs the existing reference_posts.analyze_event() function and appends durable lessons to playbook/patterns.md.",
+      paths: [".github/workflows/analyze-references.yml", "src/reference_posts.py", "prompts/analyze_reference_posts.md"]
+    },
+    "learning-state": {
+      title: "learning_state.json",
+      tag: "existing",
+      desc: "Rolling top-20 best-performing posts, per-post rubric histories, and aggregate signals (best hook style, optimal length, etc.).",
+      paths: ["learning_state.json", "shape: { best_performing_posts: [...], …}"],
+      note: "Already authoritative — the retrospective just queries it."
+    },
+    "linkedin-metrics": {
+      title: "linkedin_metrics.json",
+      tag: "existing",
+      desc: "Append-only daily snapshots of LinkedIn metrics. Useful for trend / decay analysis once a post has been published for >1 day.",
+      paths: ["linkedin_metrics.json"]
+    },
+    "screenshot-learning": {
+      title: "screenshot_learning.json",
+      tag: "existing",
+      desc: "External screenshot examples classified into top-10% and bottom-90%, each with signals like hook style, structure, CTA type, and an excerpt.",
+      paths: ["screenshot_learning.json", "ScreenshotExample dataclass", "src/screenshot_learning.py"]
+    },
+    "reference-patterns": {
+      title: "reference_posts/<slug>/analysis/pattern_report.md",
+      tag: "existing",
+      desc: "Per-event pattern report distilled from a cohort of screenshots. Already-extracted hook patterns, weak patterns, recommended angles.",
+      paths: ["reference_posts/<slug>/analysis/pattern_report.md"]
+    },
+    "playbook-patterns": {
+      title: "playbook/patterns.md",
+      tag: "existing",
+      desc: "Durable, cross-event lessons harvested from all reference-post analyses. Already loaded into the draft prompt as {patterns_block}.",
+      paths: ["playbook/patterns.md"]
+    },
+    "playbook-voice": {
+      title: "playbook/voice.md",
+      tag: "existing",
+      desc: "Tone and style guide. Loaded into the draft prompt as {voice_block}. Unchanged by this plan.",
+      paths: ["playbook/voice.md"]
+    },
+    "gather-published": {
+      title: "gather_published_cohort(lookback_days)",
+      tag: "new",
+      desc: "Reads learning_state.json + linkedin_metrics.json, links each post back to its drafts/<date>_<slug>/scores.json rubric, returns a CohortBundle with top-N and bottom-N performers and their full text.",
+      paths: ["src/retrospective.py"],
+      note: "Uses only existing data — no new collection needed."
+    },
+    "gather-reference": {
+      title: "gather_reference_cohort()",
+      tag: "new",
+      desc: "Reads screenshot_learning.json via the existing ScreenshotLearningState.load(), returns top-10% and bottom-90% examples already shaped by ScreenshotExample.",
+      paths: ["src/retrospective.py", "src/screenshot_learning.py (reused)"]
+    },
+    "distill": {
+      title: "generate_retrospective()",
+      tag: "llm",
+      desc: "Single LLM call. Sends both cohorts (your posts + external screenshots) into prompts/retrospective.md and returns structured Markdown with sections: Top performers, Bottom performers, Do this, Avoid this, How this should shape the next draft.",
+      paths: ["prompts/retrospective.md (new)", "src/writing_client.py (reused, uncapped)"],
+      note: "Same writing client used by idea_generator. No new cost ceiling needed."
+    },
+    "write-retro": {
+      title: "write_retrospective(report)",
+      tag: "new",
+      desc: "Writes the distilled Markdown to playbook/retrospective.md (overwriting). Git tracks history — git log playbook/retrospective.md gives you every refresh.",
+      paths: ["playbook/retrospective.md"]
+    },
+    "retro-md": {
+      title: "playbook/retrospective.md",
+      tag: "new",
+      desc: "The single, always-fresh retrospective. Read by humans, consumed by the draft generator, snapshotted per-Issue. Git is the history — no bespoke versioning needed.",
+      paths: ["playbook/retrospective.md"]
+    },
+    "prompt-inject": {
+      title: "Prompt injection",
+      tag: "new",
+      desc: "idea_generator._load_retrospective_block() reads playbook/retrospective.md and fills {retrospective_block} in prompts/generate_post.md. Drafts are now generated WITH knowledge of what's working and what isn't.",
+      paths: ["src/idea_generator.py (modified)", "prompts/generate_post.md (modified)"]
+    },
+    "issue-comment": {
+      title: "Issue comment",
+      tag: "new",
+      desc: "When drafts are generated, one extra comment is posted BEFORE the 5 variant comments: ### Retrospective driving these drafts — summarizing Do/Avoid lessons plus a link to playbook/retrospective.md.",
+      paths: ["src/idea_generator.py:run()"],
+      note: "Solves the visibility complaint: you see the reasoning."
+    },
+    "snapshot": {
+      title: "Per-Issue retrospective snapshot",
+      tag: "new",
+      desc: "A copy of playbook/retrospective.md frozen alongside the drafts at drafts/<date>_<slug>/retrospective_snapshot.md. Six months from now you can see EXACTLY which retrospective shaped this Issue's variants.",
+      paths: ["drafts/<date>_<slug>/retrospective_snapshot.md"],
+      note: "This is the answer to 'how do we keep learning from every Issue?'"
+    },
+    "generate-from-issue": {
+      title: "generate-from-issue.yml",
+      tag: "existing",
+      desc: "The workflow that already runs on Issue open / needs_generation label. Calls python -m src.agent generate-from-issue, which calls idea_generator.run(). Unchanged structurally — just consumes the new retrospective block.",
+      paths: [".github/workflows/generate-from-issue.yml"]
+    },
+    "idea-generator": {
+      title: "idea_generator.run()",
+      tag: "existing",
+      desc: "Orchestrates the draft generation: fetch Issue → build prompts (now including {retrospective_block}) → call LLM → write variants → post comments. This plan adds two new touch points but doesn't rewrite the orchestration.",
+      paths: ["src/idea_generator.py"]
+    },
+    "gap-no-comparison": {
+      title: "Gap: no top-vs-bottom comparison",
+      tag: "gap",
+      desc: "Today, learning_state.json contains the top 20 performers, but no function reads it alongside the bottom performers and produces a differential analysis. Each signal lives alone.",
+      paths: ["Today: no comparative function exists"],
+      note: "Closed by gather_published_cohort + gather_reference_cohort + generate_retrospective."
+    },
+    "gap-not-injected": {
+      title: "Gap: signals never reach the prompt",
+      tag: "gap",
+      desc: "post_generator.py has loaders for linkedin_insights, prompt_patches, and LESSONS_LEARNED.md — but idea_generator.py (the v2 generator that actually runs) never imports them. So even today's data doesn't influence drafts.",
+      paths: ["src/idea_generator.py:build_prompts() loads voice + patterns + good examples only"],
+      note: "Closed by adding _load_retrospective_block() and {retrospective_block} placeholder."
+    },
+    "gap-no-visibility": {
+      title: "Gap: no visibility per Issue",
+      tag: "gap",
+      desc: "There's no comment on the Issue explaining what data shaped the drafts. You can't tell why a draft chose a contrarian angle vs a story angle.",
+      paths: ["Today: only the 5 variant comments + a summary comment"],
+      note: "Closed by the retrospective Issue comment and per-Issue snapshot."
+    }
+  };
+
+  const panel = {
+    title: document.getElementById("panel-title"),
+    tags: document.getElementById("panel-tags"),
+    desc: document.getElementById("panel-desc"),
+    extra: document.getElementById("panel-extra"),
+  };
+
+  function selectNode(id) {
+    document.querySelectorAll(".node.selected").forEach(n => n.classList.remove("selected"));
+    const el = document.querySelector(`.node[data-id="${id}"]`);
+    if (el) el.classList.add("selected");
+    const d = DATA[id];
+    if (!d) return;
+    panel.title.textContent = d.title;
+    panel.tags.innerHTML = `<span class="tag ${d.tag}">${d.tag}</span>`;
+    panel.desc.classList.remove("empty");
+    panel.desc.textContent = d.desc;
+    let extra = "";
+    if (d.paths && d.paths.length) {
+      extra += `<p style="color:var(--muted); margin-bottom:6px;">Where:</p><ul>` + d.paths.map(p => `<li><span class="path">${p}</span></li>`).join("") + `</ul>`;
+    }
+    if (d.note) {
+      extra += `<p style="border-left: 2px solid var(--accent); padding-left: 10px; margin-top: 14px; color: var(--text);">${d.note}</p>`;
+    }
+    panel.extra.innerHTML = extra;
+  }
+
+  document.querySelectorAll(".node").forEach(n => {
+    n.addEventListener("click", () => selectNode(n.dataset.id));
+  });
+
+  // Toggle: today vs proposed
+  const todayBtn = document.getElementById("tab-today");
+  const proposedBtn = document.getElementById("tab-proposed");
+  const retroGroup = document.getElementById("retro-group");
+  const gapBlock = document.getElementById("gap-block");
+
+  function setMode(mode) {
+    if (mode === "today") {
+      todayBtn.classList.add("active");
+      proposedBtn.classList.remove("active");
+      retroGroup.classList.add("crossed");
+      gapBlock.classList.remove("hidden");
+      // mark new + llm nodes as "not yet built" via faded look
+      document.querySelectorAll(".node.new, .node.llm").forEach(n => n.classList.add("crossed"));
+    } else {
+      proposedBtn.classList.add("active");
+      todayBtn.classList.remove("active");
+      retroGroup.classList.remove("crossed");
+      gapBlock.classList.add("hidden");
+      document.querySelectorAll(".node.crossed").forEach(n => n.classList.remove("crossed"));
+    }
+  }
+  todayBtn.addEventListener("click", () => setMode("today"));
+  proposedBtn.addEventListener("click", () => setMode("proposed"));
+
+  // Default to today so user immediately sees the gap
+  setMode("today");
+
+  // Pre-select an interesting node so the side panel isn't empty
+  selectNode("gap-not-injected");
+</script>
+
+</body>
+</html>

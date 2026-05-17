@@ -14,6 +14,8 @@ The runtime fills in placeholders before sending to Claude. Placeholders use `{d
 
 {patterns_block}
 
+{retrospective_block}
+
 {good_examples_block}
 
 {rejection_avoidance_block}
