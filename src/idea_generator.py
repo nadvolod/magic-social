@@ -12,6 +12,8 @@ for manual/dispatch use but no longer runs on schedule.
 
 from __future__ import annotations
 
+import base64
+import io
 import json
 import logging
 import os
@@ -21,6 +23,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
+from urllib.parse import urlparse
 
 import requests
 
@@ -268,13 +271,65 @@ def generate_variants(
         )
 
     system_prompt, user_prompt = build_prompts(idea, variant_count=variant_count)
+    image_payload = _prepare_image_payload(idea.image_urls)
     raw = writing_client.generate_text(
         client,
         system_prompt,
         user_prompt,
-        image_urls=idea.image_urls,
+        image_urls=image_payload,
     )
     return _extract_json(raw)
+
+
+# ---------------------------------------------------------------------------
+# Image payload prep (GitHub user-attachments need auth + resizing)
+# ---------------------------------------------------------------------------
+
+
+_IMAGE_MAX_EDGE = 768  # detail="low" only uses 512px tiles, 768 gives slight margin
+_IMAGE_DOWNLOAD_TIMEOUT = 20
+
+
+def _prepare_image_payload(urls: list[str]) -> list[str]:
+    """Convert raw image URLs into a list of base64 data URLs.
+
+    GitHub `user-attachments` URLs reject anonymous fetches from third-party
+    services like OpenAI's image downloader (HTTP 400). We pull each image
+    on the runner (with GITHUB_TOKEN if needed), resize, and inline it as
+    `data:image/...;base64,...`. Failures are logged and skipped so the
+    overall generation still runs.
+    """
+    if not urls:
+        return []
+    try:
+        from PIL import Image  # noqa: PLC0415
+    except ImportError:
+        logger.warning("Pillow not available — skipping image attachments")
+        return []
+
+    gh_token = os.environ.get("GITHUB_TOKEN", "")
+    data_urls: list[str] = []
+    for url in urls:
+        try:
+            headers = {"User-Agent": "magic-social-bot/1.0"}
+            host = urlparse(url).hostname or ""
+            if gh_token and ("github.com" in host or "githubusercontent.com" in host):
+                headers["Authorization"] = f"Bearer {gh_token}"
+            resp = requests.get(url, headers=headers, timeout=_IMAGE_DOWNLOAD_TIMEOUT)
+            resp.raise_for_status()
+            img = Image.open(io.BytesIO(resp.content))
+            if img.mode not in ("RGB", "L"):
+                img = img.convert("RGB")
+            img.thumbnail((_IMAGE_MAX_EDGE, _IMAGE_MAX_EDGE))
+            buf = io.BytesIO()
+            img.save(buf, format="JPEG", quality=80)
+            b64 = base64.b64encode(buf.getvalue()).decode("ascii")
+            data_urls.append(f"data:image/jpeg;base64,{b64}")
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("Skipping image %s: %s", url, exc)
+            continue
+    logger.info("Prepared %d/%d images for multimodal call", len(data_urls), len(urls))
+    return data_urls
 
 
 # ---------------------------------------------------------------------------
