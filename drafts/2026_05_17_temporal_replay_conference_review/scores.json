@@ -1,49 +1,46 @@
 {
   "variant_1": {
     "angle": "contrarian",
-    "rubric_total": 69.0,
+    "rubric_total": 83.0,
     "rubric_breakdown": {
-      "hook": 20.0,
-      "structure": 4.0,
-      "proof": 5.0,
+      "hook": 16.0,
+      "structure": 7.0,
+      "proof": 20.0,
       "cta": 20.0,
       "clarity": 20.0
     },
     "rubric_issues": [
       "Include an indented code/config snippet for concrete teaching value.",
-      "Post length is far from target (1702 chars; target 800-1500).",
-      "Add measurable proof (numbers, before/after, or concrete outcomes)."
+      "Post length is slightly off target (1582 chars)."
     ]
   },
   "variant_2": {
     "angle": "story",
-    "rubric_total": 68.0,
+    "rubric_total": 71.0,
     "rubric_breakdown": {
       "hook": 16.0,
-      "structure": 7.0,
+      "structure": 10.0,
       "proof": 5.0,
       "cta": 20.0,
       "clarity": 20.0
     },
     "rubric_issues": [
       "Include an indented code/config snippet for concrete teaching value.",
-      "Post length is slightly off target (1625 chars).",
       "Add measurable proof (numbers, before/after, or concrete outcomes)."
     ]
   },
   "variant_3": {
     "angle": "tactical",
-    "rubric_total": 68.0,
+    "rubric_total": 71.0,
     "rubric_breakdown": {
       "hook": 16.0,
-      "structure": 7.0,
+      "structure": 10.0,
       "proof": 5.0,
       "cta": 20.0,
       "clarity": 20.0
     },
     "rubric_issues": [
       "Include an indented code/config snippet for concrete teaching value.",
-      "Post length is slightly off target (1640 chars).",
       "Add measurable proof (numbers, before/after, or concrete outcomes)."
     ]
   },
@@ -59,7 +56,7 @@
     },
     "rubric_issues": [
       "Include an indented code/config snippet for concrete teaching value.",
-      "Post length is slightly off target (1666 chars).",
+      "Post length is slightly off target (1591 chars).",
       "Add measurable proof (numbers, before/after, or concrete outcomes)."
     ]
   },
@@ -75,7 +72,7 @@
     },
     "rubric_issues": [
       "Include an indented code/config snippet for concrete teaching value.",
-      "Post length is far from target (522 chars; target 800-1500).",
+      "Post length is far from target (551 chars; target 800-1500).",
       "Add measurable proof (numbers, before/after, or concrete outcomes)."
     ]
   }

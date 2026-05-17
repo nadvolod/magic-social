@@ -1,54 +1,45 @@
 # variant_4 — authority
 
-**Intended audience:** Senior engineers, staff engineers, and engineering leaders evaluating durable execution and AI system design tradeoffs.
-**Why it may perform:** Positions the author as pattern-recognizer, uses recognizable conference entities as proof, and lands on a broad but concrete industry claim.
-**Risks:** Makes a strong claim without hard quantitative evidence; authority comes from synthesis rather than metrics.
+**Intended audience:** Senior AI infrastructure engineers, distributed systems practitioners, and technical leaders
+**Why it may perform:** Frames the event as evidence for a broader industry pattern, which supports authority and credibility. Strong fit for the stated goal.
+**Risks:** Makes a broad claim without hard numeric evidence, so its strength depends on the audience accepting conference observation as valid signal.
 
 ---
 
-After enough AI infra conversations, the pattern is obvious: the winning teams obsess over recovery, not demos.
+After enough AI infra conversations, the pattern gets hard to ignore.
 
-Replay by Temporal reinforced something I've been seeing repeatedly.
+I saw the same pattern again at Replay by Temporal.
 
-The teams that sound most credible about AI agents are usually not the ones talking most about prompts.
+The teams making real progress with AI are not the ones obsessing over the cleverest orchestration layer.
 
-They are the ones talking about orchestration, replay, timeouts, resumability, and audit trails.
+They are the ones designing for interruption.
 
-That pattern showed up all over Replay.
+At Temporal Replay, that theme kept surfacing in different forms: packed rooms for workflow talks, architecture slides getting more attention than product screenshots, and long discussions about recovery, retries, and resumability.
 
-On the main REPLAY stage.
-In the packed session rooms.
-In side conversations after talks.
+That matters because agentic AI has inherited the oldest distributed systems problem there is:
 
-And it showed up in who was on stage too.
+work rarely fails at the beginning.
 
-When companies like Netflix, NVIDIA, and Datadog are sharing lessons in this area, I pay attention.
+It fails halfway through.
 
-Because these systems only look simple when you ignore runtime behavior.
+In other words, the hard part is not starting an agent.
 
-One visible detail from the event captured the contrast well.
+The hard part is resuming one correctly.
 
-The conference had huge visuals, planets hanging over the hall, a giant inflatable mascot, and even the Braintrust typing contest pulling people in.
+Walking through Replay by Temporal, seeing giant Ziggy hanging over the venue and the huge main stage branding, the flashy parts were fun.
 
-A lot of fun.
+But the strongest signal was quieter.
 
-But the technical center of gravity was much more serious.
+People were leaning into the infrastructure story.
 
-Durable execution is moving from “workflow infrastructure” to a core abstraction for agentic AI.
+That matches what I keep seeing in practice. Once a system runs long enough, the questions stop being about prompts and start being about timeouts, state, replay, auditability, and side effects.
 
-That shift matters.
+Temporal Technologies is well positioned in that shift because durable execution maps directly onto the failure modes teams are now hitting with production AI.
 
-It means the conversation is getting more mature.
+My takeaway is simple:
 
-Less “which framework feels magical?”
-More “how does this system behave after 10 failures, a deploy, and a partial completion state?”
+AI infrastructure is converging with workflow reliability.
 
-That is the right question set for senior engineers.
+And that is a good thing.
 
-My biggest takeaway from Replay by Temporal:
-
-The infra layer is finally getting the attention it deserves in AI.
-
-And that is probably the best sign that the space is growing up.
-
-Are you seeing the same shift in your own AI systems, or are most teams still stuck at the demo layer?
+If you are building long-running AI systems today, where are you seeing the biggest gap: planning, execution, or recovery?

@@ -1,21 +1,19 @@
 # variant_5 — short engagement
 
-**Intended audience:** Busy senior engineers and AI infra builders who respond to concise, opinionated observations.
-**Why it may perform:** Short, scannable, uses concrete event entities, and ends with a broad question likely to invite comments from practitioners.
-**Risks:** Very compressed; may feel less personal than longer variants. Raw idea was thin, so specificity comes mainly from attached visuals and referenced conference entities.
+**Intended audience:** Engineers building long-running AI workflows and durable systems
+**Why it may perform:** Short, sharp, and comment-friendly. Keeps the claim narrow and grounded in visible event details.
+**Risks:** Less personal than the other variants; may feel more observational than experiential.
 
 ---
 
-Replay by Temporal made one thing very clear.
+Replay by Temporal reinforced something I already suspected.
 
-The serious AI teams are shifting attention from prompts to failure recovery.
+The hard part of agentic AI is not generating the next step.
 
-At Replay, hearing names like Netflix, NVIDIA, and Datadog in the same orbit as durable execution was the real signal.
+It's recovering the current one.
 
-The REPLAY stage, the giant inflatable mascot, and the Braintrust typing contest were fun.
+At Temporal Replay, the strongest signal was how much attention went to replay, retries, and resumability. Packed sessions, architecture slides everywhere, and giant Ziggy floating over a conference centered on durable execution.
 
-But the lasting takeaway was simpler:
+Temporal Technologies is betting on the right problem.
 
-agentic AI gets real when replay, retries, and resumability become first-class design concerns.
-
-Are you seeing that shift in your own stack yet?
+What failure mode are you designing around most right now: timeout, duplicate work, or partial completion?
