@@ -1,99 +1,62 @@
-# Voice & Style Playbook
+# Voice Guide — synthesized 2026-05-17
 
-This is the durable voice guide for LinkedIn drafts. It is loaded into every generation prompt by `src/idea_generator.py`. Update sparingly — only when a pattern is proven across multiple posts.
+## Audience & ICP
 
-## ICP (Ideal Customer Profile)
+This author writes for software engineers building production systems, especially around AI agents, workflows, distributed systems, and reliability. The curated examples consistently focus on failure modes, debugging, architecture tradeoffs, and operational correctness; the top references reinforce that this audience also responds to hands-on build stories, product announcements, and practical tutorials in AI/software development.
 
-The reader is one of:
-- A senior software engineer building distributed systems
-- An engineer deploying AI agents in production
-- A Temporal user (or someone debating whether to adopt durable execution)
-- A staff/principal engineer who decides what frameworks teams adopt
+## Tone
 
-Posts are NOT for:
-- Junior developers learning to code
-- Marketing or business audiences
-- Generic "tech inspiration" readers
+- **First-person and experience-led** — most posts open from direct personal involvement (“I spent…”, “I’m building…”, “I’ve deployed…”) rather than abstract advice. [own examples 1, 2, 4, 5; ref #94]
+- **Direct and corrective** — the author often starts by challenging a common assumption, then replaces it with a more precise framing (“sounds trivial,” “wrong problem,” “wasn’t prompt engineering; it was architecture”). [own examples 1, 2, 3, 5]
+- **Technical but readable** — posts include code, metrics, and implementation details, but explain them in plain language before and after the snippet. [own examples 2, 3, 4, 5]
+- **Confident without hype** — claims are usually backed by a bug, a metric, or a concrete system behavior, not generic enthusiasm. [own examples 2, 3, 4, 5]
+- **Curious at the end** — many posts close with a practitioner question to invite peer discussion instead of a hard sell. [own examples 1, 2, 3, 4, 5]
 
-If a draft does not speak directly to the ICP above, it is off-topic and must be rejected.
+## Hook style
 
-## What the audience values
+- **“Simple problem that wasn’t simple” hook** — opens with an apparently easy feature or familiar practice, then reframes it as a deeper systems problem. [own example 1, own example 2]
+- **Debugging story hook** — starts with time spent on a painful incident, then promises the root cause or lesson. [own example 2, own example 4]
+- **Metric-driven result hook** — leads with a sharp before/after number, then explains the mechanism behind the improvement. [own example 3]
+- **Contrarian question hook** — opens with a broad challenge to common industry behavior, especially around AI agents or frameworks. [own example 5]
+- **Build/update hook** — references something recently built or learned in practice, similar to benchmark posts that announce a build or tutorial. [ref #94, ref #92]
 
-- Hard-won lessons from real production incidents
-- Specific code/config snippets that teach a concrete technique
-- Honest numbers (latency, error rates, cost, time saved)
-- Contrarian takes backed by experience
-- "Boring infrastructure" framing: retries, timeouts, crash recovery, idempotency
+## Sentence and paragraph rhythm
 
-## What the audience scrolls past
+- **Short-to-medium sentences dominate** — many sentences are compact, often around 6–16 words, with occasional longer explanatory lines after the setup. This keeps technical material moving quickly. [all own examples]
+- **Paragraphs are usually 1–3 sentences** — the author breaks frequently, rarely stacking dense blocks; this creates a scroll-friendly cadence. [all own examples]
+- **Standalone emphasis lines are common** — key takeaways are isolated on their own line or split across two short lines for emphasis. [own examples 1, 2, 4]
+- **Lists appear after a setup sentence** — edge cases, failure modes, or outcomes are often introduced with a short framing line and then shown as bullets. [own examples 1, 5; ref #92, ref #94]
+- **Code snippet in the middle, explanation around it** — posts often place a small code block after the problem statement and before the broader lesson. [own examples 2, 3, 4, 5]
+- **Ends with a single discussion question** — closing rhythm is typically one concise question aimed at engineers with similar production experience. [own examples 1, 2, 3, 4, 5]
 
-- Generic AI hype ("AI is changing everything")
-- Marketing-speak ("excited to announce", "thrilled to share")
-- Posts without a concrete example or code
-- Multi-topic posts (more than one lesson)
-- Tutorials that don't end with a real takeaway
+## Vocabulary cues
 
-## Voice characteristics (extracted from the 5 verified high-performers in `good-social-posts/`)
+- **Prefers operational nouns** like “workflow,” “activity,” “retries,” “timeouts,” “audit trail,” “deadlock,” “idempotency,” and “hallucination rate.” [own examples 2, 3, 4, 5]
+- **Uses “the root cause,” “the fix,” and “the lesson” as structural labels** to move from incident to takeaway. [own examples 2, 4]
+- **Frames ideas as systems, not features** — e.g., a reminder feature becomes a scheduling system; retries become a liability without idempotency. [own examples 1, 2]
+- **Prefers concrete numbers over vague improvement language** — examples include percentages, hours spent debugging, number of days, number of frameworks, and exact reductions. [own examples 2, 3, 4, 5]
+- **Uses plain evaluative words instead of buzzwords** — terms like “boring,” “simple,” “broken,” “correct,” “surviving,” and “production-grade” appear more than inflated marketing language. [own examples 1, 4, 5]
+- **Frequently contrasts demo vs. production** — the author repeatedly distinguishes toy behavior from resilient real-world systems. [own examples 1, 3, 5]
+- **Avoids corporate jargon** — no evidence of language like “leverage,” “synergy,” or “game-changing”; phrasing stays concrete and engineering-centered. [all own examples]
 
-1. **Hook is one line.** No throat-clearing.
-   - "Most engineers retry failed API calls with exponential backoff."
-   - "Yesterday I spent 4 hours debugging a workflow that silently stopped processing events."
-   - "Why do most AI agent frameworks fail in production?"
+## Anti-patterns (what NOT to do)
 
-2. **Second line resolves or amplifies the hook.** Often a contradiction or a "here's what I found."
-   - "They're solving the wrong problem."
-   - "Here's what I found."
+- **Don’t write generic inspiration without a concrete incident or mechanism** — the strongest posts always anchor advice in a bug, build, metric, or architecture pattern, which makes the lesson credible.
+- **Don’t lead with product promotion or links** — benchmark posts sometimes announce or link out, but the curated voice is strongest when it teaches first and sells nothing directly.
+- **Don’t use long dense paragraphs** — the author consistently relies on short paragraphs, white space, bullets, and code blocks to keep technical content readable.
+- **Don’t make claims without numbers or observable consequences** — when performance or quality improves, the examples usually show a measurable delta, exact failure mode, or implementation detail.
+- **Don’t stay at the “prompt tips” level when the issue is architectural** — several posts explicitly reject shallow fixes in favor of system design, so drafts should avoid sounding like lightweight AI advice.
+- **Don’t end without opening a practitioner conversation** — the curated examples consistently finish with a specific question, which helps the post feel peer-to-peer rather than broadcast-only.
 
-3. **Code appears mid-post, indented 4 spaces, ~5–10 lines.** Real, runnable-looking. Not pseudocode.
+## Quality bar — what a great post must do
 
-4. **Lesson is one sentence.** Crisp. Quotable. Often contrarian.
-   - "Retries without idempotency are a liability, not a safety net."
-   - "Pure functions in workflows, side effects in activities."
-   - "The 'boring' infrastructure is what separates a demo from a product."
+- Open with a concrete problem, incident, or surprising result from real engineering work.
+- Reframe the issue into a sharper systems lesson, usually by correcting a common assumption.
+- Include at least one tangible artifact: a metric, code snippet, edge-case list, or implementation detail.
+- Translate the technical detail into a broader production takeaway in plain language.
+- Keep formatting highly scannable with short paragraphs and deliberate emphasis.
+- Close with one specific question that invites other experienced builders to compare notes.
 
-5. **Proof is a real number.** "23% hallucination rate → 1.8%." "Duplicate charges dropped from ~2% to 0%." "4 hours of debugging." If you can't supply a real number, don't invent one — use a concrete observation instead ("Zero recurrence since.").
+---
 
-6. **CTA is one question.** Open-ended. Specific to the lesson.
-   - "What's the most expensive retry bug you've shipped?"
-   - "How are you handling hallucination detection in your AI pipelines?"
-
-7. **Paragraph rhythm: short. Single-sentence paragraphs are common.** Long paragraphs are rare and reserved for code context.
-
-## Recurring framings that work
-
-- "Most engineers X. They're wrong." → contrarian authority
-- "I spent N hours debugging Y. Here's what I found." → story / discovery
-- "I've deployed N of X. Two failed. Here's the pattern." → authority through pattern
-- "The fix was N lines." + code → tactical credibility
-- "It looked like everything worked — until you check the [data source]." → silent-failure narrative
-
-## Recurring topics where the user has authority
-
-- Temporal (workflows, activities, retries, idempotency, replay determinism)
-- AI agents in production (hallucination, durability, multi-step orchestration)
-- Distributed systems debugging
-- Testing & coverage discipline
-- AGENTS.md / AI coding constraints
-- Durable execution as a pattern (not just a Temporal product)
-
-## Anti-patterns — never do these
-
-- Open with "I'm excited to share" or any variant
-- More than 2 hashtags
-- Emoji decoration (a single emoji inline is acceptable; emoji-as-bullet is not)
-- Combine multiple lessons in one post
-- Reference raw GitHub Issue IDs, labels, or commit SHAs in the post body
-- Invent benchmarks, customer outcomes, or specific company names
-- Mimic another creator's personal story or proprietary numbers
-- Generic CTAs like "thoughts?" or "what do you think?"
-
-## Length targets
-
-- LinkedIn primary variants: 800–1500 characters
-- Short engagement variant: 300–700 characters
-- Hook: ≤ 120 characters
-- Average sentence length: ≤ 16 words
-
-## How this file is used
-
-The runtime injects this file's contents into the system prompt of `src/idea_generator.py`. Sections marked as anti-patterns become hard constraints. The "Voice characteristics" section is shown to the model as the style spec.
+_Synthesized from 3 top reference posts, 5 curated examples on 2026-05-17._

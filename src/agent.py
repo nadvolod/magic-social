@@ -1362,6 +1362,30 @@ Examples:
     analytics_parser.add_argument("--repo", required=True)
     analytics_parser.add_argument("--posts", help="JSON file containing list of Post objects")
 
+    # derive-voice command
+    voice_parser = subparsers.add_parser(
+        "derive-voice",
+        help="Synthesize playbook/voice.md from top reference posts + good-social-posts/",
+    )
+    voice_parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print the synthesized voice guide to stdout without writing playbook/voice.md",
+    )
+
+    # judge-variants command
+    judge_parser = subparsers.add_parser(
+        "judge-variants",
+        help="LLM-as-judge: score generated variants for an Issue against top references",
+    )
+    judge_parser.add_argument("--repo", required=True, help="owner/repo")
+    judge_parser.add_argument("--issue", type=int, required=True, help="Issue number")
+    judge_parser.add_argument(
+        "--model",
+        default=None,
+        help="Override the evaluation model (default: gpt-5.4-mini or $JUDGE_MODEL)",
+    )
+
     # retrospective command
     retro_parser = subparsers.add_parser(
         "retrospective",
@@ -1653,7 +1677,7 @@ Examples:
     )
 
     token = os.environ.get("GITHUB_TOKEN")
-    if args.command not in ("experiments", "feedback", "metrics", "linkedin-poll", "health-check", "score-fixtures", "analyze-references", "retrospective") and not token:
+    if args.command not in ("experiments", "feedback", "metrics", "linkedin-poll", "health-check", "score-fixtures", "analyze-references", "retrospective", "derive-voice") and not token:
         print("Error: GITHUB_TOKEN environment variable is required", file=sys.stderr)
         sys.exit(1)
 
@@ -1710,6 +1734,35 @@ Examples:
                 f"✅ Wrote retrospective: playbook/retrospective.md "
                 f"(own posts: {report.published.total}, reference: {report.reference.total})"
             )
+
+    elif args.command == "derive-voice":
+        from .voice_deriver import gather_voice_sources, run_refresh as run_voice_refresh  # noqa: PLC0415
+        sources = gather_voice_sources()
+        markdown = run_voice_refresh(dry_run=args.dry_run)
+        if args.dry_run:
+            sys.stdout.write(markdown)
+        else:
+            print(
+                f"✅ Wrote voice guide: playbook/voice.md "
+                f"({sources.source_counts()})"
+            )
+
+    elif args.command == "judge-variants":
+        from .variant_judge import run_judge  # noqa: PLC0415
+        report_path, verdict = run_judge(
+            issue_number=args.issue,
+            repo=args.repo,
+            token=token,
+            model=args.model,
+        )
+        print(f"📊 Judge report: {report_path}")
+        if verdict.passed:
+            print("✅ PASS — v2 model meets the acceptance bar.")
+        else:
+            print("❌ FAIL — v2 model did NOT meet the bar:")
+            for reason in verdict.reasons:
+                print(f"   - {reason}")
+            sys.exit(2)
 
     elif args.command == "experiments":
         manager = ExperimentManager()

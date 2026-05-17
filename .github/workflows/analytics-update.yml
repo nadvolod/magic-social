@@ -58,12 +58,18 @@ jobs:
           WRITING_MODEL: ${{ vars.WRITING_MODEL || 'gpt-5.4' }}
         run: python -m src.agent retrospective --lookback-days 60
 
-      - name: Commit updated learning state + metrics + retrospective
+      - name: Refresh voice playbook
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          WRITING_MODEL: ${{ vars.WRITING_MODEL || 'gpt-5.4' }}
+        run: python -m src.agent derive-voice
+
+      - name: Commit updated learning state + metrics + retrospective + voice
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          for f in learning_state.json experiments.json METRICS.md README.md playbook/retrospective.md; do
+          for f in learning_state.json experiments.json METRICS.md README.md playbook/retrospective.md playbook/voice.md; do
             if [ -f "$f" ]; then
               git add "$f"
             fi

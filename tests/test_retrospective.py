@@ -317,7 +317,8 @@ def test_load_retrospective_block_returns_text_when_present(monkeypatch, tmp_pat
     fake.write_text("# Sample retrospective\n\n## Snapshot\n\nx\n", encoding="utf-8")
     monkeypatch.setattr(idea_generator, "RETROSPECTIVE_PATH", fake)
     block = idea_generator._load_retrospective_block()
-    assert "DATA-DRIVEN RETROSPECTIVE" in block
+    assert "COMPETITIVE LANDSCAPE" in block
+    assert "Raw Idea" in block
     assert "Sample retrospective" in block
 
 

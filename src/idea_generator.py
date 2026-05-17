@@ -28,11 +28,13 @@ import requests
 
 from . import github_storage, writing_client
 from .post_generator import (
-    _load_external_social_lessons,
     _load_good_posts_examples,
     _load_screenshot_signal_guidance,
     score_linkedin_post_quality,
 )
+# NOTE: _load_external_social_lessons is intentionally NOT imported — it loaded
+# v1-era Google Doc lessons from the commit-driven model. Severed at the
+# 2026-05-17 v2 re-baseline (Issue #422). See archive/v1/README.md.
 
 logger = logging.getLogger(__name__)
 
@@ -180,14 +182,15 @@ def _good_examples_block() -> str:
 
 
 def _rejection_block() -> str:
-    lessons = _load_external_social_lessons()
+    """Signals the model should treat as anti-patterns.
+
+    v2 uses screenshot-learning signal only. The v1 external-lessons path
+    (Google Doc) is intentionally severed — see archive/v1/README.md.
+    """
     screenshot = _load_screenshot_signal_guidance()
-    parts = []
-    if lessons:
-        parts.append("EXTERNAL LESSONS:\n\n" + lessons)
-    if screenshot:
-        parts.append("SCREENSHOT-LEARNED SIGNALS:\n\n" + screenshot)
-    return "\n\n".join(parts)
+    if not screenshot:
+        return ""
+    return "SCREENSHOT-LEARNED SIGNALS:\n\n" + screenshot
 
 
 RETROSPECTIVE_PATH = REPO_ROOT / "playbook" / "retrospective.md"
@@ -204,7 +207,12 @@ def _load_retrospective_block() -> str:
     text = _load_text(RETROSPECTIVE_PATH).strip()
     if not text:
         return ""
-    return "DATA-DRIVEN RETROSPECTIVE — apply these lessons in every variant:\n\n" + text
+    return (
+        "COMPETITIVE LANDSCAPE — these are the reference posts you must outperform. "
+        "The Raw Idea is the subject; the patterns below are the bar to clear, "
+        "not a template to imitate. If a reference pattern doesn't serve the Raw Idea, "
+        "drop it.\n\n" + text
+    )
 
 
 def _split_prompt_template(template: str) -> tuple[str, str]:

@@ -75,7 +75,7 @@ Same shape as Top performers, but for the cohort's weakest posts. Note the obser
 
 ## Do this
 
-A bulleted list of 4–7 concrete rules the next draft should follow, each ending with a bracketed citation. Examples:
+A bulleted list of 4–7 patterns the references rely on. Match them ONLY when they strengthen the Raw Idea — never when they replace it. Each ends with a bracketed citation. Examples:
 - Open with a single-sentence contrarian claim, ≤15 words, then a one-line setup paragraph. [own #92, ref #18]
 - Use a numbered list for tactical posts; prose for story posts. [ref top decile]
 
@@ -86,6 +86,6 @@ Each rule must be specific enough to mechanically check.
 A bulleted list of 3–5 anti-patterns, each with a one-sentence rationale and bracketed citation. Examples:
 - Avoid generic openings ("Excited to share…", "I just wanted to…") — every bottom-cohort post that opened this way landed below the median. [ref bottom #44, #51]
 
-## Shaping the next draft
+## How to exceed this cohort
 
-Two or three sentences tying the lessons together into a directive for the next generation pass. This text is read by the draft generator — be concrete enough that following it visibly changes the output.
+2–4 sentences that explicitly frame the reference posts above as the bar to clear. Name 2–3 concrete dimensions on which the next post must be **better** than the strongest reference (more specific, more grounded in lived experience, more credible numbers, more unexpected angle). End with: "The Raw Idea is non-negotiable subject matter — references inform tone and shape, not topic. If a reference pattern doesn't strengthen the Raw Idea, drop it."
