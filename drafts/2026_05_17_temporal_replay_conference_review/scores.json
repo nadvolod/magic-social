@@ -1,23 +1,21 @@
 {
   "variant_1": {
-    "angle": "What Temporal Replay clarified about durable execution",
-    "rubric_total": 60.0,
+    "angle": "Why Temporal Replay matters more than another conference recap",
+    "rubric_total": 71.0,
     "rubric_breakdown": {
       "hook": 16.0,
-      "structure": 7.0,
+      "structure": 10.0,
       "proof": 5.0,
-      "cta": 12.0,
+      "cta": 20.0,
       "clarity": 20.0
     },
     "rubric_issues": [
       "Include an indented code/config snippet for concrete teaching value.",
-      "Post length is slightly off target (1530 chars).",
-      "Add measurable proof (numbers, before/after, or concrete outcomes).",
-      "Move the question-style CTA to the final paragraph."
+      "Add measurable proof (numbers, before/after, or concrete outcomes)."
     ]
   },
   "variant_2": {
-    "angle": "Conference recap through the production questions that actually matter",
+    "angle": "A conference review through the lens of durable AI systems",
     "rubric_total": 71.0,
     "rubric_breakdown": {
       "hook": 16.0,
@@ -32,19 +30,17 @@
     ]
   },
   "variant_3": {
-    "angle": "Why an event about replay matters beyond Temporal users",
-    "rubric_total": 63.0,
+    "angle": "The review I want from engineers after Temporal Replay",
+    "rubric_total": 86.0,
     "rubric_breakdown": {
       "hook": 16.0,
       "structure": 10.0,
-      "proof": 5.0,
-      "cta": 12.0,
+      "proof": 20.0,
+      "cta": 20.0,
       "clarity": 20.0
     },
     "rubric_issues": [
-      "Include an indented code/config snippet for concrete teaching value.",
-      "Add measurable proof (numbers, before/after, or concrete outcomes).",
-      "Move the question-style CTA to the final paragraph."
+      "Include an indented code/config snippet for concrete teaching value."
     ]
   }
 }

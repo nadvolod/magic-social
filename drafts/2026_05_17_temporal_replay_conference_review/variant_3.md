@@ -1,43 +1,45 @@
-# variant_3 — Why an event about replay matters beyond Temporal users
+# variant_3 — The review I want from engineers after Temporal Replay
 
-**Intended audience:** Architects, staff engineers, and AI infrastructure engineers thinking about determinism, idempotency, and long-running execution.
-**Why it may perform:** It takes a conference name and broadens it into a durable systems thesis, which can attract readers beyond attendees while still signaling expertise.
-**Risks:** This is the most conceptual of the variants and may feel less personal than a stronger event recap with concrete people or moments.
+**Intended audience:** Senior engineers who value practical judgment over event promotion, especially Temporal users and distributed systems practitioners.
+**Why it may perform:** It uses a direct, corrective tone and gives readers a concrete framework for writing or evaluating conference reviews, which can drive comments from experienced engineers.
+**Risks:** It is more of an opinionated framing than a true recap, so it may feel abstract if the audience expects firsthand event details.
 
 ---
 
-Temporal Replay was nominally about Temporal.
+I do not want a polished conference summary of Temporal Replay.
 
-But the bigger lesson was about software architecture.
+I want the messy engineering version.
 
-Replay sounds like an implementation detail.
-It isn't.
+Tell me what held up.
+Tell me what felt hand-wavy.
+Tell me what changed your mind about Temporal.
 
-It is one of those concepts that forces you to separate code that is merely convenient from code that is actually correct.
+That is what makes a conference review useful.
 
-At Temporal Replay, that was the thread I kept coming back to.
+Temporal Replay should be especially good for this because Temporal is not a vibes topic.
+It is a correctness topic.
 
-If your workflow logic depends on non-deterministic behavior, replay exposes it.
-If your side effects are in the wrong place, replay exposes it.
-If your recovery story is vague, replay exposes it.
+Either the model of durable execution helps you reason about real systems.
+Or it does not.
 
-That is why I think conferences like Temporal Replay matter even for engineers who are not deep in the Temporal ecosystem yet.
+So the most credible Temporal Replay review is not a list of highlights.
+It is a list of changed beliefs.
 
-They push the conversation away from framework preference and toward more important questions:
+For example:
 
-What state is durable?
-What can be retried safely?
-What must be idempotent?
-What can be reconstructed from history?
+• Did the event make replay semantics clearer?
+• Did it change how you think about idempotency?
+• Did it make long-running workflows feel safer to ship?
+• Did it expose gaps in how your current AI agent stack handles failure?
 
-Those questions apply just as much to AI agents as they do to payments, fulfillment, or approvals.
+That is the kind of post senior engineers save.
 
-The industry still spends too much time on the intelligence layer and not enough on the execution layer.
+Because it compresses someone else's conference time into practical judgment.
 
-Temporal Replay was a useful correction.
+A Temporal Replay review can build real credibility if it answers one thing honestly:
 
-For me, the strongest takeaway from Temporal Replay was simple:
-if a system has to survive time, crashes, deploys, and humans, replay is not trivia.
-It is design pressure.
+What do you believe now about Temporal that you did not believe before the conference?
 
-Would love to hear whether other people see replay as a Temporal-specific concern or a broader architecture mindset.
+That is the review I would read end to end.
+
+What is the most useful changed belief you've had after a technical conference?

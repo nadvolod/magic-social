@@ -1,47 +1,46 @@
-# variant_1 — What Temporal Replay clarified about durable execution
+# variant_1 — Why Temporal Replay matters more than another conference recap
 
-**Intended audience:** Senior engineers building AI agents, workflows, and production systems with Temporal or similar durable execution tools.
-**Why it may perform:** It uses the conference as a credibility anchor but turns it into a practical systems takeaway, which fits an authority-building goal for technical readers.
-**Risks:** It stays fairly high-level because the raw idea provides almost no concrete scenes, people, or sessions.
+**Intended audience:** Senior engineers using Temporal or building AI agents and workflow-heavy production systems.
+**Why it may perform:** It reframes a generic conference recap into a sharper systems question, which fits the ICP and invites practitioners to compare concrete takeaways.
+**Risks:** Because the raw idea contains almost no specifics beyond Temporal Replay and conference review, this stays high-level and may feel less personal than stronger experience-led posts.
 
 ---
 
-Temporal Replay made one thing very clear for me.
+Most conference reviews are really travel notes.
 
-Most teams still talk about workflows as if they are just orchestration glue.
+A good Temporal Replay review should be something else.
 
-They are not.
+Temporal Replay sits at the intersection of Temporal, durable execution, and production reality.
+That makes it more interesting than a generic event post.
 
-At Temporal Replay, the most useful conversations were not about demos.
-They were about failure.
+If I were reviewing Temporal Replay, I would focus on one question:
 
-What happens after a worker restart.
-What happens during replay.
-What happens when a long-running process spans deploys, retries, and partial side effects.
+Did the conference help engineers build more correct systems?
 
-That is the real boundary between code that looks good on stage and systems that survive production.
+That is the bar that matters.
 
-What I appreciated about Temporal Replay was that the discussion stayed close to reality.
-Not "AI agents will change everything."
-More like:
+For teams working on AI agents, workflows, and long-running jobs, the hard problems are rarely the demo.
+They are replay safety, retries, timeouts, idempotency, observability, and recovery after failure.
 
-• how to keep workflow code deterministic
-• where activity boundaries should live
-• what replay actually means for debugging
-• why durable execution changes the way you think about state
+That is why a Temporal conference matters.
+Not because it is about workflow orchestration.
+Because it is about surviving production.
 
-That matters for anyone building AI systems.
+The best event reviews usually miss that.
+They talk about energy, talks, and networking.
+Useful, but incomplete.
 
-A research agent, approval flow, document pipeline, or human-in-the-loop process all have the same ugly questions underneath:
+A strong Temporal Replay review should answer things like:
 
-Can it resume?
-Can it recover?
-Can you explain what happened later?
+• What ideas changed how you think about durable execution?
+• What implementation detail was immediately useful?
+• What production mistake became easier to reason about after the event?
+• What did Temporal Replay clarify about building AI systems that need to resume, retry, and stay correct?
 
-Temporal Replay reinforced something I keep seeing in practice:
-reliability is not a feature you bolt on after the agent works.
-It is the architecture.
+That is the review I would want to read.
 
-I left Temporal Replay with more conviction that durable execution is still underused in AI engineering, even though it solves some of the most expensive production problems.
+Not "the event was great."
 
-Curious what other people took away from Temporal Replay, especially around replay, determinism, and long-running AI workflows.
+But "here is what Temporal Replay changed about how I build systems."
+
+If you wrote a review of Temporal Replay, what was the one idea you brought back into your actual architecture?

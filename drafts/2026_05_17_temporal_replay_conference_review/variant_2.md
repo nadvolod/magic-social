@@ -1,47 +1,46 @@
-# variant_2 — Conference recap through the production questions that actually matter
+# variant_2 — A conference review through the lens of durable AI systems
 
-**Intended audience:** Engineers and technical leads evaluating how to run long-lived workflows and AI systems reliably in production.
-**Why it may perform:** It is highly scannable, grounded in the conference, and reframes the event around practical engineering questions that senior readers care about.
-**Risks:** Because there are no raw-idea specifics beyond the title, it cannot include richer named scenes or people that would make it feel more vivid.
+**Intended audience:** Engineers evaluating Temporal for AI agents, durable execution, and long-running orchestration.
+**Why it may perform:** It connects Temporal Replay directly to current AI-agent pain points, making the post timely and relevant beyond conference attendees.
+**Risks:** Without named sessions, people, or scenes, the post relies on conceptual clarity rather than vivid firsthand detail.
 
 ---
 
-I went into Temporal Replay expecting talks.
+What I care about after Temporal Replay is simple:
 
-I came away thinking about incident prevention.
+Did it make me more confident about building AI systems that can fail correctly?
 
-That was the value of Temporal Replay for me.
+That is the standard.
 
-The best part of the conference was not any single flashy idea.
-It was hearing the same production questions come up again and again in different forms.
-
-Questions like:
-
-• How do you recover cleanly after partial progress?
-• How do you make replay safe?
-• How do you debug a workflow months later?
-• How do you keep long-running execution correct across code changes?
-
-Those are not niche concerns.
-They show up anywhere durable execution meets real business logic.
-
-That is also why Temporal keeps showing up in serious AI systems.
-Once an agent runs longer than a single request, touches external APIs, or needs human approval, the hard part stops being model quality.
-
-The hard part becomes correctness over time.
-
-Temporal Replay was a good reminder that production engineering is mostly about handling the moments where reality refuses to follow the happy path.
+Temporal Replay is interesting because Temporal is one of the few tools that forces engineers to confront the boring parts early.
 
 Retries.
 Timeouts.
-Replays.
-Versioning.
+Replay.
+Crash recovery.
 Auditability.
 
-Boring words.
-Very expensive when ignored.
+Those are not side concerns for AI agents.
+They are the product.
 
-I like conferences that leave me with sharper questions, not just more notes.
-Temporal Replay did that.
+A conference review worth reading should connect the event back to that reality.
 
-If you were at Temporal Replay too, what topic stuck with you most after the conference ended?
+Did Temporal Replay make durable execution feel more practical?
+Did it sharpen the boundary between workflow code and side effects?
+Did it make Temporal feel like the right abstraction for long-running agent work?
+
+That is the kind of review I trust.
+
+Not because it is more technical for its own sake.
+Because it tells me whether the conference delivered something operationally useful.
+
+There is a big difference between:
+
+• "I attended Temporal Replay"
+• "Temporal Replay changed how I think about recovery, determinism, and long-running AI work"
+
+The second one is valuable.
+
+Especially now, when so much AI content still lives at the prompt layer while the real failures happen in orchestration.
+
+If you went to Temporal Replay, what idea was actually worth carrying back into production?
