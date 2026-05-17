@@ -1,88 +1,77 @@
-# magic-social — LinkedIn Content Intelligence Agent (v2)
+# magic-social
 
-An AI agent that turns GitHub Issues into high-quality LinkedIn drafts and learns from peer/competitor posts you upload as screenshots. v2 replaces v1's commit-driven flow (which stalled at 85 stale drafts, 0 published) with **idea-driven generation** — open an Issue, and `gpt-5.4` automatically produces 5 angled variants scored against your verified winners. No magic commands.
-
-**v1 → v2 in one sentence:** the bottleneck was draft quality, not workflow plumbing, so v2 invests in voice, ICP discipline, and reference-post pattern learning rather than another auto-pipeline.
+An AI agent that turns ideas into LinkedIn drafts, learns from your feedback, and tracks what wins.
 
 ---
 
-## v2 Quickstart
+## How to use it
 
-### 1. Generate drafts from an idea
+### 1. Open an idea → get 5 drafts
 
-1. Open an Issue using the **Content Idea** template (mobile or desktop).
-2. That's it. The `needs_generation` label is auto-applied by the template, which fires `generate-from-issue.yml`. Five variants land in `drafts/YYYY_MM_DD_<slug>/` and a summary comment is posted on the Issue.
-3. Want to regenerate after editing the Issue? Remove the `needs_generation` label and re-add it.
+Open a GitHub Issue using the **Content Idea** template. The `needs_generation` label fires `generate-from-issue.yml`, and 5 variants land in `drafts/YYYY_MM_DD_<slug>/` with a summary comment on the Issue.
 
 Locally:
 
 ```bash
 GITHUB_TOKEN=... OPENAI_API_KEY=... \
-  python -m src.agent generate-from-issue --repo nadvolod/magic-social --issue 123
+  python -m src.agent generate-from-issue --repo nadvolod/magic-social --issue <number>
 ```
 
-### 2. Learn patterns from peer screenshots
+Regenerate by removing the `needs_generation` label and re-adding it.
 
-1. Drop screenshots of peer / coworker / competitor LinkedIn posts into `reference_posts/<event_slug>/raw/`.
-2. Open an Issue with the **Reference Post Analysis** template — the `needs_analysis` label fires `analyze-references.yml` automatically.
+### 2. React on the issue to give feedback
 
-The pipeline (`src/reference_posts.py`) extracts structured JSON via a multimodal model, then produces `reference_posts/<slug>/analysis/pattern_report.md` and appends durable lessons to `playbook/patterns.md`. Re-run by toggling the `needs_analysis` label.
+On any `[Social Post]` issue:
 
-Locally:
+| Reaction | Meaning |
+|---|---|
+| 🚀 | **Published** — flips status to `status:published`, saves to `good-social-posts/` as a few-shot example |
+| 👍 | Good draft |
+| 👎 | Bad draft |
+
+Or comment one of: `publish`, `rewrite`, `skip`, `too long`, `not relevant`, `weak hook`.
+
+Feedback is consumed on the next learning-loop run (`python -m src.agent learn` or the scheduled `analytics-update.yml` workflow).
+
+### 3. Learn from peer posts (optional)
+
+Drop screenshots into `reference_posts/<slug>/raw/`, then open an Issue with the **Reference Post Analysis** template. `analyze-references.yml` extracts patterns into `reference_posts/<slug>/analysis/pattern_report.md` and appends durable lessons to `playbook/patterns.md`.
 
 ```bash
-OPENAI_API_KEY=... \
-  python -m src.agent analyze-references --slug replay_conference_2026
+python -m src.agent analyze-references --slug replay_conference_2026
 ```
-
-### 3. Validate scorer calibration
-
-```bash
-python -m src.agent score-fixtures
-```
-
-Scores the 5 verified `good-social-posts/` against the rubric. Average must be ≥ 75/100, otherwise the calibration anchors in `src/agents/quality_reviewer.py` need sharpening.
 
 ---
 
-## v2 Architecture (delta from v1)
+## Where analytics live
 
-| Layer | v1 | v2 |
+| Signal | Lives in | Updated by |
 |---|---|---|
-| Trigger | Daily commit scan (`scan-commits.yml`) | **Opening an Issue with `needs_generation` label** (`generate-from-issue.yml`) |
-| Writing model | `gpt-5.4-mini` only | **`gpt-5.4`** (`WRITING_MODEL` env) |
-| Eval model | Same model | `gpt-5.4-mini` (cheap tier) |
-| Multimodal | Own published posts only | + **Peer post screenshots** (`reference_posts.py`) |
-| Voice asset | `good-social-posts/` few-shot | + `playbook/voice.md` distilled voice guide |
-| Patterns | `learning_state.json` only | + `playbook/patterns.md` harvested from reference posts |
+| **Per-post feedback** (👍/👎/🚀, comments, ratings) | GitHub Issue reactions + comments on each `[Social Post]` issue | You, manually |
+| **Learning loop state** (scoring weights, feedback events, rejection reasons) | `learning_state.json` | `python -m src.agent learn` / `analytics-update.yml` (Wed + Fri 09:00 UTC) |
+| **Screenshot benchmarks** (top 10% vs bottom 90% peer/own posts) | `screenshot_learning.json` | `python -m src.agent screenshot-learn` / `screenshot-learning.yml` (daily 06:30 UTC) |
+| **A/B experiments** (hook, length, tone, CTA, structure) | `experiments.json` | `analytics-update.yml` |
+| **LinkedIn engagement** (impressions, saves, reposts, comments, follower count) | `linkedin_metrics.json` | `linkedin-poll.yml` (daily 07:00 UTC), needs `LINKEDIN_ACCESS_TOKEN` |
+| **Reference-post patterns** (durable voice/style lessons) | `playbook/patterns.md`, `playbook/voice.md` | `analyze-references.yml` |
+| **Generated dashboard** (the section below) | `METRICS.md` + this README between the `METRICS_DASHBOARD` markers | `python -m src.agent metrics` |
+| **Live dashboard UI** | `dashboard/` (Next.js app, Neon-backed) | `cd dashboard && npm run dev` |
 
-The v1 commit-scan workflow is dormant (schedule disabled) but the code is preserved. Re-enable `scan-commits.yml`'s `cron:` if Issue-driven generation feels too slow to seed.
+Refresh the embedded dashboard:
 
-### v2 success gate
-
-Within 2 weeks of v2 shipping, ≥ 3 generated posts should reach LinkedIn. If not, the bottleneck isn't infrastructure — STOP and reconsider voice/ICP/prompts before adding more pipelines.
-
----
-
-## Legacy v1 docs (commit-driven flow)
-
-**Starting baseline (v1):** your real LinkedIn posts set the minimum quality bar. Generated posts must match your current style before publishing. But the goal isn't to match — it's to **surpass and grow**.
+```bash
+python -m src.agent metrics      # rewrites METRICS.md + README block
+python -m src.agent linkedin-poll  # pulls latest LinkedIn metrics
+```
 
 ---
 
-## Objective: 100% Follower Growth Per Year
+## Environment variables
 
-The system's north star is **doubling your LinkedIn followers annually** through consistently high-performing content.
-
-| Phase | Goal | Status |
-|-------|------|--------|
-| **1. Match** | Generate posts that match your current style | In progress |
-| **2. Ship** | Get 3 AI-generated posts published | Not yet |
-| **3. Learn** | Learning loop active, weights adjusting from real data | Waiting for published post analytics |
-| **4. Outperform** | AI posts consistently beat your baseline engagement | Not yet |
-| **5. Scale** | 100% follower growth year-over-year | Not yet |
-
-Phase 1 uses your screenshot posts as the quality floor. Once the system ships posts that perform, it shifts to optimizing for **engagement and reach** — not just matching your voice.
+| Variable | Required | Description |
+|---|---|---|
+| `GITHUB_TOKEN` | Yes | GitHub PAT with repo + issues write access |
+| `OPENAI_API_KEY` | Yes | OpenAI API key (default model: `gpt-5.4-mini`; writer uses `gpt-5.4` via `WRITING_MODEL`) |
+| `LINKEDIN_ACCESS_TOKEN` | No | LinkedIn OAuth 2.0 token for daily metrics polling |
 
 ---
 
@@ -222,46 +211,6 @@ Parsed from GitHub Issue reactions, quick comments, and `## Post Feedback` templ
 - Implicit signals (automated): **119** (posts auto-marked after 72h no feedback or 7d stale)
 - Combined total: **482** feedback entries
 
-**Improvement themes** (from 'What would make it better?'):
-
-_Use quick reactions (👍/👎/🚀), mobile format, or a short comment on any post issue to contribute data here._
-
-#### How to Give Feedback
-
-On any generated GitHub Issue, choose the fastest option:
-
-- React to the issue: 👍 good draft, 👎 bad draft, 🚀 published
-- Add a short comment: `publish`, `rewrite`, `skip`, `too long`, `not relevant`, `weak hook`
-
-Quick mobile format:
-
-```
-## Post Feedback
-
-- Verdict: ✅ published  OR  ❌ skipped
-- Reason: quality / style / not relevant / too long / too technical / other
-- Improve: 
-- Rating: 1-5
-```
-
-Optional full template:
-
-```
-## Post Feedback — YYYY-MM-DD
-
-- Published: yes / no
-- If not published, why: quality / style / not relevant / too long / too technical / other
-- What would make it better: 
-- Rating (1-5): 
-```
-
-Free-text also works (still include `## Post Feedback`):
-
-```
-## Post Feedback
-This one felt too generic. Make it sharper and include one concrete number.
-```
-
 ---
 
 ### 🔗 LinkedIn Metrics
@@ -272,177 +221,32 @@ The daily poll has been running but returning 0 followers and no posts.
 This usually means `LINKEDIN_ACCESS_TOKEN` is missing or expired.
 
 To fix:
-1. Create or refresh your LinkedIn OAuth token (see README for setup)
+1. Create or refresh your LinkedIn OAuth token
 2. Add it as `LINKEDIN_ACCESS_TOKEN` in GitHub Secrets
 3. Run `python -m src.agent linkedin-poll` to verify
 
----
-
-### 🚀 Action Items
-
-Prioritized by impact on getting the system producing and improving:
-
-1. **Unblock post generation** — stale drafts are blocking new posts. Review/archive old draft issues or run a scan with `--disable-backlog-throttle`
-2. **Connect LinkedIn API** — add `LINKEDIN_ACCESS_TOKEN` to GitHub Secrets to start tracking real engagement data
-3. **Publish your first post** — the learning loop, experiments, and weight adjustments all need at least 1 published post with analytics
-4. **Review feedback themes** — explicit average rating is below 3.0. Check recent feedback and update generation prompt or examples
-
----
-
-### 🔁 How to Update This Dashboard
-
-```bash
-# Regenerate METRICS.md from current learning state + experiments
-python -m src.agent metrics
-
-# Post feedback requests on all existing open issues (run once)
-python -m src.agent backfill-feedback --repo owner/repo
-
-# Poll LinkedIn API for post metrics + follower count
-python -m src.agent linkedin-poll
-
-# Learn from screenshot-only benchmark issues
-python -m src.agent screenshot-learn --repo owner/repo
-
-# Collect analytics (updates learning state, then regenerate)
-python -m src.agent analytics --repo owner/repo --posts posts.json
-python -m src.agent metrics
-```
-
-> **Tip:** The daily LinkedIn poll workflow (`.github/workflows/linkedin-poll.yml`) runs
-> automatically and commits updated dashboard files (`linkedin_metrics.json`, `METRICS.md`, `README.md`).
 <!-- METRICS_DASHBOARD_END -->
 
 ---
 
-## Monitored Repos
+## Scheduled workflows
 
-The agent scans these repos for lesson-worthy commits. **Edit `config.yaml` → `agent.source_repos` to add or remove repos.**
-
-| Repo | Topics |
-|------|--------|
-| [`nadvolod/LifeNotes`](https://github.com/nadvolod/LifeNotes) | AI (GPT-4o, Whisper), Playwright E2E, Next.js/Vercel, Clerk auth |
-| [`nadvolod/temporal-learning`](https://github.com/nadvolod/temporal-learning) | Temporal.io, distributed systems, workflow orchestration, AI agents |
-| [`nadvolod/ultimate-code-metrics`](https://github.com/nadvolod/ultimate-code-metrics) | Code quality metrics, engineering productivity |
-| [`nadvolod/ceo-mission-control`](https://github.com/nadvolod/ceo-mission-control) | CEO tools, mission control, leadership engineering |
-| [`nadvolod/magic-social`](https://github.com/nadvolod/magic-social) | This agent itself — meta-improvements, AI tooling |
-
-To add a repo: edit `config.yaml` and add to `source_repos` list, then update `.github/workflows/scan-commits.yml` `--repos` argument to match.
+| Workflow | Schedule | Purpose |
+|---|---|---|
+| `generate-from-issue.yml` | On Issue with `needs_generation` | Idea → 5 drafts |
+| `analyze-references.yml` | On Issue with `needs_analysis` | Peer screenshots → patterns |
+| `analytics-update.yml` | Wed + Fri 09:00 UTC | Consume feedback, update learning state |
+| `linkedin-poll.yml` | Daily 07:00 UTC | Poll LinkedIn API, refresh dashboard |
+| `screenshot-learning.yml` | Daily 06:30 UTC | Reclassify screenshot benchmarks |
+| `weekly-learning.yml` | Weekly | Roll up patterns + voice updates |
+| `self-improve.yml` | Monday 10:00 UTC | Backlog analysis, config tuning |
 
 ---
 
-## How It Works
-
-1. **Scans** commits from monitored repos daily
-2. **Scores** each commit 0-100 (novelty, impact, teachability, relevance, proof)
-3. **Generates 3 variations** per qualifying commit (different hook patterns)
-4. **Stores** each variation as a GitHub Issue for review
-5. **Learns** from your feedback — which posts you publish, skip, or rate
-6. **Benchmarks** against your real LinkedIn posts (uploaded as screenshot issues)
-
-### Your Posts Set the Starting Bar
-
-Upload screenshots of your published LinkedIn posts as [Social Screenshot issues](https://github.com/nadvolod/magic-social/issues/new?template=social-screenshot.md). The AI reads the content and engagement metrics, classifies them as top 10% vs bottom 90%, and uses those signals to improve future generation.
-
-Right now, your posts are the quality floor — generated posts must meet this bar to ship. As the system learns from published post analytics, the goal shifts from matching your style to **beating your best engagement numbers** and driving follower growth.
-
----
-
-## Quick Start
+## Validate scorer calibration
 
 ```bash
-# Install
-pip install -r requirements.txt
-
-# Dry run — see what posts would be generated (no issues created)
-python -m src.agent scan --repos nadvolod/LifeNotes nadvolod/temporal-learning --dry-run --variations 3
-
-# Generate posts and create GitHub Issues
-python -m src.agent scan --repos nadvolod/LifeNotes nadvolod/temporal-learning --issue-repo nadvolod/magic-social --variations 3
-
-# Check system health
-python -m src.agent health-check
-
-# Refresh metrics dashboard
-python -m src.agent metrics
+python -m src.agent score-fixtures
 ```
 
-### Environment Variables
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `GITHUB_TOKEN` | Yes | GitHub PAT with repo + issues write access |
-| `OPENAI_API_KEY` | Yes | OpenAI API key for AI-generated posts |
-| `LINKEDIN_ACCESS_TOKEN` | No | LinkedIn OAuth 2.0 token for daily metrics polling |
-
----
-
-## Giving Feedback
-
-On any generated GitHub Issue:
-
-- **Quick reactions:** 👍 good draft, 👎 bad draft, 🚀 published
-- **Short comment:** `publish`, `rewrite`, `skip`, `too long`, `not relevant`, `weak hook`
-- **Rating template:**
-  ```
-  ## Post Feedback
-  - Verdict: published / skipped
-  - Rating: 1-5
-  - Improve: (what would make it better)
-  ```
-
----
-
-## Post Generation
-
-Each commit gets **3 variations** with different hook patterns:
-
-| Pattern | Template |
-|---------|---------|
-| `result` | "We cut {metric} by {amount}. Here's exactly how." |
-| `contrarian` | "Most engineers {wrong_belief}. They're wrong." |
-| `story` | "Yesterday I spent {time} debugging {problem}." |
-| `number` | "{N} things I learned about {topic} the hard way:" |
-| `question` | "Why does {bad_thing} keep happening in {system}?" |
-| `confession` | "I made a mistake. {honest_statement}" |
-| `revelation` | "I was wrong about {topic}. Here's what changed my mind." |
-
-Each variation goes through a quality gate (scored 0-100, threshold 75) with up to 2 rewrite attempts.
-
----
-
-## GitHub Actions
-
-| Workflow | Schedule | What it does |
-|----------|----------|-------------|
-| Scan commits | Daily 08:00 UTC + push to main | Scans all monitored repos, generates 3 variations per commit |
-| Collect analytics | Wed + Fri 09:00 UTC | Parses feedback from issues, updates learning state |
-| LinkedIn poll | Daily 07:00 UTC | Polls LinkedIn API for engagement metrics |
-| Self-improve | Monday 10:00 UTC | Analyzes backlog, tunes config |
-| Screenshot learning | Daily 06:30 UTC + issue events | AI-classifies screenshot benchmark issues |
-
----
-
-## Architecture
-
-```
-GitHub Actions → src/agent.py (orchestrator)
-                    ↓
-    ├─ commit_scanner.py  → scans repos for commits
-    ├─ scoring.py         → scores 0-100
-    ├─ post_generator.py  → generates 3 variations (OpenAI gpt-4o)
-    ├─ github_storage.py  → creates GitHub Issues
-    ├─ analytics.py       → learning loop
-    └─ experiments.py     → A/B testing
-```
-
-| Component | File | Purpose |
-|-----------|------|---------|
-| Orchestrator | `src/agent.py` | Pipeline, CLI, metrics |
-| Commit scanner | `src/commit_scanner.py` | Multi-repo scanning |
-| Scoring | `src/scoring.py` | 0-100 with learned weights |
-| Post generator | `src/post_generator.py` | AI content + quality gate |
-| Storage | `src/github_storage.py` | GitHub Issues |
-| Analytics | `src/analytics.py` | Feedback + learning |
-| Experiments | `src/experiments.py` | A/B tests |
-| Screenshot learning | `src/screenshot_learning.py` | Visual benchmark learning |
+Average must be ≥ 75/100 against `good-social-posts/`. Below that, sharpen the calibration anchors in `src/agents/quality_reviewer.py`.
