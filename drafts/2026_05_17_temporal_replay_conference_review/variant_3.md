@@ -1,38 +1,42 @@
-# variant_3 — From conference energy to a concrete AI-operations takeaway
+# variant_3 — The conference scene that captured the community
 
-**Intended audience:** Production-minded AI engineers, platform engineers, and architects thinking about reliability beyond prototypes.
-**Why it may perform:** It gives a clearer technical thesis than a normal conference recap while staying grounded in firsthand experience and named specifics.
-**Risks:** More insight-forward than purely reflective, so it may feel slightly less warm to readers who mainly want a gratitude post.
+**Intended audience:** Engineers who value both technical depth and the community around production-grade AI and distributed systems.
+**Why it may perform:** It uses a vivid scene as the anchor, which makes the post memorable and shareable, while still grounding the event in Temporal, Nexus, Mason, Melissa, Netflix, and OpenAI.
+**Risks:** This version leans more atmospheric, so it may generate more affinity than debate.
 
----
+## LinkedIn-ready post (copy below)
 
-Replay 2026 made one thing much clearer to me: AI orchestration is becoming an operations problem.
+```
+One moment from Replay 2026 captured the whole conference for me.
 
-I went in excited to learn.
-I left with a much sharper view of what production AI actually needs.
+A room full of engineers learning about durable systems by day, then ending up around a secret Tiki room, live music, sonic gameplay, and glow-in-the-dark cotton candy at night.
 
-I was lucky to support the Nexus workshop as a teaching assistant, with Mason leading the room, and to spend time around Melissa’s AI workshop as well.
+That contrast should not have worked.
 
-Those workshop conversations were more useful than any generic “agents are the future” claim.
-People were asking the right questions:
+But it did.
 
-- How do you resume long-running AI work?
-- How do you survive failures without losing progress?
-- How do you make the system observable enough to trust?
+I was there as a teaching assistant for the Nexus workshop with Mason and the AI workshop led by Melissa, so I got to experience the event from inside the rooms where people were actually building, asking questions, and getting unstuck.
 
-Then the broader conference reinforced it.
-Talks from Netflix and OpenAI showed that this is no longer theoretical. Teams are using Temporal to scale AI operations in real systems.
+That made the atmosphere hit differently.
 
-That was my biggest takeaway from Replay:
-if AI work spans multiple steps, external APIs, human review, or long runtimes, you need durability as a system property.
-Not as an afterthought.
+Replay was not just a place where people talked about AI.
+It felt like a place where people are trying to make AI durable.
 
-And yes, it was also a beautiful event.
-A secret Tiki room.
-Live music.
-Sonic gameplay.
-Glow-in-the-dark cotton candy.
+You could hear it in the presentations from Netflix and OpenAI on using Temporal to scale AI operations.
 
-Huge thanks to Temporal for hosting a conference that managed to be both technically serious and genuinely fun.
+You could see it in the workshop rooms.
 
-I’m excited to bring these lessons back into the durable distributed systems I’m building with AI.
+And you could feel it in the conversations between sessions.
+
+For me, that is what made the conference memorable.
+
+Not just the production stories.
+Not just the scale.
+Not just the fun details.
+
+It was the sense that this community is building something real together.
+
+Huge thanks to Temporal, Mason, Melissa, and all the people I met at Replay.
+
+I left grateful, a little overloaded with ideas, and very ready to apply them.
+```

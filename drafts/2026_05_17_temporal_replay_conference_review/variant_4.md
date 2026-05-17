@@ -1,33 +1,42 @@
-# variant_4 — A people-first reflection on a fast-growing engineering community
+# variant_4 — What I’m taking back to production from Replay
 
-**Intended audience:** Engineers who care about both technical depth and the communities forming around durable execution and AI systems.
-**Why it may perform:** It directly expresses the gratitude-and-community emotional core, which makes it feel more authentic than a forced lesson post.
-**Risks:** It is the least authority-forward option and may generate fewer saves from readers seeking tactical takeaways.
+**Intended audience:** Production AI engineers and architects who want to connect conference learning to concrete next steps in system design.
+**Why it may perform:** It keeps the gratitude core but adds a stronger forward-looking thesis for engineers who care about durable orchestration in practice.
+**Risks:** It edges closer to an insight post, so readers expecting a pure recap may find it slightly more opinionated.
 
----
+## LinkedIn-ready post (copy below)
 
-What I’ll remember most from Replay 2026 is how human it felt.
+```
+Replay 2026 gave me more than conference energy.
 
-It’s easy to look at a conference with 2000+ engineers and think about scale.
+It gave me a sharper learning agenda.
 
-But my experience was much more personal.
+I was lucky to support the Nexus workshop with Mason and the AI workshop led by Melissa, and that hands-on vantage point made one thing very clear:
 
-I got to support the Nexus workshop as a teaching assistant, and I also spent time helping around Melissa’s AI workshop.
-Those rooms created the kind of conversations I always hope for at technical events: honest questions, shared debugging stories, and people trying to build things correctly instead of just quickly.
+The next wave of AI engineering will be won by teams that treat orchestration as infrastructure, not glue code.
 
-The talks from Netflix and OpenAI mattered.
-So did the big vision around Temporal and durable distributed systems with AI.
+That idea kept showing up everywhere.
 
-But the lasting part for me was the people.
-The engineers I met.
-The conversations between sessions.
-The feeling that this community is trying to build real systems, not just impressive demos.
+In the workshop rooms.
+In hallway conversations.
+In talks from companies like Netflix and OpenAI on how they are using Temporal to scale AI operations.
 
-And somehow all of that existed alongside a secret Tiki room, live music, sonic gameplay, and glow-in-the-dark cotton candy.
+The common thread was durability.
 
-That mix was surprisingly perfect.
-Serious engineering during the day.
-Genuine connection around it.
+Not just getting an agent to work once.
+Getting it to survive retries, long-running execution, failures, and real production complexity.
 
-Huge thanks to Temporal for hosting Replay and creating space for both.
-I learned a lot, met great people, and I’m leaving grateful for the human beings I connected with.
+That is the part I am most excited to apply.
+
+Replay also somehow managed to make all of this feel joyful.
+
+A secret Tiki room, live music, sonic gameplay, and glow-in-the-dark cotton candy is not the usual backdrop for distributed systems conversations.
+
+But maybe it should be.
+
+Huge thanks to Temporal for hosting, and to Mason, Melissa, and the people I connected with there.
+
+I left with more conviction that durable distributed systems will be a core part of production AI.
+
+Now it is time to turn that learning into better systems.
+```

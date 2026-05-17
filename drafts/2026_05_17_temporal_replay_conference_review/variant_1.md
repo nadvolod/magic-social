@@ -1,34 +1,37 @@
-# variant_1 — Teaching-assistant gratitude from the workshop floor
+# variant_1 — The TA perspective that made Replay personal
 
-**Intended audience:** Engineers building AI systems in production, especially those evaluating durable execution and orchestration patterns.
-**Why it may perform:** It matches the raw idea’s gratitude-centered emotional core while still giving senior engineers one concrete takeaway about Temporal and AI operations.
-**Risks:** Less punchy than a hard technical lesson post; some readers may prefer a sharper single insight or stronger narrative tension.
+**Intended audience:** Engineers building AI systems in production who care about durable orchestration, community, and learning from practitioners.
+**Why it may perform:** It opens with a personal workshop moment, names Mason, Melissa, Nexus, Netflix, OpenAI, Temporal, and adds concrete sensory details that make the recap feel lived rather than generic.
+**Risks:** Less tactical than a pure technical post, so some readers may want a sharper takeaway on what was learned technically.
 
----
+## LinkedIn-ready post (copy below)
 
-I left Replay 2026 feeling grateful for the people more than the stage.
+```
+The best part of Replay 2026 for me was not a keynote.
 
-I got to support two workshops as a teaching assistant, and that ended up being the best part of the conference for me.
+It was getting to support the workshops.
 
-In the Nexus workshop, led by Mason, I spent my time helping engineers work through durable execution ideas in real time.
+I was lucky enough to be a teaching assistant in the Nexus workshop with Mason and in the AI workshop led by Melissa.
 
-In Melissa’s AI workshop, I got to see the same thing from a different angle: people trying to figure out what it actually takes to run AI systems beyond the demo.
+That changed the whole conference for me.
 
-That was the real energy of Replay.
+Instead of only watching talks, I got to see engineers up close while they were actually working through durable execution, orchestration, and the messy reality of building AI systems that have to survive production.
 
-Yes, there were 2000+ engineers.
-Yes, the talks from Netflix and OpenAI showed how serious this space has become.
+That is a very different experience from just hearing the polished version on stage.
 
-But what stayed with me were the smaller moments:
-- people leaning over laptops asking the hard questions
-- hallway conversations after sessions
-- the feeling that durable distributed systems with AI are becoming a real engineering discipline
+Replay brought together 2000+ engineers, but what stayed with me most were the smaller moments:
 
-One takeaway I’m bringing home is simple:
-Temporal makes more sense to me now as infrastructure for AI operations, not just workflow orchestration. When agents need retries, recovery, auditability, and long-running state, durability stops being optional.
+• helping in the room during the Nexus workshop
+• learning alongside people in Melissa’s AI workshop
+• hearing how Netflix and OpenAI are using Temporal to scale AI operations
+• then somehow ending the day with a secret Tiki room, live music, sonic gameplay, and glow-in-the-dark cotton candy
 
-And somehow the whole event also included a secret Tiki room, live music, sonic gameplay, and glow-in-the-dark cotton candy.
+That mix felt very Temporal to me.
 
-Huge thanks to Temporal for hosting Replay, to Mason and Melissa for the workshops, and to the people I met along the way.
+Serious engineering during the day.
+Real human connection all the way through.
 
-I’m leaving with a lot of ideas, and even more appreciation for this community.
+Huge thanks to Mason, Melissa, Temporal, and everyone I got to meet there.
+
+I came home with a lot to learn, a lot to apply, and a lot of gratitude for the people building durable distributed systems together.
+```
