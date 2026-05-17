@@ -1,23 +1,20 @@
 # variant_5 — short engagement
 
-**Intended audience:** Engineers working on AI agents, workflow orchestration, and durable execution
-**Why it may perform:** Short, sharp, and comment-friendly with a clear claim tied to an observed conference signal
-**Risks:** Less event-specific detail than the longer variants, so it may feel more like an insight post than a conference review
+**Intended audience:** Busy senior engineers and AI infra builders who respond to concise, high-signal claims
+**Why it may perform:** It is short, sharp, and comment-friendly, with a clear contrast between demo and production concerns.
+**Risks:** It is intentionally compressed, so it has less concrete scene-setting than the longer variants.
 
 ---
 
-Replay confirmed something I have been seeing all year.
+Temporal Replay reinforced something I already suspected.
 
-Serious AI engineering is moving down the stack.
+The hard part of production AI isn't getting an agent to do step 1.
 
-The interesting conversations are no longer just about models.
+It's getting step 17 to resume correctly after a crash, retry safely, and leave an audit trail.
 
-They are about retries, replay, resumability, and what happens after step 4 fails.
+That's why durable execution keeps showing up in serious engineering conversations.
 
-At Replay, the packed rooms and best hallway chats kept coming back to the same thing:
+Demos optimize for capability.
+Production optimizes for recovery.
 
-boring infrastructure wins.
-
-The lesson: production AI gets decided by recovery semantics, not demo quality.
-
-What infrastructure question are more teams finally starting to ask?
+What production failure mode do you think AI teams still underestimate most?

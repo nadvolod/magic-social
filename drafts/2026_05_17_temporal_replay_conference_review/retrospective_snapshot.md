@@ -2,60 +2,61 @@
 
 ## Snapshot
 
-There are **no published-post analytics from your own account in this 60-day window**, so this retrospective relies entirely on **external reference posts**: **3 top performers** and **5 usable bottom performers** (one bottom entry, **ref #93**, has no content/signals and cannot support conclusions). The clearest pattern is that top posts were **straightforward, informative, and structurally easy to scan**—announcement, personal build story, or tutorial/list—while several bottom posts were **more technical, code-heavy, or promotional** without a comparably strong payoff signal. Confidence is **moderate at best** because the sample is small and only reference-based.
+There are no analytics for your own published posts in this 60-day window, so this retrospective is based entirely on external references: 3 top-performing screenshots and 5 usable bottom-performing screenshots, plus 1 empty reference entry with no signals. The clearest headline finding is that the strongest reference posts package technical content as either a timely announcement or a concrete build/tutorial, usually with simple list-like structure and low-friction CTAs; several weaker posts were more promotional, more tool-config-specific, or buried the practical takeaway inside a problem narrative. Confidence is moderate at best because the top cohort is small and one bottom reference is blank, so treat these as directional rules, not hard laws.
 
 ## Top performers
 
-- **Source:** Reference — issue #95  
-  **Key metrics:** engagement_score **436.0**; **379 reactions**, **12 comments**, **7 reposts**  
-  **Why it worked:** It used an **announcement hook** with an **informative tone** and a clear **introduction → features → comparison → CTA** structure around a timely technology update.  
+- **Source:** Reference — issue #95
+  - **Key metrics:** engagement_score 436.0; 379 reactions, 12 comments, 7 reposts
+  - **Why it worked:** It used a timely announcement hook, informative tone, and a clear progression from intro to features to comparison to CTA, with concrete numbers supporting the update. [ref #95]
 
-- **Source:** Reference — issue #94  
-  **Key metrics:** engagement_score **111.0**; **60 reactions**, **10 comments**, **7 reposts**  
-  **Why it worked:** It framed the content as a **personal story** tied to a real build and delivered it in a **list structure**, which made the Temporal use case concrete and easy to follow.  
+- **Source:** Reference — issue #94
+  - **Key metrics:** engagement_score 111.0; 60 reactions, 10 comments, 7 reposts
+  - **Why it worked:** It framed the post as a personal build story and used list structure around a real Temporal app, which made the technical content concrete and easy to scan. [ref #94]
 
-- **Source:** Reference — issue #92  
-  **Key metrics:** engagement_score **36.0**; **5,883 impressions**, **27 reactions**, **2 comments**, **1 repost**  
-  **Why it worked:** It positioned itself as an **educational tutorial** with an **informative hook** and **list structure**, creating a clear expectation of practical value.  
+- **Source:** Reference — issue #92
+  - **Key metrics:** engagement_score 36.0; 5,883 impressions, 27 reactions, 2 comments, 1 repost
+  - **Why it worked:** It positioned itself as an educational tutorial, used a list structure, and gave readers a clear “learn this” promise with a link CTA. [ref #92]
 
 ## Bottom performers
 
-- **Source:** Reference — issue #90  
-  **Key metrics:** engagement_score **0.0**; **515 impressions**, **0 reactions**, **0 comments**, **0 reposts**  
-  **Why it likely underperformed:** It opened with a **problem statement** and used a **narrative + bullets** format, but the post was also **code-including** and technically specific, which did not convert even modest reach into engagement.  
+- **Source:** Reference — issue #90
+  - **Key metrics:** engagement_score 0.0; 515 impressions, 0 reactions, 0 comments, 0 reposts
+  - **Why it worked:** It likely underperformed because the problem-statement hook led into a narrative-plus-bullets format with code and curiosity CTA, but no evidence here that the payoff was immediately legible or broadly relevant. [ref #90]
 
-- **Source:** Reference — issue #204  
-  **Key metrics:** engagement_score **2.0**; **2 reactions**, **0 comments**, **0 reposts**  
-  **Why it likely underperformed:** Despite a sharp **contrarian/problem-solution hook**, it stayed in a **personal anecdote → problem → solution → takeaway** frame that appears less effective here than the top cohort’s simpler announcement/list/tutorial formats.  
+- **Source:** Reference — issue #204
+  - **Key metrics:** engagement_score 2.0; 2 reactions, 0 comments, 0 reposts
+  - **Why it worked:** It likely struggled because the contrarian hook and anecdotal problem/solution framing were narrower and less broadly useful than the top posts’ clearer build/tutorial or product-news framing. [ref #204]
 
-- **Source:** Reference — issue #413  
-  **Key metrics:** engagement_score **21.0**; **890 impressions**, **9 reactions**, **4 comments**, **0 reposts**  
-  **Why it likely underperformed:** It mixed a **problem-solution hook** with a **promotional CTA** and **webinar link**, making it feel more like marketing than a standalone lesson.  
+- **Source:** Reference — issue #413
+  - **Key metrics:** engagement_score 21.0; 890 impressions, 9 reactions, 4 comments, 0 reposts
+  - **Why it worked:** It appears to have been held back by promotional packaging—a webinar/promo link, confident promotional tone, and embedded media—despite technical content and bullets. [ref #413]
 
-- **Source:** Reference — issue #100  
-  **Key metrics:** engagement_score **49.0**; **3,480 impressions**, **31 reactions**, **5 comments**, **1 repost**  
-  **Why it likely underperformed:** It was **step-by-step** and useful, but the topic was a narrow tooling tweak and included **code**, which drew some interest but far less than broader tutorial/build-story posts.  
+- **Source:** Reference — issue #100
+  - **Key metrics:** engagement_score 49.0; 3,480 impressions, 31 reactions, 5 comments, 1 repost
+  - **Why it worked:** It likely capped out because it focused on a narrow tool-setting optimization in step-by-step form, which is useful but less inherently novel or shareable than the top cohort’s broader build and announcement posts. [ref #100]
 
-- **Source:** Reference — issue #93  
-  **Key metrics:** engagement_score **0.0**; no usable metrics/signals  
-  **Why it likely underperformed:** No content was captured, so this entry should be excluded from pattern-setting.  
+- **Source:** Reference — issue #93
+  - **Key metrics:** engagement_score 0.0; no usable metrics or text signals
+  - **Why it worked:** No conclusion should be drawn from this item because the screenshot data is empty. [ref #93]
 
 ## Do this
 
-- Open with a **plain-English value signal in the first line**: either a product/news announcement, a personal build statement, or a tutorial label; avoid making the reader infer the topic. [ref #95, ref #94, ref #92]  
-- Use a **scan-friendly structure**: either a **list** for builds/tutorials or a **4-part sequence** of intro, features/details, comparison/context, and CTA for announcements. [ref #95, ref #94, ref #92]  
-- Make the post about **one concrete artifact**—a launch, a thing you built, or a tutorial—not a broad reflection on a problem. [ref #95, ref #94, ref #92 vs. ref #90, ref #204]  
-- Keep the tone **informative or educational**, not sales-led; the strongest reference posts all emphasized explanation over promotion. [ref #95, ref #94, ref #92 vs. ref #413]  
-- If you include a CTA, make it **low-friction and content-adjacent**—“details,” “link,” or “contact”—rather than a webinar or overt promo ask. [ref #95, ref #92, ref #94 vs. ref #413]  
-- For technical topics, **lead with the outcome/use case before implementation details**; the better-performing references foregrounded what was built or learned, while lower performers led more directly from technical setup/problem framing. [ref #94, ref #92 vs. ref #90, ref #100]  
+- Open with one of two proven frames only: a timely product/technology announcement or a first-person “I built X with Y” setup. Those are the only hook styles represented in the top references. [ref #95, ref #94]
+- Structure technical posts as a scan-friendly list or simple sequence, not dense prose: intro → features/comparison → CTA for announcements, or build context → list of what it does/why it matters → CTA for project posts. [ref #95, ref #94, ref #92]
+- Make the value proposition obvious in the first line by naming the artifact: model release, app, or tutorial. All top references tell the reader immediately what exists. [ref #95, ref #94, ref #92]
+- Use educational or informative tone over promotional tone; every top reference is informative/educational, while the clearest promotional bottom post underperformed. [ref #95, ref #94, ref #92, ref #413]
+- Include concrete specifics early—features, comparisons, or implementation context—rather than only a vague pain point. The strongest post used numbers and comparison; the build post anchored on a specific app; the tutorial post named the exact thing being taught. [ref #95, ref #94, ref #92]
+- Keep the CTA low-friction and content-aligned: “more details,” “link to tutorial,” or “contact if relevant.” Top references used soft CTAs, while the webinar/promo CTA appears weaker. [ref #95, ref #94, ref #92, ref #413]
 
 ## Avoid this
 
-- Avoid opening on a **generic pain point or engineering annoyance** without immediately anchoring it to a tangible deliverable; that pattern showed up in low performers, not top ones. [ref #90, ref #204]  
-- Avoid making the post **code-forward** in the main narrative; every usable bottom post with `has_code: true` stayed in the bottom cohort, while all top posts had `has_code: false`. [ref #90, ref #413, ref #100 vs. ref #95, ref #94, ref #92]  
-- Avoid **promotional CTAs** such as webinar pushes or product-marketing framing; the clearest example underperformed despite decent formatting. [ref #413]  
-- Avoid overly **niche tooling/setup posts** unless you broaden them into a larger engineering lesson or workflow outcome. [ref #100 vs. ref #92, ref #94]  
+- Avoid leading with a pain statement unless the payoff is immediately concrete; the zero-engagement problem-led post did not convert attention into any interaction. [ref #90]
+- Avoid overt promo packaging in the post body or CTA; the bottom cohort includes a technically solid post that still underperformed with webinar/promo framing. [ref #413]
+- Avoid overly narrow config-tip framing as the main idea if you want outsized engagement; the tool-settings post got some traction but stayed in the bottom cohort relative to broader, more shareable topics. [ref #100]
+- Avoid relying on contrarian phrasing alone to carry the post; the contrarian/problem-solution reference stayed near the bottom without the broader pull of a launch, build, or tutorial asset. [ref #204]
+- Avoid drawing lessons from incomplete screenshots; one bottom reference is empty, so it should not influence drafting decisions. [ref #93]
 
-## Shaping the next draft
+## How to exceed this cohort
 
-Write the next post as a **clear, useful artifact post**: first line says exactly what it is, then use a **list-based structure** to explain what was built, what it does, and why it matters to engineers working on distributed systems, AI agents, or Temporal. Keep the body **educational and concrete**, minimize code in the post itself, and end with a **light CTA** to learn more rather than a promotional ask.
+The bar to clear is set by references that made technical content instantly legible: a major announcement with concrete feature framing, a personal Temporal build, and a tutorial asset. Your next post should be better on specificity, stronger on lived experience, and more credible in its evidence than the strongest reference—for example, a sharper build artifact than ref #94, more concrete technical detail than ref #92, and more decision-useful comparisons or numbers than ref #95. It also needs a clearer “why this matters for senior engineers” angle than the weaker references, without slipping into promo language. The Raw Idea is non-negotiable subject matter — references inform tone and shape, not topic. If a reference pattern doesn't strengthen the Raw Idea, drop it.

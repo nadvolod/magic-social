@@ -1,54 +1,49 @@
 # variant_1 — contrarian
 
-**Intended audience:** Senior engineers, staff engineers, and Temporal users evaluating durable execution for production systems
-**Why it may perform:** Strong contrarian hook, grounded conference scenes, and a clear production-oriented lesson align with the ICP's interest in real failure modes over hype
-**Risks:** Because the raw idea was sparse, the post stays general and avoids naming specific talks beyond what is visible; that may reduce specificity
+**Intended audience:** Senior engineers building AI agents, distributed systems practitioners, and Temporal users evaluating production architecture
+**Why it may perform:** It uses a contrarian hook, reframes a conference recap into a production systems lesson, and speaks directly to operational pain senior engineers recognize.
+**Risks:** The raw idea is vague, so this draft uses a cautious assumption. It stays credible, but it is less specific than a post grounded in named talks or visible scenes.
 
 ---
 
-Most engineering conferences optimize for announcements. The useful ones optimize for failure stories.
+Most conference takeaways are useless by Monday.
 
-Replay made that obvious.
+Assuming the raw idea is a review of Temporal Replay.
 
-I was there to talk about durable execution and AI agents.
+I read a lot of conference recaps that summarize talks.
 
-What stuck with me wasn't the keynote energy, the giant REPLAY stage, or the packed rooms.
+That's usually the wrong artifact.
 
-It was how often the best conversations started with something breaking.
+For engineers building production systems, the useful question is simpler:
 
-One speaker walked through where a production system went wrong.
+What changed in how you design software after the event?
 
-Another session got into what happens when long-running workflows meet real-world change.
+My takeaway from Temporal Replay wasn't a feature list.
 
-And in the hallway, the most valuable chats were not "look what we built."
+It was a sharper reminder that durable execution is not an "agent framework" idea.
+It's an operational correctness idea.
 
-They were:
+The talks and hallway conversations all kept pulling toward the same failure modes:
 
-"Here is where replay bit us."
-"Here is where retries were not enough."
-"Here is where the happy path demo stopped helping."
+• work that gets retried without idempotency
+• long-running processes that die on deploy
+• orchestration logic mixed with side effects
+• systems that look fine in demos and break under replay
 
-You could feel the difference.
+That's the part I think many teams still miss.
 
-This wasn't conference theater.
+A lot of AI engineers are trying to make agents smarter.
 
-It was operators comparing scars.
+The more urgent problem is making them survivable.
 
-Even the rooms reflected it. Laptops open. People taking notes. Q&A running long. A workshop screen full of boxes and arrows instead of product slogans.
+If a 20-minute workflow crashes at minute 19, I care less about prompt quality than whether the system resumes correctly.
 
-That is why I left more bullish on durable execution than when I arrived.
-
-Not because the idea is flashy.
-
-Because the people building serious systems kept circling back to the same boring requirements:
-
-crash recovery
-idempotency
-replay safety
-resumability
+That was the strongest signal I took away from Replay.
 
 The lesson:
 
-The strongest infra communities do not hide failure. They turn it into shared design knowledge.
+Production AI is converging with distributed systems.
 
-What is the most useful failure story you have heard from an engineering conference?
+The teams that treat agents like durable workflows will outlast the teams treating them like chat sessions.
+
+If you were at Temporal Replay too, what idea actually changed your architecture?
