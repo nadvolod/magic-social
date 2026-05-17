@@ -1,44 +1,45 @@
-        # variant_2 — story
+# variant_2 — story
 
-        **Intended audience:** Engineers who attend systems conferences and care about real production lessons over hype
-        **Why it may perform:** Uses a concrete scene, named talk, and a personal observation arc that feels authentic and specific
-        **Risks:** Less punchy for readers who prefer a sharper technical claim or stronger contrarian framing
+**Intended audience:** Engineers building long-running workflows, AI agents, and distributed systems in production
+**Why it may perform:** Uses a specific first-person conference takeaway and centers on a vivid production question that resonates with the ICP.
+**Risks:** Without concrete named scenes or speakers from the event, the story is more reflective than reportorial.
 
-        ---
+---
 
-        The moment that stuck with me from Temporal Replay wasn't on stage.
+I went into Temporal Replay expecting framework talk. I left thinking about failure recovery.
 
-It was in a workshop room.
+Assuming this was my main takeaway from the event.
 
-Rows of engineers had laptops open. A workflow diagram was projected at the front. Nobody was half-paying attention.
-Everybody was locked in.
+The moment that stuck with me wasn't a flashy demo.
 
-That scene said more than any keynote could.
+It was hearing the same theme come up again and again in talks and side conversations: what happens after step 3 fails?
 
-I went to Replay to speak, meet people building with Temporal, and compare notes on AI agents.
+That question sounds small.
 
-What surprised me was how consistent the hallway conversations were.
+It's not.
 
-Not "Which model are you using?"
+In distributed systems, that's the whole game.
 
-More like:
+You can build an impressive workflow on a whiteboard.
+You can chain LLM calls into something that looks magical.
 
-What happens when the agent crashes halfway through?
-How do you resume after deploys?
-How do you stop replay and retries from turning bugs into expensive loops?
+But production starts when a worker dies, a timeout hits, or a deploy lands halfway through long-running work.
 
-Then I saw the same pattern again in the bigger sessions.
-Rob Zienert's Netflix talk was packed.
-The audience questions were all about the hard edges of running durable systems over time.
+Replay made that gap feel very visible.
 
-Even the event itself reinforced it.
-Huge stage. Giant Replay branding. Packed rooms.
-But the highest-signal conversations were still the boring ones: timeouts, recovery, determinism, resource exhaustion.
+A lot of engineering content still rewards the happy path.
 
-That was my biggest takeaway from the conference.
+This event kept pulling attention back to the parts that usually get skipped:
+replay,
+retries,
+resumption,
+state recovery,
+and deterministic orchestration.
 
-The industry is finally talking less about agent demos and more about the infrastructure that keeps them alive.
+That's why I liked it.
 
-That's the shift I've been hoping to see.
+It felt less like "look what we built" and more like "here's what broke, and here's how we stopped losing work."
 
-If you were at Replay too, what conversation or session best captured that change for you?
+The lesson: the best systems conversations start where the demo ends.
+
+What conference talk or hallway conversation changed how you think about production reliability?

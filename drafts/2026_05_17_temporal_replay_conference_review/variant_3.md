@@ -1,39 +1,45 @@
-        # variant_3 — tactical
+# variant_3 — tactical
 
-        **Intended audience:** Senior engineers and architects evaluating AI agent frameworks and workflow systems
-        **Why it may perform:** Highly saveable because it gives a reusable rubric, while still grounding the post in real conference scenes
-        **Risks:** Because the raw idea is vague, the rubric is interpretive and may feel less like a direct conference recap
+**Intended audience:** Staff/principal engineers choosing workflow, agent, or durable execution infrastructure
+**Why it may perform:** Highly saveable format, practical checklist, and directly relevant to framework evaluation decisions.
+**Risks:** Less emotionally engaging than a more scene-based conference recap. Also depends on the audience caring about tool selection.
 
-        ---
+---
 
-        I left Temporal Replay with a simple rubric for judging AI agent architecture.
+My biggest takeaway from Temporal Replay: evaluate orchestration tools with 5 failure questions.
 
-Conferences can overload you with ideas.
+Assuming this was a conference review built around practical takeaways.
 
-So I tried to reduce Replay to one practical takeaway I can use the next time I review an agent design.
+Replay reinforced something I keep seeing in production.
 
-Here is the rubric I kept hearing, implicitly or explicitly, across sessions and conversations:
+Teams compare workflow and agent tooling on developer experience first.
 
-1. Can the system survive a worker crash?
-2. Can it resume from the middle?
-3. Can every external step timeout cleanly?
-4. Can you explain retries without hand-waving?
-5. Can you inspect what happened after the fact?
+I think that's backwards.
 
-That is the difference between an agent demo and an agent system.
+The better filter is failure handling.
 
-The workshop photo I took made this feel obvious.
-A workflow graph was on screen, and the room was full of engineers following state transitions, not prompt wording.
+The 5 questions I'd now ask after this event:
 
-The packed talks reinforced it.
-Rob Zienert's Netflix session drew a crowd because production engineers care about operating behavior, not framework aesthetics.
+1. What happens if a worker crashes mid-step?
+2. What happens if the process restarts during a deploy?
+3. Can the system resume without redoing completed work?
+4. Where is retry behavior defined and audited?
+5. What prevents non-deterministic orchestration logic?
 
-My practical Replay review is this:
+If a tool answers those clearly, I'm interested.
 
-If your architecture cannot answer those five questions, it is not ready for long-running AI work.
+If it mostly shows happy-path demos, I'm skeptical.
 
-That is the durable execution lens I think more teams should adopt.
+That's what made Replay useful for me.
 
-It cuts through a lot of noise very quickly.
+It kept bringing the conversation back to operational mechanics instead of abstractions.
 
-What questions are on your own rubric when you evaluate agent infrastructure for production?
+Especially for AI agents, that matters.
+
+A 20-minute task is not impressive if a timeout forces you to restart from zero.
+
+A multi-step workflow is not reliable if retries duplicate side effects.
+
+The lesson: evaluate orchestration systems by recovery behavior, not demo quality.
+
+What failure question do you ask first when you're evaluating workflow or agent infrastructure?

@@ -1,20 +1,23 @@
-        # variant_5 — short engagement
+# variant_5 — short engagement
 
-        **Intended audience:** AI engineers and distributed systems builders who care about production reliability
-        **Why it may perform:** Short, clear, and comment-friendly with a specific conference reference and a sharp claim
-        **Risks:** Less differentiated if many attendees post similar conference takeaways
+**Intended audience:** Engineers interested in production reliability, workflow orchestration, and durable execution
+**Why it may perform:** Short, clear, and comment-friendly. Easy for engineers to respond with their own conference lessons.
+**Risks:** Very concise and not highly differentiated without more specific conference details.
 
-        ---
+---
 
-        My biggest takeaway from Temporal Replay: agent infrastructure is finally getting more attention than agent demos.
+Temporal Replay reinforced a belief I keep coming back to.
 
-The strongest signal was not the stage production.
+The best engineering conferences are not about features.
 
-It was packed rooms for talks on recovery, replay, long-running workflows, and real production stories like Rob Zienert's Netflix session.
+They're about failure modes.
 
-That feels like a healthy shift.
+What happens after the timeout.
+After the crash.
+After the deploy lands mid-workflow.
 
-We're spending less time asking if agents are possible.
-More time asking if they survive reality.
+That's the part that decides whether a system is real.
 
-What part of agent reliability is your team wrestling with most right now?
+Replay felt strongest when the conversation stayed there.
+
+What's the most useful production lesson you've ever taken home from a conference?
