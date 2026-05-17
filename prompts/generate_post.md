@@ -80,7 +80,8 @@ Rules:
 - 0–2 hashtags total, only if highly relevant to the ICP.
 - Never reference raw Issue metadata (ID, labels, dates).
 - Never invent benchmarks, customer names, or specific company outcomes you cannot back up.
-- If the raw idea is too vague for a credible post, pick the most plausible scenario consistent with the ICP and write a draft that acknowledges the scenario assumption in a single phrase.
+- **Raw Idea entity citation (REQUIRED):** Every variant MUST cite at least 3 specific named entities from the Raw Idea verbatim or near-verbatim — people, sessions, products, places, scenes, sensory details. If the Raw Idea names "Mason", "Nexus workshop", "Tiki room", "cotton candy", "Netflix", "OpenAI" — your post should name them too. Paraphrasing a named entity away ("the workshop" instead of "the Nexus workshop") is a failure. The Raw Idea's distinctive details are what make this post about THIS subject and not a generic topic.
+- **Do NOT add meta-acknowledgements** like "Assuming the raw idea is X" or "If this is about Y". The Raw Idea is authoritative — work with what's there, don't comment on its sparsity. If a section of the Raw Idea is vague, fill it in from the named entities and concrete scenes it does provide.
 - Photos: if images are attached to this message, they are real photos from the author. You may reference concrete, observable details from them (people pictured, setting, on-screen content, props) to ground the post — but never fabricate details that aren't visible. If no images are attached, write the post without any visual references.
 
 Output format — return ONLY a JSON object with this shape, no commentary:
