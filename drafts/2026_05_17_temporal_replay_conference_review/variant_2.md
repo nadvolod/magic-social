@@ -1,47 +1,48 @@
         # variant_2 — founder_story
 
-        **Intended audience:** Engineers building agent workflows, especially those moving from demos to production systems with restarts, deploys, and partial failures.
-        **Why it may perform:** Uses a concrete debugging story, keeps one lesson, and connects a workshop experience to a production-grade takeaway engineers can apply immediately.
-        **Risks:** The 3-hour debugging detail is a plausible scenario assumption, so some readers may prefer a more explicit note that it came from workshop support.
+        **Intended audience:** Engineers evaluating how to move AI workflows from demos to production
+        **Why it may perform:** Uses a concrete story, a debugging frame, and a relatable workshop moment that exposes a real production concern.
+        **Risks:** The debugging scenario is inferred from the workshop context, so some readers may want a more explicit personal production incident.
 
         ---
 
-        Yesterday I spent 3 hours debugging a workshop demo that kept "working" until it restarted.
+        Yesterday I spent 2 hours debugging a workshop example that looked fine. Here's what I found.
 
-Here's what I found.
+I was helping at Replay as a teaching assistant for two workshops.
 
-I was helping at Replay during the Nexus workshop, and the failure mode was subtle.
+The code worked on the happy path.
 
-The flow looked fine on the happy path.
-Call service A.
-Wait for a response.
-Continue the workflow.
+Then someone asked the production question:
+"What happens if the process dies after step 2?"
 
-Then we'd restart a worker or lose a process.
-Suddenly the system exposed the real bug: the orchestration logic assumed the process would stay alive.
+That was the real bug.
 
-The fix was not a better prompt.
-It was durable state and explicit timeouts.
+The first version was doing orchestration inline inside an activity-shaped blob.
+It could finish.
+But it couldn't recover cleanly.
 
-    result = await workflow.execute_activity(
-        call_tool,
-        request,
-        start_to_close_timeout=timedelta(seconds=30),
-        retry_policy=RetryPolicy(max_attempts=3),
-    )
+We refactored it into workflow state plus retryable activities:
 
-    await workflow.wait_condition(
-        lambda: workflow_state.tool_finished
-    )
+    @workflow.defn
+    class NexusFlow:
+        @workflow.run
+        async def run(self, req: Input) -> Output:
+            a = await workflow.execute_activity(step_a, req)
+            b = await workflow.execute_activity(step_b, a)
+            return await workflow.execute_activity(step_c, b)
 
-That pattern is boring.
-It is also what turns a workshop demo into something you can trust.
+One small structural change.
+Completely different failure behavior.
 
-The lesson: if your AI workflow depends on process memory, it will eventually fail in production.
+Now if the worker restarts after step_b, the workflow resumes from recorded history instead of replaying side effects blindly.
 
-Replay had 2,000+ engineers in the room, and the strongest talks kept circling the same reality: durable execution matters because crashes, deploys, and partial failures are normal.
+The lesson: if your AI or integration flow can't resume mid-flight, you haven't built orchestration yet.
 
-I came in expecting more discussion about model tricks.
-I left thinking much more about recovery semantics.
+The proof was immediate.
 
-What was the last bug you found only after a restart or deploy?
+In the workshop, people stopped asking about the happy path and started asking the right questions: retries, recovery, and determinism.
+That shift was the most valuable part of the session for me.
+
+Replay had 2,000+ engineers in the room, but the best moments were still the small ones where a "working demo" became a production design discussion.
+
+What's the question that usually reveals whether a workflow is real or just a demo?

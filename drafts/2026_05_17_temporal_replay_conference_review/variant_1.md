@@ -1,48 +1,50 @@
         # variant_1 — contrarian
 
-        **Intended audience:** Senior engineers and staff engineers building AI agents in production, especially those evaluating orchestration and durable execution patterns.
-        **Why it may perform:** Strong contrarian hook, clear single lesson, concrete code, and a conference-derived insight tied directly to production pain the ICP recognizes.
-        **Risks:** Could feel slightly broad without a personal production metric. Relies on conference observation rather than a deep incident story.
+        **Intended audience:** Senior engineers building AI agents and distributed systems in production
+        **Why it may perform:** Strong contrarian hook, one clear lesson, credible conference-based authority signal, and concrete workflow code aligned with Temporal users.
+        **Risks:** Leans on conference synthesis rather than a personal production metric, so it may feel less hard-won than an incident post.
 
         ---
 
-        Most engineers think AI agents fail because of prompts. They're wrong.
+        Most engineers treat AI orchestration as a prompt problem. They're wrong.
 
-I went to Replay and spent most of my time in the AI and Nexus workshops.
+At Replay, I was listening for one thing: what actually breaks when AI systems leave the demo stage.
 
-The pattern that kept coming up was not model quality.
+The pattern was consistent.
 
-It was orchestration quality.
+The hard part isn't getting an LLM to answer.
 
-Teams can usually get a demo working.
-What breaks in production is everything around the model:
-retries, timeouts, resumability, and handoffs between systems.
+It's surviving timeouts, partial progress, retries, deploys, and human approvals without losing state.
 
-A simple pattern I kept seeing was this:
+That's why the most useful takeaway for me wasn't a model trick.
+
+It was durable execution.
+
+A simple pattern looks like this:
 
     @workflow.defn
-    class ResearchRun:
+    class ResearchWorkflow:
         @workflow.run
-        async def run(self, query: str):
-            plan = await workflow.execute_activity(make_plan, query)
+        async def run(self, query: str) -> Report:
+            plan = await workflow.execute_activity(create_plan, query)
             for step in plan.steps:
-                await workflow.execute_activity(
-                    execute_step,
-                    step,
-                    retry_policy=RetryPolicy(max_attempts=3),
-                )
-            return await workflow.execute_activity(finalize_report, query)
+                await workflow.execute_activity(execute_step, step)
+            return await workflow.execute_activity(summarize_results, query)
 
-That code is not flashy.
+Each step is isolated.
+Each step can retry.
+Each step can resume after a crash.
 
-That's the point.
+The lesson: AI agents fail in production for distributed systems reasons, not prompt reasons.
 
-The durable insight: production AI is mostly a distributed systems problem wearing an LLM badge.
+My proof was the conference itself.
 
-Replay made that feel obvious. More than 2,000 engineers showed up to talk about durable execution, not just prompts. That tells you where the real pain is.
+In a room of 2,000+ engineers, the most credible conversations were about replay, recovery, and orchestration boundaries.
+Not prompt templates.
 
-My biggest takeaway from the conference was that the "boring" parts are becoming the differentiator.
+That matched what I've seen building production systems too.
 
-If your agent cannot survive a crash at step 4 of 9, you do not have an agent system yet. You have a demo.
+The "AI" part gets attention.
+The durable part keeps it alive.
 
-What part of your AI stack is causing more pain today: model behavior or orchestration?
+What failure mode forced you to stop treating agent orchestration like a prompt engineering problem?

@@ -1,41 +1,41 @@
         # variant_3 — tactical_technical
 
-        **Intended audience:** Production AI engineers and architects designing multi-step agent systems with approvals, tool calls, and long-running workflows.
-        **Why it may perform:** Practical and teachable. The code is simple, the lesson is crisp, and the framing aligns with engineers who want implementation guidance instead of conference recap fluff.
-        **Risks:** Less emotionally sticky than the story or contrarian variants. Proof is observational rather than a hard before/after metric.
+        **Intended audience:** Production engineers who want concrete patterns for AI workflow reliability
+        **Why it may perform:** Highly practical, easy to save, and delivers a concrete code pattern with a crisp operational lesson.
+        **Risks:** Less emotional than the story variant and lighter on measurable outcome data.
 
         ---
 
-        One of the most useful ideas I took from Replay was this: add durability before adding more agent features.
+        The most useful AI lesson I took from Replay was 6 lines of timeout and retry config.
 
-I attended the AI sessions and helped with workshops, and the same implementation detail kept standing out.
+I went to Replay expecting model discussions.
 
-Many agent stacks still treat multi-step work like a single request.
+The more valuable takeaway was operational.
 
-That breaks the moment a tool call hangs, a worker restarts, or a human approval arrives late.
+If you're building AI in production, every external call needs explicit failure boundaries.
+Otherwise one slow dependency turns your agent into a stuck process.
 
-A better default is to make each step durable and independently retryable.
+This is the baseline pattern I keep coming back to:
 
-    @workflow.defn
-    class AgentRun:
-        @workflow.run
-        async def run(self, task: str):
-            plan = await workflow.execute_activity(create_plan, task)
-            approved = await workflow.execute_activity(request_approval, plan)
-            if not approved:
-                return "cancelled"
-            return await workflow.execute_activity(execute_plan, plan)
+    result = await workflow.execute_activity(
+        call_model,
+        prompt,
+        start_to_close_timeout=timedelta(seconds=45),
+        retry_policy=RetryPolicy(max_attempts=3),
+    )
 
-Why this works:
-- each boundary is persisted
-- retries happen per step
-- human input can arrive later
-- restarts do not lose progress
+That snippet teaches two things.
 
-The lesson: durable boundaries matter more than clever chains.
+First, timeouts are part of the contract.
+Second, retries belong at the activity boundary, not hidden inside random helper code.
 
-Replay had 2,000+ attendees, and the strongest technical conversations were about surviving failure, not just generating output.
+The lesson: reliable AI systems come from explicit orchestration semantics, not smarter prompts.
 
-That's also why the Nexus material stood out to me. It forces you to think about long-running, cross-service work as a system, not a prompt.
+My proof is qualitative but specific.
 
-If you're building agents today, where are you drawing the boundary between orchestration and tool execution?
+Across sessions, workshops, and hallway conversations with 2,000+ attendees, the strongest production patterns kept coming back to the same boring primitives: retries, replay, and resumability.
+
+That's also why the conference felt useful.
+It was one of the few AI-heavy events where infrastructure got equal billing.
+
+If you're shipping agents today, what's your default timeout and retry policy for model calls?
