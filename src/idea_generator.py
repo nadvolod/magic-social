@@ -49,6 +49,11 @@ GITHUB_API = "https://api.github.com"
 # ---------------------------------------------------------------------------
 
 
+MAX_IMAGES_PER_ISSUE = 20
+_IMG_TAG_RE = re.compile(r"""<img\b[^>]*\bsrc=["']([^"']+)["']""", re.IGNORECASE)
+_MD_IMG_RE = re.compile(r"!\[[^\]]*\]\((https?://[^)\s]+)\)")
+
+
 @dataclass
 class IdeaIssue:
     number: int
@@ -61,6 +66,27 @@ class IdeaIssue:
     supporting_notes: str = ""
     labels: list[str] = field(default_factory=list)
     url: str = ""
+    image_urls: list[str] = field(default_factory=list)
+
+
+def _extract_image_urls(body: str, limit: int = MAX_IMAGES_PER_ISSUE) -> list[str]:
+    """Pull image URLs from an Issue body (both <img src=...> and ![](url) forms).
+
+    De-duplicates while preserving order. Caps at `limit` to bound multimodal cost.
+    """
+    if not body:
+        return []
+    urls: list[str] = []
+    seen: set[str] = set()
+    for match in list(_IMG_TAG_RE.finditer(body)) + list(_MD_IMG_RE.finditer(body)):
+        url = match.group(1).strip()
+        if not url or url in seen:
+            continue
+        seen.add(url)
+        urls.append(url)
+        if len(urls) >= limit:
+            break
+    return urls
 
 
 def fetch_issue(repo: str, token: str, issue_number: int) -> IdeaIssue:
@@ -97,6 +123,7 @@ def parse_issue_payload(payload: dict) -> IdeaIssue:
         supporting_notes=_extract_section(body, "Supporting notes"),
         labels=labels,
         url=payload.get("html_url", ""),
+        image_urls=_extract_image_urls(body),
     )
 
 
@@ -241,7 +268,12 @@ def generate_variants(
         )
 
     system_prompt, user_prompt = build_prompts(idea, variant_count=variant_count)
-    raw = writing_client.generate_text(client, system_prompt, user_prompt)
+    raw = writing_client.generate_text(
+        client,
+        system_prompt,
+        user_prompt,
+        image_urls=idea.image_urls,
+    )
     return _extract_json(raw)
 
 

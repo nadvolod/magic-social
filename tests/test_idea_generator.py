@@ -92,6 +92,35 @@ def test_parse_issue_handles_missing_optional_sections():
     assert idea.audience == ""
 
 
+def test_parse_issue_extracts_image_urls_from_body():
+    body = (
+        "### Raw idea\n\nGreat conference experience.\n\n"
+        "### References, notes, links (optional)\n\n"
+        '<img width="500" alt="Image" src="https://example.com/a.png" />\n'
+        '<img src="https://example.com/b.jpg" alt="b">\n\n'
+        "### Supporting notes\n\n"
+        "Photo: ![scene](https://example.com/c.jpeg)\n"
+        '<img src="https://example.com/a.png" alt="dup">\n'  # duplicate must be ignored
+    )
+    idea = idea_generator.parse_issue_payload(
+        {"number": 9, "title": "x", "body": body, "html_url": "", "labels": []}
+    )
+    assert idea.image_urls == [
+        "https://example.com/a.png",
+        "https://example.com/b.jpg",
+        "https://example.com/c.jpeg",
+    ]
+
+
+def test_parse_issue_caps_image_urls():
+    imgs = "\n".join(f'<img src="https://x/{i}.png"/>' for i in range(30))
+    body = f"### Raw idea\n\nLots of pics.\n\n### Supporting notes\n\n{imgs}\n"
+    idea = idea_generator.parse_issue_payload(
+        {"number": 9, "title": "x", "body": body, "html_url": "", "labels": []}
+    )
+    assert len(idea.image_urls) == idea_generator.MAX_IMAGES_PER_ISSUE
+
+
 # ---------------------------------------------------------------------------
 # Prompt assembly
 # ---------------------------------------------------------------------------

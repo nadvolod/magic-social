@@ -24,8 +24,8 @@ Your posts:
 - Open with a single-sentence hook that creates immediate tension or curiosity
 - Use short sentences (max ~15 words)
 - Use white space generously — 1–2 sentence paragraphs
-- Share ONE concrete lesson backed by proof (a number, a before/after, a real outcome)
-- Include a small, indented code/config snippet (4-space indent) that teaches the reader something
+- Share ONE concrete lesson backed by proof — a number, a before/after, a real outcome, a named moment, or an observed scene
+- Ground the post in something concrete the reader can picture. For technical topics: an indented code/config snippet (4-space indent). For experience/recap/story topics: a specific scene, named person, on-screen content, or sensory detail. Never force code onto a topic that isn't about code.
 - End with one open-ended question that invites comments
 - Optimize for saves, comments, and shares — never for likes
 - Avoid: fluff, clichés, "I'm excited to share", hashtag spam, vague inspiration
@@ -36,11 +36,18 @@ Tone: direct, confident, specific, human. First person. No marketing language.
 
 Generate {variant_count} distinct LinkedIn post variants from this idea.
 
+First, read the Raw idea carefully and classify the topic:
+- TECHNICAL — code, debugging, architecture, infra, bugs, patterns, performance. Variants must include code/config snippets.
+- EXPERIENCE — conference recap, event, trip, milestone, meeting, talk you gave or attended. Variants must include named people/sessions/scenes — NOT invented code.
+- INSIGHT — opinion, framework, mental model, lesson learned over time. Variants may include code OR a named example, whichever fits.
+
+Match every variant to the topic. Do NOT bolt invented code onto an EXPERIENCE post to satisfy a template. The Raw idea is authoritative — the angles below are positioning frames, not topic overrides.
+
 Each variant must use one of these angles. Produce one variant per angle, in this order:
-1. Contrarian technical authority — "Most engineers do X. They're wrong."
-2. Founder / story — "Yesterday I spent N hours debugging X. Here's what I found."
-3. Tactical technical — concrete how-to with code, short result.
-4. Authority positioning — "I've deployed 3 different X. Two failed. Here's the pattern."
+1. Contrarian — challenge a widely-held belief in the audience's domain. "Most {{ICP-relevant noun}} think X. They're wrong."
+2. Story — first-person specific moment, what happened, what you learned. Concrete scene over abstract takeaway.
+3. Tactical — concrete how-to, takeaway, or recap of what worked. If technical: with code. If experience: with named sessions/people/specific actions.
+4. Authority — pattern across multiple experiences or a strong evidenced claim. "After N times doing X, here's the pattern."
 5. Short engagement — under 600 chars, one sharp claim + question.
 
 Source Issue:
@@ -55,11 +62,13 @@ References / notes: {references}
 
 Required structure for variants 1–4 (variant 5 may compress):
 - Hook (one line)
-- Context: what were you trying to do, briefly
-- Problem: what went wrong / what you discovered
-- Code or config snippet: 4-space indented, readable, teaches something concrete
+- Context: setting and stakes — where you were, what you were trying to do, what was at stake
+- Substance: the specific thing that happened, or the specific claim
+- Evidence (pick the form that fits the topic):
+  - Code/config snippet, 4-space indented (TECHNICAL topics)
+  - Named scene: a specific moment, person, session, or visible detail (EXPERIENCE topics — pull from attached photos if present)
+  - Before/after, named example, or concrete number (INSIGHT topics)
 - Lesson: the one durable insight
-- Proof: a number or before/after or specific outcome
 - CTA: one open-ended question
 
 Rules:
@@ -68,6 +77,7 @@ Rules:
 - Never reference raw Issue metadata (ID, labels, dates).
 - Never invent benchmarks, customer names, or specific company outcomes you cannot back up.
 - If the raw idea is too vague for a credible post, pick the most plausible scenario consistent with the ICP and write a draft that acknowledges the scenario assumption in a single phrase.
+- Photos: if images are attached to this message, they are real photos from the author. You may reference concrete, observable details from them (people pictured, setting, on-screen content, props) to ground the post — but never fabricate details that aren't visible. If no images are attached, write the post without any visual references.
 
 Output format — return ONLY a JSON object with this shape, no commentary:
 
