@@ -1,54 +1,55 @@
 {
   "variant_1": {
-    "angle": "Gratitude for the people and moments that made Replay memorable",
-    "rubric_total": 59.0,
+    "angle": "Teaching-assistant gratitude from the workshop floor",
+    "rubric_total": 50.0,
     "rubric_breakdown": {
       "hook": 16.0,
       "structure": 14.0,
       "proof": 5.0,
       "cta": 4.0,
+      "clarity": 11.0
+    },
+    "rubric_issues": [
+      "Include an indented code/config snippet for concrete teaching value.",
+      "Add measurable proof (numbers, before/after, or concrete outcomes).",
+      "End with an open-ended question to invite comments.",
+      "Sentences are too long; use shorter lines."
+    ]
+  },
+  "variant_2": {
+    "angle": "One conference scene that captured durable AI",
+    "rubric_total": 67.0,
+    "rubric_breakdown": {
+      "hook": 16.0,
+      "structure": 14.0,
+      "proof": 5.0,
+      "cta": 12.0,
       "clarity": 20.0
     },
     "rubric_issues": [
       "Include an indented code/config snippet for concrete teaching value.",
       "Add measurable proof (numbers, before/after, or concrete outcomes).",
-      "End with an open-ended question to invite comments."
-    ]
-  },
-  "variant_2": {
-    "angle": "Why Replay made the future of AI orchestration feel real",
-    "rubric_total": 76.0,
-    "rubric_breakdown": {
-      "hook": 20.0,
-      "structure": 11.0,
-      "proof": 5.0,
-      "cta": 20.0,
-      "clarity": 20.0
-    },
-    "rubric_issues": [
-      "Include an indented code/config snippet for concrete teaching value.",
-      "Post length is slightly off target (1573 chars).",
-      "Add measurable proof (numbers, before/after, or concrete outcomes)."
+      "Move the question-style CTA to the final paragraph."
     ]
   },
   "variant_3": {
-    "angle": "The workshop view of what engineers actually need from AI infrastructure",
-    "rubric_total": 68.0,
+    "angle": "From conference energy to a concrete AI-operations takeaway",
+    "rubric_total": 67.0,
     "rubric_breakdown": {
       "hook": 16.0,
-      "structure": 7.0,
+      "structure": 14.0,
       "proof": 5.0,
-      "cta": 20.0,
+      "cta": 12.0,
       "clarity": 20.0
     },
     "rubric_issues": [
       "Include an indented code/config snippet for concrete teaching value.",
-      "Post length is slightly off target (1559 chars).",
-      "Add measurable proof (numbers, before/after, or concrete outcomes)."
+      "Add measurable proof (numbers, before/after, or concrete outcomes).",
+      "Move the question-style CTA to the final paragraph."
     ]
   },
   "variant_4": {
-    "angle": "One scene that captured what made Replay special",
+    "angle": "A people-first reflection on a fast-growing engineering community",
     "rubric_total": 59.0,
     "rubric_breakdown": {
       "hook": 16.0,
@@ -64,7 +65,7 @@
     ]
   },
   "variant_5": {
-    "angle": "From conference inspiration to production intent",
+    "angle": "Short recap with a forward-looking durable-AI thesis",
     "rubric_total": 67.0,
     "rubric_breakdown": {
       "hook": 16.0,

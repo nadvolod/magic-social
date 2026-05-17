@@ -1,44 +1,38 @@
-# variant_3 — The workshop view of what engineers actually need from AI infrastructure
+# variant_3 — From conference energy to a concrete AI-operations takeaway
 
-**Intended audience:** Engineers building AI systems in production who want grounded signals from what peers are actually struggling with.
-**Why it may perform:** It uses the workshop vantage point as a credible, first-person lens and mixes practical production concerns with memorable event details.
-**Risks:** Because it avoids hard technical specifics, some readers may want more concrete implementation lessons.
+**Intended audience:** Production-minded AI engineers, platform engineers, and architects thinking about reliability beyond prototypes.
+**Why it may perform:** It gives a clearer technical thesis than a normal conference recap while staying grounded in firsthand experience and named specifics.
+**Risks:** More insight-forward than purely reflective, so it may feel slightly less warm to readers who mainly want a gratitude post.
 
 ---
 
-Helping in workshops at Replay 2026 was a better signal than any keynote.
+Replay 2026 made one thing much clearer to me: AI orchestration is becoming an operations problem.
 
-I was lucky enough to support two sessions as a teaching assistant:
-the Nexus workshop led by Mason and the AI workshop led by Melissa.
+I went in excited to learn.
+I left with a much sharper view of what production AI actually needs.
 
-That gave me a close-up view of what engineers are actually trying to solve.
+I was lucky to support the Nexus workshop as a teaching assistant, with Mason leading the room, and to spend time around Melissa’s AI workshop as well.
 
-Not “how do I call an LLM?”
+Those workshop conversations were more useful than any generic “agents are the future” claim.
+People were asking the right questions:
 
-More like:
-How do I orchestrate long-running work?
-How do I recover state after failure?
-How do I make AI systems durable enough for production?
+- How do you resume long-running AI work?
+- How do you survive failures without losing progress?
+- How do you make the system observable enough to trust?
 
-That was the real value of Replay for me.
+Then the broader conference reinforced it.
+Talks from Netflix and OpenAI showed that this is no longer theoretical. Teams are using Temporal to scale AI operations in real systems.
 
-The conference brought together 2,000+ engineers, but the workshops made the trend tangible.
-You could see where the friction is.
-And you could see that durable distributed systems are becoming the real foundation for useful AI applications.
+That was my biggest takeaway from Replay:
+if AI work spans multiple steps, external APIs, human review, or long runtimes, you need durability as a system property.
+Not as an afterthought.
 
-The talks from Netflix and OpenAI reinforced that point.
-When companies at that scale are using Temporal for AI operations, it says a lot about where the ecosystem is going.
+And yes, it was also a beautiful event.
+A secret Tiki room.
+Live music.
+Sonic gameplay.
+Glow-in-the-dark cotton candy.
 
-But some of my favorite moments were outside the formal sessions too.
-The secret Tiki room, the live music, the sonic gameplay, even the glow-in-the-dark cotton candy.
+Huge thanks to Temporal for hosting a conference that managed to be both technically serious and genuinely fun.
 
-Those details sound small.
-They are not.
-
-They are what turn a technical event into a real community.
-
-Huge thanks to Temporal for putting together a conference that felt strong on both fronts: serious systems thinking and real human connection.
-
-I left with new ideas, new respect for the builders in this space, and a long list of things I want to apply.
-
-If you’re building AI in production, what reliability problem are you spending the most time on right now?
+I’m excited to bring these lessons back into the durable distributed systems I’m building with AI.
