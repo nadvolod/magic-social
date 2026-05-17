@@ -1,46 +1,50 @@
-# variant_2 — A conference review through the lens of durable AI systems
+# variant_2 — The room that convinced me durable AI is becoming real
 
-**Intended audience:** Engineers evaluating Temporal for AI agents, durable execution, and long-running orchestration.
-**Why it may perform:** It connects Temporal Replay directly to current AI-agent pain points, making the post timely and relevant beyond conference attendees.
-**Risks:** Without named sessions, people, or scenes, the post relies on conceptual clarity rather than vivid firsthand detail.
+**Intended audience:** Engineers building production AI systems, workflow platform users, and technical leaders thinking about orchestration and reliability
+**Why it may perform:** It gives a sharper point of view than a standard event recap and ties the conference directly to a meaningful industry shift from model-centric thinking to infrastructure-centric thinking.
+**Risks:** It makes a broader industry claim, so some readers may want more explicit examples or disagree with the framing.
 
 ---
 
-What I care about after Temporal Replay is simple:
+The most interesting part of Replay 2026 wasn't the branding.
 
-Did it make me more confident about building AI systems that can fail correctly?
+It was the room.
 
-That is the standard.
+I sat in a workshop at Temporal Replay with rows of engineers on laptops, a Replay sign near the stage, and slide after slide on how these systems actually work.
 
-Temporal Replay is interesting because Temporal is one of the few tools that forces engineers to confront the boring parts early.
+Not AI as theater.
 
-Retries.
-Timeouts.
-Replay.
-Crash recovery.
-Auditability.
+AI as infrastructure.
 
-Those are not side concerns for AI agents.
-They are the product.
+That distinction matters more than most people think.
 
-A conference review worth reading should connect the event back to that reality.
+Outside the conference, a lot of the conversation is still about models.
 
-Did Temporal Replay make durable execution feel more practical?
-Did it sharpen the boundary between workflow code and side effects?
-Did it make Temporal feel like the right abstraction for long-running agent work?
+Inside Replay by Temporal, the center of gravity felt different:
 
-That is the kind of review I trust.
+- orchestration
+- recovery
+- long-running execution
+- state
+- failure handling
+- what happens after deploy day
 
-Not because it is more technical for its own sake.
-Because it tells me whether the conference delivered something operationally useful.
+That's the layer I'm increasingly convinced matters most.
 
-There is a big difference between:
+The flashy part of agentic AI is easy to demo.
 
-• "I attended Temporal Replay"
-• "Temporal Replay changed how I think about recovery, determinism, and long-running AI work"
+The hard part is making it resumable, observable, and correct when a task runs for minutes, hours, or days.
 
-The second one is valuable.
+That's why the workshop room stood out to me.
 
-Especially now, when so much AI content still lives at the prompt layer while the real failures happen in orchestration.
+It wasn't just full.
 
-If you went to Temporal Replay, what idea was actually worth carrying back into production?
+It was focused.
+
+People were following architecture diagrams, testing ideas, asking implementation questions, and treating durable execution like a real engineering discipline, not a buzzword.
+
+Even the rest of the event reinforced that feeling: the packed halls, the conversations with Vickie Ma and others from the Temporal community, the giant Ziggy somehow watching over all of it.
+
+I came back from Replay more convinced that the infrastructure layer around AI is where a lot of the real work still is.
+
+Are you seeing the same shift in your own teams, from model fascination to systems design?

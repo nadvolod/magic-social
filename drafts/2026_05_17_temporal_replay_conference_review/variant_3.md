@@ -1,45 +1,47 @@
-# variant_3 — The review I want from engineers after Temporal Replay
+# variant_3 — One conference, three scenes I keep thinking about
 
-**Intended audience:** Senior engineers who value practical judgment over event promotion, especially Temporal users and distributed systems practitioners.
-**Why it may perform:** It uses a direct, corrective tone and gives readers a concrete framework for writing or evaluating conference reviews, which can drive comments from experienced engineers.
-**Risks:** It is more of an opinionated framing than a true recap, so it may feel abstract if the audience expects firsthand event details.
+**Intended audience:** Distributed systems engineers, conference-going builders, and people active in the Temporal and AI infra ecosystem
+**Why it may perform:** It is highly scannable, emotionally grounded, and built around memorable scenes that make the post feel lived-in rather than generic.
+**Risks:** It is more reflective than authoritative, so readers looking for a hard technical lesson may skip it.
 
 ---
 
-I do not want a polished conference summary of Temporal Replay.
+I usually forget conference details fast.
 
-I want the messy engineering version.
+I'm still thinking about three scenes from Replay 2026.
 
-Tell me what held up.
-Tell me what felt hand-wavy.
-Tell me what changed your mind about Temporal.
+First: the workshop room.
 
-That is what makes a conference review useful.
+Rows of people with laptops open, watching architecture diagrams, asking real implementation questions, and treating durable execution as something to build with, not just admire.
 
-Temporal Replay should be especially good for this because Temporal is not a vibes topic.
-It is a correctness topic.
+Second: the stage.
 
-Either the model of durable execution helps you reason about real systems.
-Or it does not.
+Replay by Temporal had the kind of production value you notice immediately, but what I remember more is the contrast between the big visuals and the very practical conversations they led into.
 
-So the most credible Temporal Replay review is not a list of highlights.
-It is a list of changed beliefs.
+Third: the in-between moments.
 
-For example:
+Dinner, hallway chats, quick photo conversations, and the kind of small interactions that turn internet names into actual people.
 
-• Did the event make replay semantics clearer?
-• Did it change how you think about idempotency?
-• Did it make long-running workflows feel safer to ship?
-• Did it expose gaps in how your current AI agent stack handles failure?
+That part is easy to underestimate.
 
-That is the kind of post senior engineers save.
+A lot of this field can feel abstract online.
 
-Because it compresses someone else's conference time into practical judgment.
+Then you get into a room with the Temporal community, see Vickie Ma in person, meet other builders, and suddenly the whole space feels more real and more collaborative.
 
-A Temporal Replay review can build real credibility if it answers one thing honestly:
+Even giant Ziggy somehow added to that feeling.
 
-What do you believe now about Temporal that you did not believe before the conference?
+A ridiculous inflatable creature hanging over a serious engineering conference should not work.
 
-That is the review I would read end to end.
+And yet it did.
 
-What is the most useful changed belief you've had after a technical conference?
+Because Replay 2026 didn't feel stiff.
+
+It felt technical, ambitious, and unusually human at the same time.
+
+That's rare.
+
+I came back with new ideas, but also with more appreciation for the people building this ecosystem.
+
+Grateful for the conversations, the generosity, and the reminder that hard systems problems are a lot more fun when you're solving them with a real community.
+
+What moment from a conference has stayed with you longer than the actual talks?

@@ -1,46 +1,44 @@
-# variant_1 — Why Temporal Replay matters more than another conference recap
+# variant_1 — Why Replay felt bigger than a conference
 
-**Intended audience:** Senior engineers using Temporal or building AI agents and workflow-heavy production systems.
-**Why it may perform:** It reframes a generic conference recap into a sharper systems question, which fits the ICP and invites practitioners to compare concrete takeaways.
-**Risks:** Because the raw idea contains almost no specifics beyond Temporal Replay and conference review, this stays high-level and may feel less personal than stronger experience-led posts.
+**Intended audience:** Senior engineers, AI infra builders, Temporal users, and people working on durable execution systems
+**Why it may perform:** It leads with a human reflection instead of a generic recap, uses concrete scenes from Replay 2026, and connects community energy to production engineering concerns senior builders care about.
+**Risks:** Less tactical than a lesson post, so it depends on readers resonating with the community angle rather than expecting a technical takeaway.
 
 ---
 
-Most conference reviews are really travel notes.
+Replay 2026 reminded me that infrastructure is built by people first.
 
-A good Temporal Replay review should be something else.
+I went to Temporal Replay expecting strong talks on durable execution and agentic AI.
 
-Temporal Replay sits at the intersection of Temporal, durable execution, and production reality.
-That makes it more interesting than a generic event post.
+I left thinking more about the people than the slides.
 
-If I were reviewing Temporal Replay, I would focus on one question:
+There were packed rooms, workshop laptops open, hallway conversations that kept running long after the session ended, and that giant Ziggy floating over the venue like a very strange mascot for distributed systems.
 
-Did the conference help engineers build more correct systems?
+What stayed with me most was the mix.
 
-That is the bar that matters.
+You could go from a deeply technical session to a casual conversation in the lounge, then end up talking shop again over dinner with people who care about the same hard problems: retries, recovery, orchestration, long-running workflows, and what production AI systems actually need.
 
-For teams working on AI agents, workflows, and long-running jobs, the hard problems are rarely the demo.
-They are replay safety, retries, timeouts, idempotency, observability, and recovery after failure.
+That part matters.
 
-That is why a Temporal conference matters.
-Not because it is about workflow orchestration.
-Because it is about surviving production.
+A lot of AI discourse still lives at the demo layer.
 
-The best event reviews usually miss that.
-They talk about energy, talks, and networking.
-Useful, but incomplete.
+Replay by Temporal felt different.
 
-A strong Temporal Replay review should answer things like:
+It felt like a room full of engineers trying to make real systems survive contact with production.
 
-• What ideas changed how you think about durable execution?
-• What implementation detail was immediately useful?
-• What production mistake became easier to reason about after the event?
-• What did Temporal Replay clarify about building AI systems that need to resume, retry, and stay correct?
+The photos capture that better than I can:
 
-That is the review I would want to read.
+- the full workshop room with everyone on laptops
+- the Replay stage and lighting
+- the group shots with Vickie Ma and the Temporal team
+- the giant Ziggy hanging above everything
 
-Not "the event was great."
+Good conferences give you information.
 
-But "here is what Temporal Replay changed about how I build systems."
+Great ones give you energy, new friends, and a clearer sense of where the field is going.
 
-If you wrote a review of Temporal Replay, what was the one idea you brought back into your actual architecture?
+Replay did that for me.
+
+Grateful to the Temporal community, to everyone I met in the sessions and between them, and to the people building the kind of infrastructure this next wave of AI systems will actually need.
+
+What conference recently sent you home with more conviction than when you arrived?
