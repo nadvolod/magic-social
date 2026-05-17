@@ -14,7 +14,7 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 DEFAULT_WRITING_MODEL = "gpt-5.4"
-DEFAULT_MAX_TOKENS = 2000
+DEFAULT_MAX_TOKENS = 8000
 DEFAULT_TEMPERATURE = 0.7
 
 
