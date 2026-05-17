@@ -25,4 +25,19 @@
 <img width="522" height="772" alt="Image" src="https://github.com/user-attachments/assets/248bc8c4-9436-4f71-be1c-c38dce813ab1" />
 
         ## Supporting notes
+        Here are photos from the event that we can attach to the social post.
 
+<img width="3024" height="4032" alt="Image" src="https://github.com/user-attachments/assets/9848d920-d6e7-4739-a50e-f76eb54df209" />
+<img width="1282" height="1423" alt="Image" src="https://github.com/user-attachments/assets/f45027da-02b6-4a35-aad9-ed52d2617302" />
+<img width="4284" height="5712" alt="Image" src="https://github.com/user-attachments/assets/fd218a00-cf18-4389-98ad-ac5eed7fd762" />
+<img width="2316" height="3088" alt="Image" src="https://github.com/user-attachments/assets/974f2616-06e0-4b70-8f0b-1ce622c879b2" />
+<img width="3794" height="2563" alt="Image" src="https://github.com/user-attachments/assets/74006e9e-f444-4f89-a30d-467cae3583f5" />
+<img width="3024" height="4032" alt="Image" src="https://github.com/user-attachments/assets/1d83173c-dfa8-45db-be4a-afff6b7767ac" />
+<img width="4284" height="5712" alt="Image" src="https://github.com/user-attachments/assets/99440d99-ee8c-476d-9d69-0d295ce58cdc" />
+<img width="3556" height="3077" alt="Image" src="https://github.com/user-attachments/assets/a3638543-0176-420f-b388-0db1cf971353" />
+<img width="864" height="1536" alt="Image" src="https://github.com/user-attachments/assets/a140dbbf-1eb5-46d9-81d2-e89b82f75645" />
+<img width="1024" height="683" alt="Image" src="https://github.com/user-attachments/assets/c8bce3aa-3f6d-4dd3-9ece-ae80629155e9" />
+<img width="2048" height="1152" alt="Image" src="https://github.com/user-attachments/assets/d1fe7c0e-9d64-4215-be26-0712a72ea7fd" />
+<img width="2048" height="1536" alt="Image" src="https://github.com/user-attachments/assets/e726d9dd-9dcf-45e9-883a-086e8fc2aa96" />
+<img width="2048" height="1365" alt="Image" src="https://github.com/user-attachments/assets/d86b38a0-1b50-487b-ad3b-b578857f20b6" />
+<img width="2048" height="1151" alt="Image" src="https://github.com/user-attachments/assets/03d760a0-1933-4c25-8410-0eb08594530c" />

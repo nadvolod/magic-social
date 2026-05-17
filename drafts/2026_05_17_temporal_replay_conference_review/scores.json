@@ -1,63 +1,21 @@
 {
   "variant_1": {
     "angle": "contrarian",
-    "rubric_total": 81.0,
+    "rubric_total": 79.0,
     "rubric_breakdown": {
       "hook": 20.0,
-      "structure": 16.0,
+      "structure": 14.0,
       "proof": 5.0,
       "cta": 20.0,
       "clarity": 20.0
     },
     "rubric_issues": [
+      "Include an indented code/config snippet for concrete teaching value.",
       "Add measurable proof (numbers, before/after, or concrete outcomes)."
     ]
   },
   "variant_2": {
-    "angle": "founder_story",
-    "rubric_total": 78.0,
-    "rubric_breakdown": {
-      "hook": 20.0,
-      "structure": 13.0,
-      "proof": 5.0,
-      "cta": 20.0,
-      "clarity": 20.0
-    },
-    "rubric_issues": [
-      "Post length is slightly off target (1571 chars).",
-      "Add measurable proof (numbers, before/after, or concrete outcomes)."
-    ]
-  },
-  "variant_3": {
-    "angle": "tactical_technical",
-    "rubric_total": 77.0,
-    "rubric_breakdown": {
-      "hook": 16.0,
-      "structure": 16.0,
-      "proof": 5.0,
-      "cta": 20.0,
-      "clarity": 20.0
-    },
-    "rubric_issues": [
-      "Add measurable proof (numbers, before/after, or concrete outcomes)."
-    ]
-  },
-  "variant_4": {
-    "angle": "authority_positioning",
-    "rubric_total": 77.0,
-    "rubric_breakdown": {
-      "hook": 16.0,
-      "structure": 16.0,
-      "proof": 5.0,
-      "cta": 20.0,
-      "clarity": 20.0
-    },
-    "rubric_issues": [
-      "Add measurable proof (numbers, before/after, or concrete outcomes)."
-    ]
-  },
-  "variant_5": {
-    "angle": "short_engagement",
+    "angle": "story",
     "rubric_total": 75.0,
     "rubric_breakdown": {
       "hook": 16.0,
@@ -67,6 +25,52 @@
       "clarity": 20.0
     },
     "rubric_issues": [
+      "Include an indented code/config snippet for concrete teaching value.",
+      "Add measurable proof (numbers, before/after, or concrete outcomes)."
+    ]
+  },
+  "variant_3": {
+    "angle": "tactical",
+    "rubric_total": 75.0,
+    "rubric_breakdown": {
+      "hook": 16.0,
+      "structure": 14.0,
+      "proof": 5.0,
+      "cta": 20.0,
+      "clarity": 20.0
+    },
+    "rubric_issues": [
+      "Include an indented code/config snippet for concrete teaching value.",
+      "Add measurable proof (numbers, before/after, or concrete outcomes)."
+    ]
+  },
+  "variant_4": {
+    "angle": "authority",
+    "rubric_total": 75.0,
+    "rubric_breakdown": {
+      "hook": 16.0,
+      "structure": 14.0,
+      "proof": 5.0,
+      "cta": 20.0,
+      "clarity": 20.0
+    },
+    "rubric_issues": [
+      "Include an indented code/config snippet for concrete teaching value.",
+      "Add measurable proof (numbers, before/after, or concrete outcomes)."
+    ]
+  },
+  "variant_5": {
+    "angle": "short engagement",
+    "rubric_total": 69.0,
+    "rubric_breakdown": {
+      "hook": 16.0,
+      "structure": 8.0,
+      "proof": 5.0,
+      "cta": 20.0,
+      "clarity": 20.0
+    },
+    "rubric_issues": [
+      "Include an indented code/config snippet for concrete teaching value.",
       "Post length is far from target (506 chars; target 800-1500).",
       "Add measurable proof (numbers, before/after, or concrete outcomes)."
     ]

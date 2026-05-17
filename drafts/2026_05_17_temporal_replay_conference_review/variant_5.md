@@ -1,23 +1,20 @@
-        # variant_5 — short_engagement
+        # variant_5 — short engagement
 
-        **Intended audience:** Engineers shipping AI systems who care about operational reliability
-        **Why it may perform:** Compact, opinionated, and easy to comment on. Strong claim plus a specific question should drive engagement.
-        **Risks:** Short format sacrifices nuance and may feel less differentiated without a stronger personal anecdote.
+        **Intended audience:** Engineers building AI systems who care about production reliability more than demo quality.
+        **Why it may perform:** Short, sharp, and discussion-oriented. Easy to read quickly and likely to draw comments from engineers with production pain.
+        **Risks:** Less vivid than the longer variants and lighter on scene-setting.
 
         ---
 
-        Most AI conference takeaways focus on models.
+        Replay reinforced one thing for me: AI in production is a durability problem.
 
-My biggest takeaway from Replay was the opposite.
+I spent the conference around 2,000+ engineers and helped in two workshops: Nexus with Mason and an AI workshop with Melissa.
 
-The teams building credible AI systems were obsessed with boring infrastructure: retries, timeouts, replay, resumability.
+The pattern was consistent.
+Serious teams weren't obsessing over prompts.
+They were asking about retries, recovery, state, and resumability.
 
-    await workflow.execute_activity(
-        call_model,
-        prompt,
-        retry_policy=RetryPolicy(max_attempts=3),
-    )
+That's the shift.
+The hard part of production AI is often orchestration, not intelligence.
 
-In a 2,000+ engineer room, durability kept coming up more than prompts.
-
-What's the most important "boring" reliability feature in your AI stack right now?
+What reliability problem is hurting your AI system most right now?

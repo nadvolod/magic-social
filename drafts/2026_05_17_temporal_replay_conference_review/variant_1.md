@@ -1,50 +1,40 @@
         # variant_1 — contrarian
 
-        **Intended audience:** Senior engineers building AI agents and distributed systems in production
-        **Why it may perform:** Strong contrarian hook, one clear lesson, credible conference-based authority signal, and concrete workflow code aligned with Temporal users.
-        **Risks:** Leans on conference synthesis rather than a personal production metric, so it may feel less hard-won than an incident post.
+        **Intended audience:** Engineers building AI agents and distributed systems in production, especially those evaluating orchestration and durable execution patterns.
+        **Why it may perform:** Strong contrarian hook, concrete conference grounding, named workshops and companies, and a clear production-focused lesson that matches the ICP.
+        **Risks:** Mentions Netflix and OpenAI without specific technical details, so some readers may want more depth. '2,000+' should remain only if accurate.
 
         ---
 
-        Most engineers treat AI orchestration as a prompt problem. They're wrong.
+        Most AI engineers think better models will get them to production. They're wrong.
 
-At Replay, I was listening for one thing: what actually breaks when AI systems leave the demo stage.
+At Replay, the part that stuck with me wasn't model quality.
 
-The pattern was consistent.
+It was orchestration.
 
-The hard part isn't getting an LLM to answer.
+I spent the conference around 2,000+ engineers focused on durable systems, not just prompts. I also helped as a teaching assistant in two workshops: the Nexus workshop led by Mason, and the AI workshop led by Melissa.
 
-It's surviving timeouts, partial progress, retries, deploys, and human approvals without losing state.
+That changed what I paid attention to.
 
-That's why the most useful takeaway for me wasn't a model trick.
+The hallway conversations were rarely about clever demos.
+They were about what happens when an agent pauses, retries, times out, or needs to resume after failure.
 
-It was durable execution.
+The clearest signal was the mix of sessions and people in the room.
+Netflix and OpenAI were both talking about using Temporal for AI at scale.
+Not as a nice-to-have layer.
+As core infrastructure.
 
-A simple pattern looks like this:
+And the conference itself made the point in a strange way.
+One minute I was in a workshop on durable orchestration.
+Later that night, people were packed into the secret Tiki room, then watching live music mixed with sonic gameplay and eating glow-in-the-dark cotton candy.
 
-    @workflow.defn
-    class ResearchWorkflow:
-        @workflow.run
-        async def run(self, query: str) -> Report:
-            plan = await workflow.execute_activity(create_plan, query)
-            for step in plan.steps:
-                await workflow.execute_activity(execute_step, step)
-            return await workflow.execute_activity(summarize_results, query)
+Fun event.
+Serious lesson.
 
-Each step is isolated.
-Each step can retry.
-Each step can resume after a crash.
+The real bottleneck for production AI isn't usually intelligence.
+It's recovery.
 
-The lesson: AI agents fail in production for distributed systems reasons, not prompt reasons.
+If your agent can't survive crashes, retries, long waits, and partial progress, you don't have a product.
+You have a demo.
 
-My proof was the conference itself.
-
-In a room of 2,000+ engineers, the most credible conversations were about replay, recovery, and orchestration boundaries.
-Not prompt templates.
-
-That matched what I've seen building production systems too.
-
-The "AI" part gets attention.
-The durable part keeps it alive.
-
-What failure mode forced you to stop treating agent orchestration like a prompt engineering problem?
+What's been the bigger challenge in your AI systems: model quality or orchestration reliability?

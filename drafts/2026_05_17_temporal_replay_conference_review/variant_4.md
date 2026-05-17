@@ -1,46 +1,42 @@
-        # variant_4 — authority_positioning
+        # variant_4 — authority
 
-        **Intended audience:** Staff and principal engineers deciding how to architect production AI systems
-        **Why it may perform:** Builds authority without hype, uses pattern recognition, and frames credibility around practical engineering questions.
-        **Risks:** More observational than deeply personal, so it may read as thought leadership if the audience wants a sharper incident.
+        **Intended audience:** Principal, staff, and senior engineers evaluating AI architecture and production-readiness patterns across teams.
+        **Why it may perform:** Builds authority through pattern recognition rather than hype, and aligns closely with the audience's concerns around durable AI systems.
+        **Risks:** Authority claim is softer because it comes from one conference, not multiple deployments. Still grounded in real observations.
 
         ---
 
-        I've seen a lot of AI demos this year. The credible ones all shared the same pattern.
+        After enough AI conversations, a pattern becomes obvious.
 
-Replay made that pattern obvious.
+The teams getting real value from AI are thinking like distributed systems engineers.
 
-I was there helping with two workshops and talking to engineers building real systems.
+That was the strongest pattern I saw at Replay.
 
-The impressive teams were not the ones with the fanciest prompt chains.
+I was there with 2,000+ engineers, helped as a teaching assistant in the Nexus workshop led by Mason and the AI workshop led by Melissa, and spent most of my time listening for what serious builders were actually worried about.
 
-They were the ones that could answer boring questions fast:
+The pattern was consistent.
 
-What retries?
-What timeout?
-What state is persisted?
-What happens after a worker crash?
+The discussion moved quickly past prompts.
+It landed on orchestration.
+Retries.
+Recovery.
+State.
+Observability.
 
-The architecture usually looked like this:
+That showed up in talks from companies like Netflix and OpenAI using Temporal for AI operations at scale.
+And it showed up in the smaller moments too, when engineers compared notes between sessions.
 
-    @workflow.defn
-    class AgentRun:
-        @workflow.run
-        async def run(self, task: Task):
-            plan = await workflow.execute_activity(make_plan, task)
-            for item in plan.items:
-                await workflow.execute_activity(run_step, item)
-            return await workflow.execute_activity(finalize, task.id)
+Even the conference atmosphere made it memorable.
+A secret Tiki room.
+Live music mixed with sonic gameplay.
+Glow-in-the-dark cotton candy.
+Then back to conversations about durable execution.
 
-Separate orchestration from side effects.
-Persist progress between steps.
-Make every external call retryable.
+My takeaway is simple.
 
-The lesson: the teams most likely to succeed with AI are building distributed systems first and agent behavior second.
+AI has crossed the line where infrastructure quality matters more than demo quality.
 
-My proof is the signal I trust most.
+If your system runs one happy path in a notebook, that's experimentation.
+If it survives failures, resumes correctly, and leaves an audit trail, that's engineering.
 
-At a 2,000+ engineer conference, the talks and hallway conversations that stuck with me were the ones grounded in durability, not novelty.
-That is usually a good filter for what survives contact with production.
-
-What's the first question you ask to tell whether an AI platform is durable or just polished?
+Where is your team spending more time right now: model behavior or workflow durability?

@@ -1,41 +1,37 @@
-        # variant_3 — tactical_technical
+        # variant_3 — tactical
 
-        **Intended audience:** Production engineers who want concrete patterns for AI workflow reliability
-        **Why it may perform:** Highly practical, easy to save, and delivers a concrete code pattern with a crisp operational lesson.
-        **Risks:** Less emotional than the story variant and lighter on measurable outcome data.
+        **Intended audience:** Engineers and technical leaders responsible for deciding whether AI systems are ready for production deployment.
+        **Why it may perform:** Highly saveable because it provides a reusable checklist. Keeps the conference framing but turns it into practical value.
+        **Risks:** Bullets are less distinctive than code for some technical audiences. Still credible because this is an EXPERIENCE topic.
 
         ---
 
-        The most useful AI lesson I took from Replay was 6 lines of timeout and retry config.
+        Replay gave me a simple filter for evaluating AI systems in production.
 
-I went to Replay expecting model discussions.
+I came away from the conference with one practical checklist.
 
-The more valuable takeaway was operational.
+I was at Replay with 2,000+ engineers focused on durable execution and AI, and I helped as a teaching assistant in the Nexus workshop with Mason and the AI workshop with Melissa.
 
-If you're building AI in production, every external call needs explicit failure boundaries.
-Otherwise one slow dependency turns your agent into a stuck process.
+Across sessions, hallway conversations, and talks from teams like Netflix and OpenAI, the same production questions kept showing up.
 
-This is the baseline pattern I keep coming back to:
+So this is the filter I'm taking back to every AI design review:
 
-    result = await workflow.execute_activity(
-        call_model,
-        prompt,
-        start_to_close_timeout=timedelta(seconds=45),
-        retry_policy=RetryPolicy(max_attempts=3),
-    )
+- Can this workflow resume after a crash?
+- Can it retry without duplicating side effects?
+- Can it survive long waits and partial progress?
+- Can we inspect what step failed and why?
+- Can we change the system without breaking in-flight work?
 
-That snippet teaches two things.
+If the answer is no to most of these, it's not production-ready.
+Even if the demo looks great.
 
-First, timeouts are part of the contract.
-Second, retries belong at the activity boundary, not hidden inside random helper code.
+One scene from the event captured the contrast for me.
+During the day, engineers were deep in workshop problems about orchestration and recovery.
+At night, the secret Tiki room, live music, and glow-in-the-dark cotton candy made it feel almost surreal.
 
-The lesson: reliable AI systems come from explicit orchestration semantics, not smarter prompts.
+But the lesson was very grounded.
 
-My proof is qualitative but specific.
+AI in production should be reviewed like distributed systems infrastructure.
+Not like a prompt experiment.
 
-Across sessions, workshops, and hallway conversations with 2,000+ attendees, the strongest production patterns kept coming back to the same boring primitives: retries, replay, and resumability.
-
-That's also why the conference felt useful.
-It was one of the few AI-heavy events where infrastructure got equal billing.
-
-If you're shipping agents today, what's your default timeout and retry policy for model calls?
+What checks are on your AI production-readiness list right now?
