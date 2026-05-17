@@ -1,40 +1,41 @@
         # variant_1 — contrarian
 
-        **Intended audience:** Engineers building AI agents and distributed systems in production, especially those evaluating orchestration and durable execution patterns.
-        **Why it may perform:** Strong contrarian hook, concrete conference grounding, named workshops and companies, and a clear production-focused lesson that matches the ICP.
-        **Risks:** Mentions Netflix and OpenAI without specific technical details, so some readers may want more depth. '2,000+' should remain only if accurate.
+        **Intended audience:** Staff engineers, Temporal users, and AI engineers evaluating production-grade orchestration
+        **Why it may perform:** Strong contrarian hook, grounded conference scenes, and a clear thesis about why durable execution matters now
+        **Risks:** Could feel broad if the audience wants more specific session details or personal implementation examples
 
         ---
 
-        Most AI engineers think better models will get them to production. They're wrong.
+        Most conference reviews focus on announcements. They're missing the useful part.
 
-At Replay, the part that stuck with me wasn't model quality.
+I went to Temporal Replay expecting product news.
 
-It was orchestration.
+What I left with was a better filter for production systems.
 
-I spent the conference around 2,000+ engineers focused on durable systems, not just prompts. I also helped as a teaching assistant in two workshops: the Nexus workshop led by Mason, and the AI workshop led by Melissa.
+The most valuable moments were not the polished demos.
 
-That changed what I paid attention to.
+They were the talks where people described what broke, what replay exposed, and what durable execution actually changed once the happy path ended.
 
-The hallway conversations were rarely about clever demos.
-They were about what happens when an agent pauses, retries, times out, or needs to resume after failure.
+That pattern showed up everywhere.
 
-The clearest signal was the mix of sessions and people in the room.
-Netflix and OpenAI were both talking about using Temporal for AI at scale.
-Not as a nice-to-have layer.
-As core infrastructure.
+In the packed workshop rooms, people were not asking "How do I start a workflow?"
+They were asking what happens after a deploy, after a timeout, after step 4 fails, after an agent runs for 20 minutes and the worker dies.
 
-And the conference itself made the point in a strange way.
-One minute I was in a workshop on durable orchestration.
-Later that night, people were packed into the secret Tiki room, then watching live music mixed with sonic gameplay and eating glow-in-the-dark cotton candy.
+One photo I took captures it well: a room full of laptops open, a workflow diagram on the screen, and everyone leaning forward for the failure modes.
 
-Fun event.
-Serious lesson.
+Another: Rob Zienert's Netflix session was standing room only.
+That tells you where the market is.
 
-The real bottleneck for production AI isn't usually intelligence.
-It's recovery.
+Engineers do not need more AI orchestration abstractions.
+They need systems that survive reality.
 
-If your agent can't survive crashes, retries, long waits, and partial progress, you don't have a product.
-You have a demo.
+My biggest takeaway from Replay:
 
-What's been the bigger challenge in your AI systems: model quality or orchestration reliability?
+The durable execution story is no longer "nice infra."
+It's becoming the default answer for long-running AI and distributed workflows.
+
+That's why this conference felt important.
+Not because of the branding.
+Because the conversations have moved from demos to recovery semantics.
+
+What was the most convincing production lesson you've seen lately about agent reliability or workflow recovery?
