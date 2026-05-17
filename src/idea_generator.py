@@ -461,6 +461,12 @@ def draft_dir_for(idea: IdeaIssue, *, now: Optional[datetime] = None) -> Path:
 def write_drafts(idea: IdeaIssue, variants: dict, target_dir: Path) -> list[Path]:
     """Write variant_N.md files, scores.json, metadata.json. Returns list of variant file paths."""
     target_dir.mkdir(parents=True, exist_ok=True)
+
+    # Clean stale variant files so previous runs (which may have produced more
+    # variants under different settings) don't pollute the current cohort.
+    for stale in target_dir.glob("variant_*.md"):
+        stale.unlink()
+
     paths: list[Path] = []
     scores: dict[str, dict] = {}
 

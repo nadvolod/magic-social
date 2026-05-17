@@ -41,7 +41,18 @@ Tone: direct, confident, specific, human. First person. No marketing language.
 
 **STEP 0 — extract named entities from the Raw idea.** Before doing anything else, mentally scan the Raw idea and list every proper noun, person name, place name, product name, session/workshop name, sensory detail, or specific scene it contains — even if the Raw idea is typo-heavy, dictation-style, or messy. Treat lowercase words like "open AI" as still naming "OpenAI". The Raw idea is ground truth; missing its specifics is the most common failure mode.
 
-**STEP 1 — name the emotional core.** Read the Raw idea and identify its primary emotional center in 2-4 words (examples: "gratitude and community", "defiance after a costly bug", "vision for what's possible", "celebration of a milestone", "frustration at a hidden complexity", "awe at scale", "discovery of a pattern"). Whatever you write next must preserve this center. A post that contradicts the emotional core — a stoic-lesson take on a gratitude post, a cynical-contrarian take on a celebration — is rejected.
+**STEP 1 — name the emotional core.** Read the Raw idea and identify its primary emotional center in 2-4 words (examples: "gratitude and community", "defiance after a costly bug", "vision for what's possible", "celebration of a milestone", "frustration at a hidden complexity", "awe at scale", "discovery of a pattern", "connection and learning together").
+
+Hunt for emotional signal words even when they're buried in messy or technical prose:
+- **Gratitude / thanks**: "grateful", "thanks", "huge thanks", "appreciate", "lucky"
+- **Connection**: "connected", "met", "community", "together", "people I", "human beings"
+- **Celebration / awe**: "amazing", "beautiful", "incredible", "wow", "can't wait"
+- **Vision / forward-looking**: "future of", "what's coming", "where this goes", "I'm building"
+- **Defiance / contrarian energy**: "wrong", "they miss", "everyone thinks", "the real problem"
+
+If the Raw idea contains gratitude or connection signals — even if it ALSO contains technical content — the post is fundamentally REFLECTION, not a lesson post. Technical material becomes the SETTING for human moments, not the subject. Forcing a "what I learned about systems" frame onto a "grateful for people I met" post is the most common failure mode and is explicitly rejected.
+
+Whatever you write next must preserve this emotional center. A post that contradicts the emotional core — a stoic-lesson take on a gratitude post, a cynical-contrarian take on a celebration — is rejected.
 
 **STEP 2 — classify the topic.**
 - TECHNICAL — code, debugging, architecture, infra, bugs, patterns, performance. Code/config snippets are appropriate.
@@ -49,7 +60,11 @@ Tone: direct, confident, specific, human. First person. No marketing language.
 - INSIGHT — opinion, framework, mental model, lesson learned over time. Code OR named example, whichever fits.
 - REFLECTION — gratitude, community, vision, personal milestone. Emotional truth + named specifics; no forced lesson.
 
-**STEP 3 — propose 3–5 angles tailored to THIS Raw Idea.** Do NOT use a fixed menu. Based on the topic + emotional core + named entities you extracted, propose 3–5 distinct angles that would each work as a strong LinkedIn post about this specific subject. Each angle name should reflect the Raw Idea — not a generic positioning frame. Example angles for a community/gratitude post might be: "Gratitude for specific people I met", "Vision for the durable-AI community we're building", "Quick reflection on one moment that stuck", "Pattern I noticed across hallway conversations". Example angles for a debugging post might be: "Contrarian about retries", "Tactical walkthrough of the fix", "Pattern across N similar bugs". Choose angles that genuinely serve the Raw Idea, not generic frames.
+**STEP 3 — propose 3–5 angles tailored to THIS Raw Idea.** Do NOT use a fixed menu. Based on the topic + emotional core + named entities you extracted, propose 3–5 distinct angles that would each work as a strong LinkedIn post about this specific subject. Each angle name should reflect the Raw Idea — not a generic positioning frame.
+
+**If the emotional core is gratitude, connection, community, celebration, or vision, AT LEAST ONE variant must directly embody that emotional core** — a gratitude post, a community-celebration post, a vision post — not a technical lesson wrapped around it. The other variants can take adjacent angles, but the emotional center deserves a direct expression. Skipping the emotional center because "lesson posts perform better" is a failure mode.
+
+Example angles for a community/gratitude conference recap: "Gratitude for specific people I met", "Vision for the durable-AI community we're building", "One scene that captured what made the event special", "Why I'm grateful for THIS specific group". Example angles for a debugging post: "Contrarian about retries", "Tactical walkthrough of the fix", "Pattern across N similar bugs". Choose angles that genuinely serve the Raw Idea, not generic frames.
 
 **Quality over quantity.** Produce up to **{variant_count}** variants — but produce **FEWER** if the Raw Idea genuinely supports fewer distinct, valuable angles. Three excellent variants beat five mediocre ones. If the Raw Idea is rich (many entities, many distinct facets), use the cap. If it's narrow (one clear story), produce 2 or 3 sharp variants.
 
