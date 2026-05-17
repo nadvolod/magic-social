@@ -492,6 +492,8 @@ def write_drafts(idea: IdeaIssue, variants: dict, target_dir: Path) -> list[Path
         "goal": idea.goal,
         "angle": idea.angle,
         "variant_count": len(paths),
+        "emotional_core": variants.get("emotional_core", ""),
+        "topic_classification": variants.get("topic_classification", ""),
     }
     (target_dir / "metadata.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
 
@@ -545,20 +547,33 @@ def build_variant_comment(key: str, variant: dict, score: dict) -> str:
     audience = variant.get("intended_audience", "")
     why = variant.get("why_it_may_perform", "")
     risks = variant.get("risks", "")
+    brings = variant.get("what_this_brings_vs_references", "")
     rubric_total = score.get("rubric_total", 0)
     label = key.replace("_", " ").title()
 
-    return (
-        f"## {label} — {angle}\n\n"
-        f"**Rubric:** {rubric_total:.1f}/100\n\n"
-        f"---\n\n"
-        f"{post_text}\n\n"
-        f"---\n\n"
-        f"- **Audience:** {audience}\n"
-        f"- **Why it may perform:** {why}\n"
-        f"- **Risks:** {risks}\n\n"
-        f"_React 👍 / 👎 to vote, or reply with edits. Highest-voted draft is the one to ship._\n"
-    )
+    parts = [
+        f"## {label} — {angle}",
+        "",
+        f"**Rubric:** {rubric_total:.1f}/100",
+        "",
+        "---",
+        "",
+        post_text,
+        "",
+        "---",
+        "",
+        f"- **Audience:** {audience}",
+        f"- **Why it may perform:** {why}",
+        f"- **Risks:** {risks}",
+    ]
+    if brings:
+        parts.append(f"- **vs reference cohort:** {brings}")
+    parts.extend([
+        "",
+        "_React 👍 / 👎 to vote, or reply with edits. Highest-voted draft is the one to ship._",
+        "",
+    ])
+    return "\n".join(parts)
 
 
 def build_summary_comment(idea: IdeaIssue, target_dir: Path, scores: dict, paths: list[Path]) -> str:
@@ -575,8 +590,25 @@ def build_summary_comment(idea: IdeaIssue, target_dir: Path, scores: dict, paths
         f"- `{k}`: {v.get('rubric_total', 0):.1f}/100 — {v.get('angle', '')}"
         for k, v in ranked
     )
+
+    # Surface the model's own classification of the Raw Idea (if metadata.json is present).
+    emotional_line = ""
+    topic_line = ""
+    meta_path = target_dir / "metadata.json"
+    if meta_path.exists():
+        try:
+            meta = json.loads(meta_path.read_text(encoding="utf-8"))
+            if meta.get("emotional_core"):
+                emotional_line = f"**Emotional core:** {meta['emotional_core']}\n\n"
+            if meta.get("topic_classification"):
+                topic_line = f"**Topic class:** {meta['topic_classification']}\n\n"
+        except (OSError, json.JSONDecodeError):
+            pass
+
     return (
         f"Generated {len(paths)} LinkedIn drafts — each posted as its own comment above so you can 👍 / 👎 per draft.\n\n"
+        f"{emotional_line}"
+        f"{topic_line}"
         f"{top_line}\n\n"
         f"**Ranked rubric:**\n"
         f"{score_lines}\n\n"
