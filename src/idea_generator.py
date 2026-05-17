@@ -162,15 +162,21 @@ def _extract_image_urls(body: str, limit: int = MAX_IMAGES_PER_ISSUE) -> list[st
 def fetch_issue(repo: str, token: str, issue_number: int) -> IdeaIssue:
     """Fetch and parse an Issue created from the content_idea template.
 
-    Requests `application/vnd.github.html+json` so the payload includes
-    `body_html` — that's where GitHub rewrites user-attachment image URLs
-    into JWT-signed `private-user-images.githubusercontent.com` URLs that
-    can actually be downloaded by automation.
+    Requests `application/vnd.github.full+json` so the payload includes BOTH
+    `body` (markdown — needed for parsing template sections) AND `body_html`
+    (rendered — where GitHub rewrites user-attachment image URLs into
+    JWT-signed `private-user-images.githubusercontent.com` URLs that can be
+    downloaded by automation).
+
+    Requesting `html+json` alone suppresses the markdown `body` field,
+    which silently empties every section (raw_idea, audience, goal, etc.).
+    That bug shipped from 2026-05-17 mid-day to ~14:50 UTC and caused the
+    model to hallucinate content for #422 from title + photos only.
     """
     url = f"{GITHUB_API}/repos/{repo}/issues/{issue_number}"
     headers = {
         "Authorization": f"Bearer {token}",
-        "Accept": "application/vnd.github.html+json",
+        "Accept": "application/vnd.github.full+json",
         "X-GitHub-Api-Version": "2022-11-28",
     }
     resp = requests.get(url, headers=headers, timeout=30)
