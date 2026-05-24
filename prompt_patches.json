@@ -1,0 +1,12 @@
+{
+  "updated_at": "2026-05-24T20:19:33.915462+00:00",
+  "patches": [
+    {
+      "type": "avoid_topic",
+      "rule": "Posts go stale before publishing \u2014 pick more timely topics.",
+      "reason": "Rejection reason 'stale_unpublished_7d' appeared 11 times in the last week.",
+      "added": "2026-05-24",
+      "source_issues": []
+    }
+  ]
+}

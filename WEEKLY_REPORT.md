@@ -1,13 +1,13 @@
 # Weekly Learning Report
 
-**Generated:** 2026-05-10 20:14 UTC
-**Period:** 2026-05-03 to 2026-05-10
+**Generated:** 2026-05-24 20:19 UTC
+**Period:** 2026-05-17 to 2026-05-24
 
 ## KPI Dashboard
 
 | Metric | Value |
 |--------|-------|
-| Publish Rate | 0.0% (0/0) |
+| Publish Rate | 0.0% (0/15) |
 | Time-to-Publish | 0.0 days |
 | Engagement Growth | +0.0% |
 | Feedback Convergence | 0 recurring reasons |
@@ -15,31 +15,21 @@
 
 ## Activity Summary
 
-- **Total posts tracked:** 365
-- **Total feedback received (all time):** 461
-- **Average rating (explicit):** 1.1/5
+- **Total posts tracked:** 382
+- **Total feedback received (all time):** 344
+- **Average rating (explicit):** 1.0/5
 - **Regeneration chains this week:** 0
 
 ## Active Prompt Patches
 
-1. **[?]** Every post MUST include a 4-space indented code or config snippet that teaches something specific — not pseudocode, not placeholders
-   _Reason:_ —
-   _Added:_ 2026-04-10
-
-2. **[?]** Posts about internal tooling changes (CI configs, linting rules, dependency bumps) are NOT valuable unless they reveal a universal engineering insight applicable to the reader's own codebase
-   _Reason:_ —
-   _Added:_ 2026-04-10
-
-3. **[?]** The lesson must be something the reader can apply to THEIR OWN codebase — not a description of what you did, but a transferable principle backed by proof
-   _Reason:_ —
-   _Added:_ 2026-04-10
-
-4. **[avoid_topic]** Posts go stale before publishing — pick more timely topics.
-   _Reason:_ Rejection reason 'stale_unpublished_7d' appeared 15 times in the last week.
-   _Added:_ 2026-05-10
+1. **[avoid_topic]** Posts go stale before publishing — pick more timely topics.
+   _Reason:_ Rejection reason 'stale_unpublished_7d' appeared 11 times in the last week.
+   _Added:_ 2026-05-24
 
 ## Lessons Learned This Week
 
+- Improvement theme 'what' mentioned 15 time(s) this week.
+- Improvement theme 'better' mentioned 15 time(s) this week.
 - Prompt patch added: [avoid_topic] Posts go stale before publishing — pick more timely topics.
 
 ---
