@@ -339,6 +339,35 @@
       },
       "summary": "Post explains how AI sped up coding but created PR review bottlenecks, then promotes an AI PR review system and a free webinar.",
       "hook_excerpt": "AI helped me write code faster."
+    },
+    {
+      "issue_number": 439,
+      "issue_url": "https://github.com/nadvolod/magic-social/issues/439",
+      "image_url": "https://github.com/user-attachments/assets/4f472210-b82f-4390-81c7-ec3c8faeaf57",
+      "recorded_at": "2026-05-26T12:55:32.911343+00:00",
+      "metrics": {
+        "impressions": 2240,
+        "reactions": 54,
+        "comments": 8,
+        "reposts": 2,
+        "saves": 1
+      },
+      "engagement_score": 88.0,
+      "percentile": 0.7692307692307693,
+      "classification": "bottom_90_percent",
+      "reason": "Engagement score 88.0 is below the historical p90 of 142.0, and the computed percentile 0.7692 is below the top-10% cutoff.",
+      "confidence": 0.93,
+      "signals": {
+        "hook_style": "not visible",
+        "tone": "informative",
+        "structure": "analytics screenshot / no post body visible",
+        "cta_type": "none visible",
+        "has_code": false,
+        "has_numbers": true,
+        "topic": "LinkedIn post performance analytics"
+      },
+      "summary": "LinkedIn analytics screenshot showing 2,240 impressions, 1,399 members reached, and modest engagement with 54 reactions, 8 comments, 2 reposts, and 1 save.",
+      "hook_excerpt": "not visible"
     }
   ],
   "version": 1
