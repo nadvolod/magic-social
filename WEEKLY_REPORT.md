@@ -1,23 +1,23 @@
 # Weekly Learning Report
 
-**Generated:** 2026-05-24 20:19 UTC
-**Period:** 2026-05-17 to 2026-05-24
+**Generated:** 2026-05-31 20:23 UTC
+**Period:** 2026-05-24 to 2026-05-31
 
 ## KPI Dashboard
 
 | Metric | Value |
 |--------|-------|
-| Publish Rate | 0.0% (0/15) |
+| Publish Rate | 0.0% (0/0) |
 | Time-to-Publish | 0.0 days |
 | Engagement Growth | +0.0% |
-| Feedback Convergence | 0 recurring reasons |
+| Feedback Convergence | 1 recurring reasons |
 | Follower Delta | +0 |
 
 ## Activity Summary
 
 - **Total posts tracked:** 382
-- **Total feedback received (all time):** 344
-- **Average rating (explicit):** 1.0/5
+- **Total feedback received (all time):** 382
+- **Average rating (explicit):** 1.1/5
 - **Regeneration chains this week:** 0
 
 ## Active Prompt Patches
@@ -28,9 +28,7 @@
 
 ## Lessons Learned This Week
 
-- Improvement theme 'what' mentioned 15 time(s) this week.
-- Improvement theme 'better' mentioned 15 time(s) this week.
-- Prompt patch added: [avoid_topic] Posts go stale before publishing — pick more timely topics.
+_No new lessons this week._
 
 ---
 
