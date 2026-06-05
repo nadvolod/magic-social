@@ -1,62 +1,62 @@
-# Voice Guide — synthesized 2026-06-03
+# Voice Guide — synthesized 2026-06-05
 
 ## Audience & ICP
 
-This author writes for software engineers building production systems, especially around AI agents, workflows, distributed systems, and reliability. The curated posts consistently target readers who care about failure modes, architecture tradeoffs, debugging lessons, and practical implementation details rather than high-level AI hype.
+This author writes for software engineers, staff-level ICs, and technical builders working on distributed systems, AI agents, workflows, and production infrastructure. The recurring subject matter in the curated examples centers on debugging, retries, determinism, hallucination control, and durable execution, suggesting readers want practical lessons that help them ship reliable systems rather than polished demos.
 
 ## Tone
 
-- **Direct and technical, but conversational** — posts use plain first-person framing ("I spent 3 days debugging...", "I'm building...") while discussing architecture, retries, determinism, and verification in concrete terms. [own examples 1–5]
-- **Confident, grounded in evidence** — claims are usually backed by a bug, code snippet, metric, or before/after result such as "23% to 1.8%" or "2% to 0%." [own examples 2–4]
-- **Slightly contrarian without sounding performative** — several posts pivot from a common assumption to a sharper lesson ("They're solving the wrong problem," "the fix wasn't prompt engineering. It was architecture"). [own examples 2, 3, 5]
-- **Practical over promotional** — even when mentioning tools like Temporal or OpenAI, the emphasis is on what broke, how it was fixed, and what pattern generalizes. [own examples 2–5, ref #94, ref #92]
-- **Invites peer discussion through specific questions** — endings ask for concrete war stories or implementation approaches, not generic engagement bait. [own examples 1–5]
+- **Direct and technical, but conversational** — posts use plain first-person narration ("I spent 4 hours debugging...", "I've deployed 3 different agent frameworks...") while staying grounded in engineering detail. [own examples 2, 4, 5]
+- **Contrarian without being abstract** — several posts open by rejecting a common assumption, then immediately prove it with a concrete failure case ("They're solving the wrong problem," "the fix wasn't prompt engineering. It was architecture."). [own examples 2, 3, 5]
+- **Experience-led, not theory-led** — claims usually come from something the author built, broke, measured, or debugged, rather than from generic advice. [own examples 1–5]
+- **Confident, but earned through specifics** — strong assertions are paired with code, metrics, or root causes, not hype. [own examples 2, 3, 4, 5]
+- **Curious and peer-oriented at the end** — posts often close by inviting other engineers to compare practices or war stories. [own examples 1–5]
 
 ## Hook style
 
-- **False simplicity → real systems complexity** — opens with something that sounds easy, then reveals the hidden engineering problem underneath. [own example 1]
-- **Debugging war story** — starts with time spent, a failure, or a production incident, then unpacks the root cause. [own examples 2, 4]
-- **Strong result + "here's how"** — leads with a measurable improvement and promises the exact mechanism behind it. [own example 3]
-- **Contrarian question** — opens by challenging a common practice or asking why standard approaches fail in production. [own examples 2, 5]
-- **Personal build/update announcement** — benchmark posts sometimes open with a product launch or "I built something" framing, but the curated voice uses this less often and usually ties it quickly to an engineering lesson. [ref #95, ref #94, own example 1]
+- **False simplicity → deeper systems problem** — opens with something that sounds easy, then reframes it as infrastructure or architecture complexity. [own example 1]
+- **Common practice is wrong/incomplete** — starts by challenging a standard engineering habit, then explains the hidden failure mode. [own example 2]
+- **Measured result first** — leads with a concrete improvement number, then promises the exact mechanism behind it. [own example 3]
+- **Debugging story with time cost** — begins with a recent incident and a specific amount of wasted time before revealing the root cause. [own example 4]
+- **Personal build/update announcement** — benchmark references sometimes open with launches, tutorials, or "I built something" framing; this exists in the broader set but is less defining than the curated voice. [ref #95, ref #94, ref #92]
 
 ## Sentence and paragraph rhythm
 
-- **Short sentences dominate the openings** — hooks often arrive as 1 short sentence per line, usually around 4–10 words, to create momentum ("Sounds trivial. It isn't."). [own examples 1, 2, 4, 5]
-- **Paragraphs are brief, usually 1–3 sentences** — the author rarely stacks dense blocks; most ideas get their own paragraph for readability. [own examples 1–5]
-- **Frequent white space for emphasis** — important turns are isolated on their own lines, especially lessons or reframes ("But the fix wasn't prompt engineering. It was architecture."). [own examples 1, 3]
-- **Uses question lists to surface edge cases** — multiple posts include 3–4 parallel questions in bullets or hyphen lists to show operational complexity. [own examples 1, 5]
-- **Code snippet followed by interpretation** — technical examples are shown in a compact code block, then immediately translated into a plain-English lesson. [own examples 2–5]
-- **Ends with a single discussion prompt** — the final line is usually one question, separated as its own paragraph. [own examples 1–5]
+- **Hooks are usually 1–2 short lines** — many posts begin with blunt, standalone sentences of roughly 4–10 words before expanding. [own examples 1, 2, 4, 5]
+- **Paragraphs are very short, often 1–3 sentences** — the curated examples rely on heavy white space and frequent breaks rather than dense blocks. [own examples 1–5]
+- **Uses isolated emphasis lines for the takeaway or reframe** — key ideas are often broken onto their own line or split across two short lines for impact. [own examples 1, 2]
+- **Frequently inserts a short list of failure cases or questions mid-post** — these appear as bullets or repeated "What happens when..." structures to surface edge cases. [own examples 1, 5]
+- **Code snippets are short and selective** — examples show only the minimal fragment needed to explain the bug, fix, or architecture pattern. [own examples 2, 3, 4, 5]
+- **Ending cadence is lesson → broader principle → question** — many posts move from incident details to a generalized engineering rule, then finish with a discussion prompt. [own examples 2–5]
 
 ## Vocabulary cues
 
-- **Prefers concrete systems language** — words like "workflow," "activity," "retry," "idempotency," "non-deterministic," "audit trail," "timeouts," and "crash recovery" appear repeatedly. [own examples 2–5]
-- **Uses "root cause," "fix," and "lesson" as structural markers** — many posts explicitly label the problem, the correction, and the takeaway. [own examples 2, 4]
-- **Frames bad assumptions with sharp contrast words** — "Sounds trivial. It isn't." / "The lesson isn't X. It's Y." / "wasn't prompt engineering. It was architecture." [own examples 1–3]
-- **Prefers exact numbers over vague improvement claims** — percentages, hours, days, counts, and durations are common and specific. [own examples 2–5, ref #95]
-- **Uses production-oriented qualifiers** — phrases like "in production," "happy path," "edge cases," "silently," and "durably" signal real-world reliability concerns. [own examples 1, 3, 4, 5]
-- **Names tools directly when relevant** — Temporal, OpenAI, Stripe, `datetime.now()`, `uuid4()`, and `AGENTS.md` are used plainly rather than abstracted away. [own examples 1–5]
-- **Avoids inflated marketing language** — no visible use of buzzwords like "revolutionary," "game-changing," or "leverage"; the style stays concrete and technical. [own examples 1–5]
+- **Prefers concrete engineering nouns** — terms like "workflow," "activity," "retry policy," "idempotency key," "audit trail," "hallucination rate," and "distributed systems problem" appear repeatedly. [own examples 1–5]
+- **Uses "The root cause," "The fix," and "The lesson" as structural markers** — these phrases recur to organize the narrative mechanically. [own examples 2, 4]
+- **Favors "production," "in production," and "production-grade" over vague quality claims** — reliability is framed in operational terms. [own examples 1, 3, 5]
+- **Uses numbers whenever available** — time spent debugging, error-rate changes, duplicate-charge rates, number of frameworks tried, and step counts are all explicit. [own examples 2, 3, 4, 5]
+- **Frames systems in terms of failure modes** — repeated wording focuses on "edge cases," "crashes," "timeouts," "duplicate," "lost," "deadlock," "resume," and "replay." [own examples 1–5]
+- **Prefers plain verbs over startup jargon** — the examples say "build," "debug," "resume," "verify," "drop," "ship," "wrap," rather than inflated business language. [own examples 1–5]
+- **Often contrasts "demo" vs. "product" or "happy path" vs. real-world reliability** — this opposition is a recurring way the author defines engineering maturity. [own examples 1, 5]
 
 ## Anti-patterns (what NOT to do)
 
-- **Don't write generic inspirational advice without an engineering artifact** — the strongest posts always include a bug, metric, code snippet, edge-case list, or implementation detail, which is what makes the lesson credible.
-- **Don't lead with product hype and stop there** — benchmark announcement posts exist, but the curated voice is strongest when a tool mention leads into a systems lesson rather than a feature parade.
-- **Don't use long, dense paragraphs** — the author consistently relies on short paragraphs and white space, so wall-of-text formatting would break the reading rhythm.
-- **Don't make abstract claims without numbers or consequences** — when something improved or failed, the posts usually quantify it or describe the operational impact; vague "better performance" language would feel off-voice.
-- **Don't end with a generic CTA like "DM me" or "link in comments"** — the established pattern is a specific peer question that invites technical discussion.
-- **Don't stay on the happy path** — the voice repeatedly focuses on retries, crashes, restarts, deadlocks, hallucinations, and duplicate charges; omitting failure modes would miss the core perspective.
+- **Don't write generic inspiration or leadership advice** — the strongest examples are all anchored in a specific bug, system behavior, metric, or implementation detail, which is what makes the lesson credible.
+- **Don't rely on hypey AI language or futurist claims** — even AI posts are framed around verification, retries, architecture, and operational tradeoffs rather than grand predictions.
+- **Don't use long dense paragraphs** — the voice consistently depends on short paragraphs and white space to keep technical material readable in-feed.
+- **Don't make claims without evidence** — the author usually supports points with code, percentages, elapsed time, or an explicit root cause, so unsupported assertions would sound off-voice.
+- **Don't end without an engineer-to-engineer prompt** — the curated posts regularly close with a concrete question that invites peers to share implementation experience, not just react.
+- **Don't over-explain the whole system** — examples zoom in on one failure mode or one design choice; trying to cover everything would dilute the punch of the lesson.
 
 ## Quality bar — what a great post must do
 
-- Open with a concrete problem, surprising result, or contrarian observation in very short lines.
-- Ground the post in a real build/debugging scenario with specific systems detail.
-- Show at least one of: code, metrics, edge cases, before/after numbers, or a precise root cause.
-- Pivot to a clear lesson that generalizes beyond the single incident.
-- Keep paragraphs short and use white space to isolate key insights.
-- End with one specific question that invites practitioners to share real experience.
+- Open with a sharp hook: either a surprising result, a broken assumption, or a debugging incident.
+- Ground the post in one concrete technical problem the author personally built, measured, or fixed.
+- Include specifics: code fragment, metric, root cause, failure mode, or exact architectural choice.
+- Extract a broader engineering principle from the incident without becoming abstract.
+- Keep the formatting scannable with short paragraphs, white space, and occasional list structure.
+- End with a focused question that invites other experienced builders to compare approaches.
 
 ---
 
-_Synthesized from 3 top reference posts, 5 curated examples on 2026-06-03._
+_Synthesized from 3 top reference posts, 5 curated examples on 2026-06-05._
