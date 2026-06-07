@@ -1,7 +1,7 @@
 # Weekly Learning Report
 
-**Generated:** 2026-05-31 20:23 UTC
-**Period:** 2026-05-24 to 2026-05-31
+**Generated:** 2026-06-07 20:25 UTC
+**Period:** 2026-05-31 to 2026-06-07
 
 ## KPI Dashboard
 
@@ -10,13 +10,13 @@
 | Publish Rate | 0.0% (0/0) |
 | Time-to-Publish | 0.0 days |
 | Engagement Growth | +0.0% |
-| Feedback Convergence | 1 recurring reasons |
+| Feedback Convergence | 0 recurring reasons |
 | Follower Delta | +0 |
 
 ## Activity Summary
 
 - **Total posts tracked:** 382
-- **Total feedback received (all time):** 382
+- **Total feedback received (all time):** 391
 - **Average rating (explicit):** 1.1/5
 - **Regeneration chains this week:** 0
 
