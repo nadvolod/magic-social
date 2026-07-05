@@ -1,7 +1,7 @@
 # Weekly Learning Report
 
-**Generated:** 2026-06-28 20:24 UTC
-**Period:** 2026-06-21 to 2026-06-28
+**Generated:** 2026-07-05 20:23 UTC
+**Period:** 2026-06-28 to 2026-07-05
 
 ## KPI Dashboard
 
@@ -22,9 +22,7 @@
 
 ## Active Prompt Patches
 
-1. **[avoid_topic]** Posts go stale before publishing — pick more timely topics.
-   _Reason:_ Rejection reason 'stale_unpublished_7d' appeared 11 times in the last week.
-   _Added:_ 2026-05-24
+_No active prompt patches._
 
 ## Lessons Learned This Week
 
