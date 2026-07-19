@@ -1,7 +1,7 @@
 # Weekly Learning Report
 
-**Generated:** 2026-07-12 20:15 UTC
-**Period:** 2026-07-05 to 2026-07-12
+**Generated:** 2026-07-19 20:16 UTC
+**Period:** 2026-07-12 to 2026-07-19
 
 ## KPI Dashboard
 
