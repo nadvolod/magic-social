@@ -4,11 +4,11 @@ agent:
   # Repos to scan for lesson-worthy commits.
   # Edit this list to add or remove monitored repos.
   source_repos:
-    - nadvolod/LifeNotes
-    - nadvolod/temporal-learning
-    - nadvolod/ultimate-code-metrics
-    - nadvolod/ceo-mission-control
-    - nadvolod/magic-social
+  - nadvolod/LifeNotes
+  - nadvolod/temporal-learning
+  - nadvolod/ultimate-code-metrics
+  - nadvolod/ceo-mission-control
+  - nadvolod/magic-social
 
   # Repo where social-post Issues are created (separate from scan sources)
   issue_repo: nadvolod/magic-social
@@ -27,7 +27,7 @@ agent:
   variations_per_commit: 3
 
   # Minimum commit score to qualify for post generation (0-100)
-  score_threshold: 30.0
+  score_threshold: 40.0
 
   # OpenAI model to use for post generation
   openai_model: gpt-5.4-mini
@@ -53,35 +53,37 @@ post_generation:
 topics:
   # Topics to prioritize for post generation (must match scoring.py RELEVANT_TOPICS)
   priority:
-    - ai
-    - distributed-systems
-    - testing
-    - performance
-    - reliability
+  - ai
+  - distributed-systems
+  - testing
+  - performance
+  - reliability
 
 content:
   # Your niche — all posts should relate to these topics
   niche_keywords:
-    - ai agents
-    - temporal
-    - distributed systems
-    - claude
-    - openai
-    - gemini
-    - workflow orchestration
-    - durable execution
-    - llm
-    - agentic
-  niche_description: "AI agentic systems, Temporal.io, distributed systems, LLMs (Claude, GPT, Gemini)"
+  - ai agents
+  - temporal
+  - distributed systems
+  - claude
+  - openai
+  - gemini
+  - workflow orchestration
+  - durable execution
+  - llm
+  - agentic
+  niche_description: "AI agentic systems, Temporal.io, distributed systems, LLMs (Claude,
+    GPT, Gemini)"
 
   # Idea bank — topics the system can generate from even without commits
   idea_bank:
-    - topic: "Building AI agents with Temporal.io"
-      context: "Deep research agent, durable workflows, crash recovery for agents"
-    - topic: "Why most AI agent frameworks fail at production"
-      context: "Temporal solves retry, state persistence, crash recovery — frameworks don't"
-    - topic: "The hidden cost of AI agent hallucinations in production"
-      context: "Guardrails, human-in-the-loop, idempotent activities"
+  - topic: "Building AI agents with Temporal.io"
+    context: "Deep research agent, durable workflows, crash recovery for agents"
+  - topic: "Why most AI agent frameworks fail at production"
+    context: "Temporal solves retry, state persistence, crash recovery — frameworks
+      don't"
+  - topic: "The hidden cost of AI agent hallucinations in production"
+    context: "Guardrails, human-in-the-loop, idempotent activities"
 
 storage:
   # Path to learning state JSON file
