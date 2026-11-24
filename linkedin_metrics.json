@@ -1,11 +1,5 @@
 [
   {
-    "recorded_at": "2026-08-26T07:17:11.425911+00:00",
-    "follower_count": 0,
-    "connection_count": 0,
-    "post_metrics": []
-  },
-  {
     "recorded_at": "2026-08-27T10:15:14.495905+00:00",
     "follower_count": 0,
     "connection_count": 0,
@@ -535,6 +529,12 @@
   },
   {
     "recorded_at": "2026-11-23T07:04:56.553922+00:00",
+    "follower_count": 0,
+    "connection_count": 0,
+    "post_metrics": []
+  },
+  {
+    "recorded_at": "2026-11-24T07:04:20.766022+00:00",
     "follower_count": 0,
     "connection_count": 0,
     "post_metrics": []
